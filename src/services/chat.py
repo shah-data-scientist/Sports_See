@@ -1,8 +1,8 @@
 """
 FILE: chat.py
 STATUS: Active
-RESPONSIBILITY: RAG pipeline orchestration service (search, context building, response generation)
-LAST MAJOR UPDATE: 2026-02-06
+RESPONSIBILITY: Hybrid RAG pipeline (SQL + Vector Search) orchestration service
+LAST MAJOR UPDATE: 2026-02-07
 MAINTAINER: Shahu
 """
 
@@ -19,6 +19,8 @@ from src.core.security import sanitize_query, validate_search_params
 from src.models.chat import ChatRequest, ChatResponse, SearchResult
 from src.repositories.vector_store import VectorStoreRepository
 from src.services.embedding import EmbeddingService
+from src.services.query_classifier import QueryClassifier, QueryType
+from src.tools.sql_tool import NBAGSQLTool
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class ChatService:
         embedding_service: EmbeddingService | None = None,
         api_key: str | None = None,
         model: str | None = None,
+        enable_sql: bool = True,
     ):
         """Initialize chat service.
 
@@ -68,15 +71,19 @@ class ChatService:
             embedding_service: Embedding service (created if not provided)
             api_key: Mistral API key (default from settings)
             model: Chat model name (default from settings)
+            enable_sql: Enable SQL tool for statistical queries (default: True)
         """
         self._api_key = api_key or settings.mistral_api_key
         self._model = model or settings.chat_model
         self._temperature = settings.temperature
+        self._enable_sql = enable_sql
 
         # Dependencies (lazy initialization)
         self._vector_store = vector_store
         self._embedding_service = embedding_service
         self._client: Mistral | None = None
+        self._sql_tool: NBAGSQLTool | None = None
+        self._query_classifier: QueryClassifier | None = None
 
     @property
     def vector_store(self) -> VectorStoreRepository:
@@ -104,6 +111,27 @@ class ChatService:
     def model(self) -> str:
         """Get chat model name."""
         return self._model
+
+    @property
+    def sql_tool(self) -> NBAGSQLTool | None:
+        """Get SQL tool (lazy initialization)."""
+        if not self._enable_sql:
+            return None
+        if self._sql_tool is None:
+            try:
+                self._sql_tool = NBAGSQLTool(mistral_api_key=self._api_key)
+                logger.info("SQL tool initialized successfully")
+            except Exception as e:
+                logger.warning(f"SQL tool initialization failed: {e}")
+                self._sql_tool = None
+        return self._sql_tool
+
+    @property
+    def query_classifier(self) -> QueryClassifier:
+        """Get query classifier (lazy initialization)."""
+        if self._query_classifier is None:
+            self._query_classifier = QueryClassifier()
+        return self._query_classifier
 
     @property
     def is_ready(self) -> bool:
@@ -225,7 +253,7 @@ class ChatService:
 
     @logfire.instrument("ChatService.chat")
     def chat(self, request: ChatRequest) -> ChatResponse:
-        """Process a chat request through the RAG pipeline.
+        """Process a chat request through hybrid RAG pipeline (SQL + Vector Search).
 
         Args:
             request: Chat request with query and parameters
@@ -244,20 +272,52 @@ class ChatService:
         # Sanitize query
         query = sanitize_query(request.query)
 
-        # Search for context
-        search_results = self.search(
-            query=query,
-            k=request.k,
-            min_score=request.min_score,
-        )
+        # Classify query to determine routing
+        query_type = self.query_classifier.classify(query) if self._enable_sql else QueryType.CONTEXTUAL
 
-        # Format context
-        if search_results:
-            context = "\n\n---\n\n".join(
-                [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
+        # Route to appropriate data source(s)
+        context_parts = []
+        search_results = []
+
+        # Statistical query → SQL tool
+        if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
+            if self.sql_tool:
+                try:
+                    logger.info(f"Routing to SQL tool (query_type: {query_type.value})")
+                    sql_result = self.sql_tool.query(query)
+
+                    if sql_result["error"]:
+                        logger.warning(f"SQL query failed: {sql_result['error']}")
+                    else:
+                        # Format SQL results as context
+                        sql_context = self.sql_tool.format_results(sql_result["results"])
+                        context_parts.append(f"DONNÉES STATISTIQUES (SQL):\n{sql_context}")
+                        logger.info(f"SQL query returned {len(sql_result['results'])} rows")
+
+                except Exception as e:
+                    logger.error(f"SQL tool error: {e}")
+
+        # Contextual/Hybrid query → Vector search
+        if query_type in (QueryType.CONTEXTUAL, QueryType.HYBRID):
+            logger.info(f"Routing to vector search (query_type: {query_type.value})")
+            search_results = self.search(
+                query=query,
+                k=request.k,
+                min_score=request.min_score,
             )
+
+            # Format vector search context
+            if search_results:
+                vector_context = "\n\n---\n\n".join(
+                    [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
+                )
+                context_parts.append(f"DOCUMENTS ET DISCUSSIONS:\n{vector_context}")
+
+        # Combine contexts
+        if context_parts:
+            context = "\n\n=== === ===\n\n".join(context_parts)
         else:
-            context = "Aucune information pertinente trouvée dans la base de connaissances."
+            context = "Aucune information pertinente trouvée."
 
         # Generate response
         answer = self.generate_response(query=query, context=context)

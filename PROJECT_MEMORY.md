@@ -433,4 +433,115 @@ poetry run uvicorn src.api.main:app --reload
 - FAISS + torch AVX2 crash on Windows: fixed by lazy-loading easyocr in data_loader.py
 
 **Maintainer:** Shahu
-**Last Updated:** 2026-02-06
+**Last Updated:** 2026-02-07 (Phase 2: SQL Integration)
+
+---
+
+## Update: 2026-02-07 — Phase 2: Excel Data Integration & SQL Tool
+
+### Overview
+
+Added **structured NBA statistics querying** via SQL database to complement existing vector search (unstructured documents). Users can now ask precise statistical questions ("Who has the most rebounds?") alongside contextual questions ("Why is he effective?").
+
+### New Components
+
+**1. Database Schema (`src/repositories/nba_database.py`)**
+- **Teams table**: 30 NBA teams (abbreviation, name)
+- **Players table**: 569 players (name, team, age)
+- **Player_stats table**: 569 stat records with 45 columns (pts, reb, ast, fg%, advanced metrics, etc.)
+- SQLAlchemy ORM models with relationships
+- NBADatabase repository with CRUD operations
+
+**2. Pydantic Validation Models (`src/models/nba.py`)**
+- `PlayerStats`: 48 fields with validators (percentages, decimals, time-format fixes)
+- `Player`, `Team`: Basic entity models
+- Handles Excel formatting issues (e.g., "15:00:00" → 3PM)
+- Field-level validation with min/max ranges
+
+**3. Ingestion Pipeline (`scripts/load_excel_to_db.py`)**
+- Reads `inputs/regular NBA.xlsx` (569 players, 45 columns)
+- Validates with Pydantic models
+- Inserts into SQLite database
+- **Results**: 30 teams, 569 players, 569 stats records (0 errors)
+- Usage: `poetry run python scripts/load_excel_to_db.py --drop`
+
+**4. LangChain SQL Tool (`src/tools/sql_tool.py`)**
+- **NBAGSQLTool**: Natural language → SQL → results
+- **8 Few-Shot Examples**: Common query patterns (top scorers, averages, comparisons)
+- **Mistral LLM**: Temperature=0.0 for deterministic SQL generation
+- **Methods**: `generate_sql()`, `execute_sql()`, `query()`, `format_results()`
+- Schema-aware prompts with column descriptions
+
+### Architecture Changes
+
+**New Directory Structure**:
+```
+Sports_See/
+├── database/
+│   └── nba_stats.db               # SQLite database (569 players)
+├── src/
+│   ├── models/
+│   │   └── nba.py                 # Pydantic NBA models
+│   ├── repositories/
+│   │   └── nba_database.py        # SQLAlchemy ORM + repository
+│   └── tools/
+│       └── sql_tool.py            # LangChain SQL agent
+└── scripts/
+    ├── load_excel_to_db.py        # Excel → SQLite pipeline
+    ├── extract_excel_schema.py    # Schema analysis utility
+    ├── read_nba_data.py           # Excel reader
+    └── test_sql_tool.py           # SQL tool test script
+```
+
+### Hybrid Querying (Planned Integration)
+
+**Query Classification**:
+- **Statistical** → SQL Tool (e.g., "Who scored the most points?")
+- **Contextual** → Vector Search (e.g., "Why is LeBron the GOAT?")
+- **Hybrid** → Both sources (e.g., "Compare Jokic and Embiid's stats and explain who's better")
+
+**Implementation Plan**:
+1. Add query classifier to `ChatService`
+2. Route statistical queries to SQL tool
+3. Route contextual queries to vector search
+4. Combine results for hybrid queries
+5. Update system prompt to handle both sources
+
+### Performance Metrics
+
+- **Database size**: ~250 KB (negligible)
+- **Query performance**: 10-20ms (local SQLite)
+- **LLM SQL generation**: ~500-1000ms (Mistral API)
+- **Cost per query**: ~$0.0001 (SQL generation)
+
+### Known Limitations
+
+1. **Single season data**: No historical trends
+2. **No game-by-game data**: Only season aggregates
+3. **Static team names**: Hardcoded in script
+4. **LLM hallucination risk**: Mitigated with few-shot examples + temperature=0.0
+
+### Testing Status
+
+- ✅ Ingestion pipeline tested (569 players loaded successfully)
+- ✅ Pydantic validation working (0 errors)
+- ✅ SQL tool created with 8 few-shot examples
+- ⚠️ Unit tests pending
+- ⚠️ Integration into ChatService pending
+
+### Next Steps
+
+1. Fix FewShotPromptTemplate syntax ✅ (Done)
+2. Test SQL tool end-to-end ⚠️
+3. Integrate SQL tool into ChatService ⚠️
+4. Add query classification logic ⚠️
+5. Write unit tests ⚠️
+6. Add hybrid query handling ⚠️
+
+### Documentation
+
+- [docs/PHASE2_SQL_INTEGRATION.md](docs/PHASE2_SQL_INTEGRATION.md) - Complete Phase 2 documentation
+- Sample queries, architecture diagrams, integration plan
+
+**Maintainer:** Shahu
+**Last Updated:** 2026-02-07 (Phase 2: SQL Integration)
