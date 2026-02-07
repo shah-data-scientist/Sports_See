@@ -25,27 +25,28 @@ class QueryClassifier:
     """Classify user queries to route to appropriate data source."""
 
     # Statistical query patterns (SQL database)
+    # Phase 4: More conservative - require stronger statistical signals
     STATISTICAL_PATTERNS = [
-        # Superlatives
-        r"\b(top|best|most|highest|lowest|worst|leading|leader)\b",
-        r"\b(who has|which player|which team)\b.*\b(most|best|highest|top)\b",
-        # Aggregations
+        # Superlatives with statistical terms (NOT just "best" which is subjective)
+        r"\b(top|most|highest|lowest|leading|leader)\s+\d+",  # "top 5", "most 10"
+        r"\b(who has|which player|which team)\b.*\b(most|highest|top)\b.*\b(points|rebounds|assists|stats)\b",
+        # Explicit aggregations (strong statistical signal)
         r"\b(average|mean|total|sum|count|how many)\b",
-        r"\bavg\b",
-        # Comparisons
-        r"\bcompare\b.*\b(stats|statistics|numbers|performance)\b",
-        r"\b(vs|versus|against)\b",
-        # Numbers and stats
-        r"\b(points|rebounds|assists|steals|blocks|percentage|rating)\b",
-        r"\b(pts|reb|ast|stl|blk|fg%|3p%|ft%|ts%|per|ws)\b",
-        # Statistical verbs
-        r"\b(scored|averaging|ranks|ranking|ranked)\b",
-        # Filters with numbers
-        r"\b(more than|less than|over|under|above|below)\b.*\d+",
-        r"\d+\s*(points|rebounds|assists)",
-        # Question words + stats
+        r"\bavg\b.*\b(points|rebounds|assists|per game)\b",
+        # Explicit stat comparisons
+        r"\bcompare\b.*\b(stats|statistics|numbers)\b",
+        # Explicit stat abbreviations (strong signal)
+        r"\b(pts|reb|ast|stl|blk|fg%|3p%|ft%|ts%|per|ws|ortg|drtg)\b",
+        # Statistical verbs with numbers
+        r"\b(scored|averaging)\b.*\d+",
+        r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b.*\b(points|rebounds|assists)\b",
+        # Explicit filters with numbers
+        r"\b(more than|less than|over|under|above|below)\b\s*\d+\s*(points|rebounds|assists)",
+        # Question words + explicit stats
         r"\bhow many\b.*\b(points|rebounds|assists|games|wins)\b",
-        r"\bwhat is\b.*\b(percentage|average|total|rating|stats)\b",
+        r"\bwhat is\b.*\b(percentage|average|total|rating)\b.*\b(of|for)\b",
+        # Specific statistical queries
+        r"\b(who are|list|show me)\b.*\b(top|players with|scorers|leaders)\b",
     ]
 
     # Contextual query patterns (vector search)

@@ -26,21 +26,24 @@ logger = logging.getLogger(__name__)
 
 
 # System prompt template
-SYSTEM_PROMPT_TEMPLATE = """Tu es '{app_name} Analyst AI', un assistant expert.
-Ta mission est de répondre aux questions en te basant sur le contexte fourni.
+# Phase 4 improvements: Explicit relevancy and faithfulness constraints
+SYSTEM_PROMPT_TEMPLATE = """Tu es '{app_name} Analyst AI', un assistant expert en analyse sportive NBA.
 
 CONTEXTE:
 ---
 {context}
 ---
 
-QUESTION:
+QUESTION DE L'UTILISATEUR:
 {question}
 
-INSTRUCTIONS:
-- Réponds de manière précise et concise basée sur le contexte
-- Si le contexte ne contient pas l'information, dis-le clairement
-- Cite les sources pertinentes si possible
+INSTRUCTIONS CRITIQUES:
+1. Réponds DIRECTEMENT à la question posée - ne dévie pas du sujet
+2. Base ta réponse UNIQUEMENT sur les informations du contexte ci-dessus
+3. N'ajoute JAMAIS d'informations qui ne sont pas dans le contexte
+4. Si le contexte ne contient pas l'information nécessaire, dis clairement "Je ne trouve pas cette information dans le contexte fourni"
+5. Sois précis et concis - va droit au but
+6. Cite les sources (noms de joueurs, équipes, statistiques) exactement comme indiqué dans le contexte
 
 RÉPONSE:"""
 
@@ -278,6 +281,7 @@ class ChatService:
         # Route to appropriate data source(s)
         context_parts = []
         search_results = []
+        sql_failed = False  # Track SQL failure for fallback
 
         # Statistical query → SQL tool
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
@@ -287,7 +291,11 @@ class ChatService:
                     sql_result = self.sql_tool.query(query)
 
                     if sql_result["error"]:
-                        logger.warning(f"SQL query failed: {sql_result['error']}")
+                        logger.warning(f"SQL query failed: {sql_result['error']} - falling back to vector search")
+                        sql_failed = True
+                    elif not sql_result["results"]:
+                        logger.warning("SQL query returned no results - falling back to vector search")
+                        sql_failed = True
                     else:
                         # Format SQL results as context
                         sql_context = self.sql_tool.format_results(sql_result["results"])
@@ -295,11 +303,17 @@ class ChatService:
                         logger.info(f"SQL query returned {len(sql_result['results'])} rows")
 
                 except Exception as e:
-                    logger.error(f"SQL tool error: {e}")
+                    logger.error(f"SQL tool error: {e} - falling back to vector search")
+                    sql_failed = True
 
         # Contextual/Hybrid query → Vector search
-        if query_type in (QueryType.CONTEXTUAL, QueryType.HYBRID):
-            logger.info(f"Routing to vector search (query_type: {query_type.value})")
+        # Also fallback to vector if SQL failed for STATISTICAL queries
+        if query_type in (QueryType.CONTEXTUAL, QueryType.HYBRID) or (query_type == QueryType.STATISTICAL and sql_failed):
+            if sql_failed and query_type == QueryType.STATISTICAL:
+                logger.info("SQL fallback activated - using vector search for statistical query")
+            else:
+                logger.info(f"Routing to vector search (query_type: {query_type.value})")
+
             search_results = self.search(
                 query=query,
                 k=request.k,
