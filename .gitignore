@@ -128,6 +128,11 @@ scripts/_working/
 tests/_archived/
 *_archived/
 
+# Evaluation test/subset files (intermediate results)
+*_subset_results.json
+*_test_subset.json
+evaluation_checkpoint*.json
+
 # OS
 Thumbs.db
 Desktop.ini

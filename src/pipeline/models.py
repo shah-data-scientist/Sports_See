@@ -6,6 +6,8 @@ LAST MAJOR UPDATE: 2026-02-06
 MAINTAINER: Shahu
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -56,11 +58,20 @@ class CleanStageOutput(BaseModel):
 
 
 class ChunkData(BaseModel):
-    """A single text chunk with metadata."""
+    """A single text chunk with metadata.
+
+    Attributes:
+        id: Unique chunk identifier
+        text: Chunk text content
+        metadata: Chunk metadata including data_type tag for filtering
+    """
 
     id: str = Field(min_length=1, description="Unique chunk identifier")
     text: str = Field(min_length=1, description="Chunk text content")
-    metadata: dict[str, str | int | float] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Chunk metadata including data_type tag",
+    )
 
 
 class ChunkStageOutput(BaseModel):

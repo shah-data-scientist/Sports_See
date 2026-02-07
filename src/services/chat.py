@@ -2,7 +2,7 @@
 FILE: chat.py
 STATUS: Active
 RESPONSIBILITY: Hybrid RAG pipeline (SQL + Vector Search) orchestration service
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-08
 MAINTAINER: Shahu
 """
 
@@ -20,6 +20,7 @@ from src.models.chat import ChatRequest, ChatResponse, SearchResult
 from src.repositories.vector_store import VectorStoreRepository
 from src.services.embedding import EmbeddingService
 from src.services.query_classifier import QueryClassifier, QueryType
+from src.services.query_expansion import QueryExpander
 from src.tools.sql_tool import NBAGSQLTool
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,7 @@ class ChatService:
         self._client: Mistral | None = None
         self._sql_tool: NBAGSQLTool | None = None
         self._query_classifier: QueryClassifier | None = None
+        self._query_expander: QueryExpander | None = None
 
     @property
     def vector_store(self) -> VectorStoreRepository:
@@ -137,6 +139,13 @@ class ChatService:
         return self._query_classifier
 
     @property
+    def query_expander(self) -> QueryExpander:
+        """Get query expander (lazy initialization)."""
+        if self._query_expander is None:
+            self._query_expander = QueryExpander()
+        return self._query_expander
+
+    @property
     def is_ready(self) -> bool:
         """Check if service is ready (index loaded)."""
         return self.vector_store.is_loaded
@@ -159,7 +168,7 @@ class ChatService:
         k: int | None = None,
         min_score: float | None = None,
     ) -> list[SearchResult]:
-        """Search for relevant documents.
+        """Search for relevant documents with smart metadata filtering.
 
         Args:
             query: Search query
@@ -181,14 +190,24 @@ class ChatService:
 
         self.ensure_ready()
 
-        # Generate query embedding
-        query_embedding = self.embedding_service.embed_query(query)
+        # PHASE 7: Expand query for better keyword matching (replaces metadata filtering)
+        expanded_query = self.query_expander.expand_smart(query)
+        if expanded_query != query:
+            logger.info(f"Expanded query: '{query}' -> '{expanded_query[:100]}...'")
 
-        # Search
+        # PHASE 6 metadata filtering DISABLED - caused false negatives
+        # (Only 3 chunks tagged as player_stats, all were headers not actual data)
+        # Query expansion provides better precision without excluding relevant chunks
+
+        # Generate query embedding using expanded query
+        query_embedding = self.embedding_service.embed_query(expanded_query)
+
+        # Search WITHOUT metadata filters (Phase 7 approach)
         results = self.vector_store.search(
             query_embedding=query_embedding,
             k=k,
             min_score=min_score,
+            metadata_filters=None,
         )
 
         # Convert to response models

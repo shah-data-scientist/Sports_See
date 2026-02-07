@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-08 03:50:23",
+  "timestamp": "2026-02-07 21:02:40",
   "phase": "Phase 5 - Optimized Prompt Template",
   "prompt_variation": "english_detailed",
   "prompt_template": "You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.\n\nCONTEXT:\n---\n{context}\n---\n\nUSER QUESTION:\n{question}\n\nINSTRUCTIONS:\n1. Answer the question directly and precisely\n2. Base your answer on the context provided above\n3. Be concise and factual\n4. Cite sources when relevant\n5. If information is not in the context, briefly state that\n\nANSWER:",
@@ -12,43 +12,43 @@
     "optimized_prompt"
   ],
   "overall_scores": {
-    "faithfulness": 0.6363790191700079,
-    "answer_relevancy": 0.23569571801617187,
-    "context_precision": 0.6879137115577633,
-    "context_recall": 0.6099290780141844
+    "faithfulness": 0.648085393577721,
+    "answer_relevancy": 0.1831960996058291,
+    "context_precision": 0.802984633544802,
+    "context_recall": 0.5851063829787234
   },
   "category_scores": [
     {
       "category": "simple",
       "count": 12,
-      "faithfulness": 0.5694444444444444,
-      "answer_relevancy": 0.3307163568546685,
-      "context_precision": 0.7327546296031645,
+      "faithfulness": 0.6916666666666668,
+      "answer_relevancy": 0.2473865053315165,
+      "context_precision": 0.8440972221963281,
       "context_recall": 0.6666666666666666
     },
     {
       "category": "complex",
       "count": 12,
-      "faithfulness": 0.7397281639928699,
-      "answer_relevancy": 0.20076748501833117,
-      "context_precision": 0.5767361110828616,
-      "context_recall": 0.4583333333333333
+      "faithfulness": 0.7823975044563279,
+      "answer_relevancy": 0.2700320256728075,
+      "context_precision": 0.8226851851585145,
+      "context_recall": 0.3333333333333333
     },
     {
       "category": "noisy",
       "count": 11,
-      "faithfulness": 0.6162103662103662,
-      "answer_relevancy": 0.1988303032577017,
-      "context_precision": 0.6864898989626568,
-      "context_recall": 0.9545454545454546
+      "faithfulness": 0.6468253968253967,
+      "answer_relevancy": 0.13604710473970963,
+      "context_precision": 0.7303030302773107,
+      "context_recall": 0.7727272727272727
     },
     {
       "category": "conversational",
       "count": 12,
-      "faithfulness": 0.6184523809523809,
-      "answer_relevancy": 0.20939660903744675,
-      "context_precision": 0.7555555555327778,
-      "context_recall": 0.3888888888888889
+      "faithfulness": 0.48253968253968255,
+      "answer_relevancy": 0.07538967977377282,
+      "context_precision": 0.8087962962747647,
+      "context_recall": 0.5833333333333334
     }
   ]
 }

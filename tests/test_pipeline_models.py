@@ -6,6 +6,8 @@ LAST MAJOR UPDATE: 2026-02-06
 MAINTAINER: Shahu
 """
 
+import pickle
+
 import pytest
 from pydantic import ValidationError
 
@@ -91,6 +93,66 @@ class TestChunkData:
     def test_empty_id_raises(self):
         with pytest.raises(ValidationError):
             ChunkData(id="", text="text")
+
+    def test_chunk_with_data_type_metadata(self):
+        """Test ChunkData with data_type metadata field."""
+        chunk = ChunkData(
+            id="0_0",
+            text="LeBron James scored 30 points",
+            metadata={
+                "source": "player_stats.csv",
+                "chunk_id_in_doc": 0,
+                "data_type": "player_stats",
+            },
+        )
+        assert chunk.metadata["data_type"] == "player_stats"
+        assert chunk.metadata["source"] == "player_stats.csv"
+
+    def test_chunk_metadata_accepts_any_type(self):
+        """Test that metadata can contain various types including nested dicts."""
+        chunk = ChunkData(
+            id="0_0",
+            text="Sample text",
+            metadata={
+                "source": "test.pdf",
+                "chunk_id_in_doc": 0,
+                "data_type": "player_stats",
+                "nested": {"key": "value"},
+                "number": 42,
+                "float_val": 3.14,
+            },
+        )
+        assert chunk.metadata["data_type"] == "player_stats"
+        assert chunk.metadata["nested"]["key"] == "value"
+        assert chunk.metadata["number"] == 42
+
+    def test_chunk_with_data_type_serializes(self):
+        """Test that ChunkData with data_type metadata can be pickled/unpickled."""
+        chunk = ChunkData(
+            id="0_0",
+            text="LeBron James scored 30 points in Game 3",
+            metadata={
+                "source": "player_stats_2023.csv",
+                "chunk_id_in_doc": 0,
+                "total_chunks_in_doc": 5,
+                "data_type": "player_stats",
+            },
+        )
+
+        # Serialize as dict (matching VectorStoreRepository format)
+        chunk_dict = {"id": chunk.id, "text": chunk.text, "metadata": chunk.metadata}
+        serialized = pickle.dumps(chunk_dict)
+
+        # Deserialize
+        deserialized_dict = pickle.loads(serialized)
+        restored_chunk = ChunkData(**deserialized_dict)
+
+        # Verify all fields preserved
+        assert restored_chunk.id == chunk.id
+        assert restored_chunk.text == chunk.text
+        assert restored_chunk.metadata["data_type"] == "player_stats"
+        assert restored_chunk.metadata["source"] == "player_stats_2023.csv"
+        assert restored_chunk.metadata["chunk_id_in_doc"] == 0
 
 
 class TestQualityCheckResult:

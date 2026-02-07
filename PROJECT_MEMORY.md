@@ -545,3 +545,150 @@ Sports_See/
 
 **Maintainer:** Shahu
 **Last Updated:** 2026-02-07 (Phase 2: SQL Integration)
+
+---
+
+## Update: 2026-02-07 — Phase 5: Prompt Optimization + Quick Test Methodology
+
+### Overview
+Achieved **major improvements** in faithfulness (+37%) and complex query handling by optimizing system prompt. Introduced **quick-test methodology** to rapidly iterate on prompt variations before full evaluation.
+
+### Phase 5 Results (47 samples)
+- **Faithfulness**: 0.473 → 0.648 (+37%)
+- **Answer Relevancy**: 0.112 → 0.183 (+63%)
+- **Context Precision**: 0.595 → 0.803 (+35%)
+- **Complex Query Breakthrough**: 0.000 → 0.270 answer relevancy (FIRST SUCCESS across all phases)
+
+### Key Finding
+**French vs English**: NO difference (0.3%) — instruction #4 "say if info not in context" was the toxic element causing refusals.
+
+**Maintainer:** Shahu | **Date:** 2026-02-07
+
+---
+
+## Update: 2026-02-08 — Phase 6: Retrieval Quality (Quality Filter + Content Metadata)
+
+### Iteration 1 - Filename-Based (12-sample subset)
+- **Quality filter**: Removed 47/302 chunks (15.6%) with excessive NaN values
+- **Results**: Faithfulness +30.5%, Answer Relevancy +28.7% (still low at 0.064), Refusals -25%
+
+### Iteration 2 - Content-Based (ABANDONED)
+- **Problem**: Filename tagging failed for Reddit PDFs → "unknown"
+- **Solution**: Analyze chunk CONTENT with regex patterns (PTS, AST, team names, player names+stats)
+- **Classification**: player_stats (2+ stat patterns), team_stats (2+ team patterns), game_data, discussion
+- **Fatal Flaw**: Regex patterns matched HEADERS (which contain "pts", "assists" text) instead of actual stat ROWS (which contain numbers)
+- **Result**: Only 3/255 chunks tagged as "player_stats" — all were column definitions, not data!
+- **Impact**: Simple queries dropped to 0.000 answer relevancy (vs 0.247 in Phase 5)
+- **Root Cause**: Inverted classification — metadata filtering excluded the exact chunks needed
+- **Status**: ABANDONED — See phase6_failure_analysis.md
+
+**Maintainer:** Shahu | **Date:** 2026-02-08
+
+---
+
+## Update: 2026-02-08 — Phase 7: Query Expansion + RAGAS Reproducibility Analysis
+
+### Overview
+Disabled broken metadata filtering from Phase 6 and implemented **NBA-specific query expansion** to improve keyword matching. Conducted **reproducibility study** to distinguish real improvements from RAGAS evaluation variance.
+
+### Phase 7 Implementation
+
+**QueryExpander Module (`src/services/query_expansion.py`)**:
+- **16 stat types**: PTS, AST, REB, STL, BLK, 3P%, FG%, FT%, PER, TS%, ORTG, DRTG, TOV, MIN, USG
+- **16 teams**: Full names + abbreviations (Lakers/LAL, Celtics/BOS, Warriors/GSW, etc.)
+- **10 player nicknames**: LeBron/King James, Curry/Chef Curry, Giannis/Greek Freak, Jokic/Joker, etc.
+- **12 query synonyms**: leader/top/best, compare/versus, average/mean, rookie/first-year, etc.
+- **Smart expansion strategy**:
+  - <8 words: 4 expansions (aggressive)
+  - 8-12 words: 3 expansions (moderate)
+  - 12-15 words: 2 expansions (light)
+  - >15 words: 1 expansion (minimal)
+- **Max expansion terms**: 15 (increased from baseline 10)
+
+**ChatService Changes**:
+- Metadata filtering **DISABLED** (broken in Phase 6)
+- Query expansion **ENABLED** via `QueryExpander.expand_smart(query)`
+- Embed expanded query instead of original for better keyword coverage
+
+### Phase 7 Results (47 samples, Gemini 2.0 Flash Lite)
+
+| Metric | Phase 5 Original | Phase 5 Re-run | Phase 7 | Apparent Change | Real Change |
+|--------|------------------|----------------|---------|-----------------|-------------|
+| **Faithfulness** | 0.648 | 0.636 | 0.461 | -28.8% | **-27.5%** ✗ |
+| **Answer Relevancy** | 0.183 | 0.236 | 0.231 | +26.2% | **-2.1%** ≈ |
+| **Context Precision** | 0.803 | 0.688 | 0.750 | -6.6% | **+9.0%** ✓ |
+| **Context Recall** | 0.585 | 0.610 | 0.681 | +16.4% | **+11.6%** ✓ |
+
+**Real Change** = Phase 5 Re-run → Phase 7 (controls for evaluation variance)
+
+### Key Findings: RAGAS Evaluation Variance
+
+**Reproducibility Study**: Re-ran Phase 5 evaluation with identical configuration to measure variance
+
+**Variance by Metric** (Phase 5 Original vs Re-run):
+- **Faithfulness**: ±16.0% average variance (Moderate stability)
+- **Answer Relevancy**: ±69.7% average variance (**Very Poor** — unreliable for fine-grained comparisons)
+- **Context Precision**: ±13.9% average variance (Moderate stability)
+- **Context Recall**: ±22.7% average variance (Poor stability)
+
+**Critical Discovery**: Faithfulness dropped **even for queries with 0 expansion terms** (noisy and conversational categories)
+
+| Category | Typical Expansion | Faithfulness P5→P7 | Conclusion |
+|----------|-------------------|---------------------|------------|
+| Simple | 20 terms | -23.4% | Expansion may contribute |
+| Complex | 2 terms | -18.0% | Minimal expansion, still dropped |
+| Noisy | 0 terms | -35.1% | **NO expansion, worst drop!** |
+| Conversational | 0 terms | -35.3% | **NO expansion, worst drop!** |
+
+**Hypothesis**: Faithfulness drop is **NOT primarily caused by query expansion**. Likely due to:
+1. RAGAS evaluation variance (±16-28% across categories)
+2. Gemini API stochasticity (different API calls score identical responses differently)
+3. Sample generation timing differences
+
+### Phase 7 Trade-offs
+
+**Gains** ✓:
+- No false negatives from broken metadata filtering
+- Better keyword coverage for stat abbreviations (PTS/points/scoring)
+- Improved context recall (+11.6% overall, +93% for conversational queries)
+- Improved context precision (+9.0%)
+- Simpler architecture (no complex content tagging)
+
+**Costs** ✗:
+- Reduced faithfulness (-27.5% real drop, 0.636 → 0.461)
+- Worst faithfulness drops in noisy (-35%) and conversational (-35%) categories
+- Reduced source diversity (expansion prioritizes keyword matches)
+- **No real relevancy gain** (+26% was mostly evaluation variance)
+
+### Investigation Scripts
+
+- `scripts/investigate_faithfulness.py`: Analyzes query expansion impact on retrieval
+- `scripts/analyze_metadata.py`: Phase 6 failure diagnosis
+- `scripts/visualize_comparison.py`: Generates comparison charts
+- `phase5_vs_phase7_comparison.md`: Comprehensive analysis report with 3 options
+- `phase6_failure_analysis.md`: Root cause documentation
+
+### Visualizations
+
+Generated in `evaluation_results/visualizations/`:
+- `overall_metrics_comparison.png`: Bar chart of 4 metrics across 3 evaluations
+- `faithfulness_by_category.png`: Category-level faithfulness comparison
+- `evaluation_variance.png`: Variance magnitude by metric
+- `category_heatmap.png`: All metrics × categories with P5→P7 change heatmap
+
+### Decision: Accept Phase 7
+
+**Rationale**:
+- Context metrics improved meaningfully (+9-11%)
+- Avoids catastrophic failures from broken metadata filtering (Phase 6's 0.000 relevancy)
+- Faithfulness drop is concerning but may be partially due to evaluation variance
+- Query expansion provides valuable keyword normalization (e.g., "PTS" = "points" = "scoring")
+- Answer relevancy "improvement" (+26%) was evaluation noise, not real gain
+
+**Recommendation**: Monitor user feedback for hallucination complaints. If faithfulness becomes problematic, implement prompt-based constraints in Phase 8 rather than rolling back query expansion.
+
+**True Value of Phase 7**: **Robustness** (no false negatives) and **context recall** (+11.6%), NOT relevancy scoring.
+
+**Test Suite**: 171 tests, all passing (test_query_expansion updated for expansion limit change)
+
+**Maintainer:** Shahu | **Date:** 2026-02-08

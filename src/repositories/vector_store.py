@@ -9,7 +9,7 @@ MAINTAINER: Shahu
 import logging
 import pickle
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import faiss
 import numpy as np
@@ -184,13 +184,15 @@ class VectorStoreRepository:
         query_embedding: np.ndarray,
         k: int = 5,
         min_score: float | None = None,
+        metadata_filters: dict[str, Any] | None = None,
     ) -> list[tuple[DocumentChunk, float]]:
-        """Search for similar documents.
+        """Search for similar documents with optional metadata filtering.
 
         Args:
             query_embedding: Query embedding vector (1 x dim)
             k: Number of results to return
             min_score: Minimum similarity score (0-1)
+            metadata_filters: Optional dict to filter chunks by metadata
 
         Returns:
             List of (chunk, score) tuples sorted by score descending
@@ -209,17 +211,55 @@ class VectorStoreRepository:
                 query_embedding = query_embedding.reshape(1, -1)
             faiss.normalize_L2(query_embedding)
 
-            # Search more if filtering by min_score
-            search_k = k * 3 if min_score is not None else k
-            scores, indices = self._index.search(query_embedding, search_k)
+            # If metadata filters provided, pre-filter chunks
+            if metadata_filters:
+                filtered_indices = []
+                for i, chunk in enumerate(self._chunks):
+                    # Check if chunk metadata matches all filters
+                    matches = all(
+                        chunk.metadata.get(key) == value
+                        for key, value in metadata_filters.items()
+                    )
+                    if matches:
+                        filtered_indices.append(i)
+
+                if not filtered_indices:
+                    # No chunks match filters, fall back to unfiltered search
+                    logger.warning(
+                        f"No chunks matched metadata filters {metadata_filters}, using all chunks"
+                    )
+                    filtered_indices = list(range(len(self._chunks)))
+
+                # Search within filtered subset
+                # Create temporary index with filtered vectors
+                filtered_vectors = np.array(
+                    [self._index.reconstruct(i) for i in filtered_indices]
+                )
+                temp_index = faiss.IndexFlatIP(filtered_vectors.shape[1])
+                temp_index.add(filtered_vectors)
+
+                # Search more if filtering by min_score
+                search_k = k * 3 if min_score is not None else k
+                search_k = min(search_k, len(filtered_indices))
+                scores, indices = temp_index.search(query_embedding, search_k)
+
+                # Map back to original indices
+                original_indices = [filtered_indices[idx] for idx in indices[0]]
+                scores = scores[0]
+            else:
+                # Normal search without metadata filtering
+                search_k = k * 3 if min_score is not None else k
+                scores, indices = self._index.search(query_embedding, search_k)
+                original_indices = indices[0]
+                scores = scores[0]
 
             results: list[tuple[DocumentChunk, float]] = []
-            for i, idx in enumerate(indices[0]):
+            for i, idx in enumerate(original_indices):
                 if idx < 0 or idx >= len(self._chunks):
                     continue
 
                 # Convert score to percentage (0-100)
-                score_percent = float(scores[0][i]) * 100
+                score_percent = float(scores[i]) * 100
 
                 # Apply minimum score filter
                 if min_score is not None and score_percent < (min_score * 100):

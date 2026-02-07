@@ -116,6 +116,58 @@ class TestDataPipelineChunk:
         assert result.chunks[0].metadata.get("source") == "test.pdf"
         assert "chunk_id_in_doc" in result.chunks[0].metadata
 
+    def test_chunk_tags_data_type_player_stats(self, pipeline):
+        """Test that chunks from player stats files are tagged with data_type='player_stats'."""
+        docs = [
+            CleanedDocument(
+                page_content="LeBron James 28.5 PTS 7.3 REB 8.1 AST 50.2 FG%. " * 50,
+                metadata={"source": "player_stats_2023.csv"},
+                char_count=2050,
+            ),
+        ]
+        result = pipeline.chunk(docs, chunk_size=500, chunk_overlap=50)
+        assert result.chunk_count > 0
+        assert result.chunks[0].metadata.get("data_type") == "player_stats"
+
+    def test_chunk_tags_data_type_team_stats(self, pipeline):
+        """Test that chunks from team stats files are tagged with data_type='team_stats'."""
+        docs = [
+            CleanedDocument(
+                page_content="Lakers won 112-108 against the Celtics. " * 50,
+                metadata={"source": "team_performance.xlsx"},
+                char_count=2000,
+            ),
+        ]
+        result = pipeline.chunk(docs, chunk_size=500, chunk_overlap=50)
+        assert result.chunk_count > 0
+        assert result.chunks[0].metadata.get("data_type") == "team_stats"
+
+    def test_chunk_tags_data_type_game_data(self, pipeline):
+        """Test that chunks from schedule/game files are tagged with data_type='game_data'."""
+        docs = [
+            CleanedDocument(
+                page_content="Game scheduled for 7:30 PM at Staples Center. " * 50,
+                metadata={"source": "schedule_2023.pdf"},
+                char_count=2350,
+            ),
+        ]
+        result = pipeline.chunk(docs, chunk_size=500, chunk_overlap=50)
+        assert result.chunk_count > 0
+        assert result.chunks[0].metadata.get("data_type") == "game_data"
+
+    def test_chunk_tags_data_type_unknown(self, pipeline):
+        """Test that chunks from unrecognized files are tagged with data_type='discussion'."""
+        docs = [
+            CleanedDocument(
+                page_content="Some random content that doesn't match any pattern. " * 50,
+                metadata={"source": "random_document.txt"},
+                char_count=2650,
+            ),
+        ]
+        result = pipeline.chunk(docs, chunk_size=500, chunk_overlap=50)
+        assert result.chunk_count > 0
+        assert result.chunks[0].metadata.get("data_type") == "discussion"
+
     def test_chunk_empty_input(self, pipeline):
         result = pipeline.chunk([])
         assert result.chunk_count == 0

@@ -9,6 +9,7 @@ MAINTAINER: Shahu
 import argparse
 import logging
 import random
+import re
 import sys
 import time
 
@@ -143,6 +144,112 @@ class DataPipeline:
             total_chars=total_chars,
         )
 
+    def _analyze_chunk_content(self, text: str) -> str:
+        """Analyze chunk content to determine data type.
+
+        Args:
+            text: Chunk text to analyze
+
+        Returns:
+            Data type: player_stats, team_stats, game_data, or discussion
+        """
+        text_lower = text.lower()
+
+        # Player stats indicators
+        player_stat_patterns = [
+            r"\bpts\b",
+            r"\bast\b",
+            r"\breb\b",
+            r"\bstl\b",
+            r"\bblk\b",
+            r"\bfg%\b",
+            r"\b3p%\b",
+            r"\bft%\b",
+            r"\bper\b",
+            r"points per game",
+            r"assists per game",
+            r"rebounds per game",
+            # Player name patterns (capitalized words that look like names)
+            r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b.*\b\d+\.\d+\b",  # "LeBron James 25.3"
+        ]
+
+        # Team indicators
+        team_patterns = [
+            r"\blakers\b",
+            r"\bceltics\b",
+            r"\bwarriors\b",
+            r"\bknicks\b",
+            r"\bheat\b",
+            r"\bmavericks\b",
+            r"\bcavaliers\b",
+            r"\bbucks\b",
+            r"\bnuggets\b",
+            r"\bsuns\b",
+            r"\bclippers\b",
+            r"\bbulls\b",
+            r"\bteam\s+stats\b",
+            r"\boffensive rating\b",
+            r"\bdefensive rating\b",
+        ]
+
+        # Count pattern matches
+        player_matches = sum(1 for pattern in player_stat_patterns if re.search(pattern, text_lower))
+        team_matches = sum(1 for pattern in team_patterns if re.search(pattern, text_lower))
+
+        # Classify based on match counts
+        if player_matches >= 2:
+            return "player_stats"
+        elif team_matches >= 2:
+            return "team_stats"
+        elif "schedule" in text_lower or "game" in text_lower or " vs " in text_lower:
+            return "game_data"
+        else:
+            return "discussion"  # General discussion/news content
+
+    def _filter_low_quality_chunks(self, chunks: list[ChunkData]) -> list[ChunkData]:
+        """Remove chunks with excessive NaN values or insufficient content.
+
+        Args:
+            chunks: List of chunks to filter
+
+        Returns:
+            Filtered list of high-quality chunks
+        """
+        filtered = []
+        filtered_count = 0
+
+        for chunk in chunks:
+            # Count NaN occurrences
+            words = chunk.text.split()
+            nan_count = chunk.text.count("NaN")
+            nan_ratio = nan_count / max(len(words), 1)
+
+            # Check actual content length (excluding whitespace/NaN)
+            content = chunk.text.replace("NaN", "").replace("\\n", " ").strip()
+            content_length = len(content)
+
+            # Apply quality thresholds
+            if nan_ratio < 0.3 and content_length > 100:
+                filtered.append(chunk)
+            else:
+                filtered_count += 1
+                source = chunk.metadata.get("source", "unknown")
+                logger.warning(
+                    "Filtered low-quality chunk from %s: " "NaN ratio=%.2f, content_length=%d",
+                    source,
+                    nan_ratio,
+                    content_length,
+                )
+
+        logger.info(
+            "Quality filter: kept %d/%d chunks (filtered %d low-quality chunks)",
+            len(filtered),
+            len(chunks),
+            filtered_count,
+        )
+
+        return filtered
+
     @logfire.instrument("Pipeline.chunk")
     def chunk(
         self,
@@ -158,7 +265,7 @@ class DataPipeline:
             chunk_overlap: Overlap between chunks (default from settings).
 
         Returns:
-            ChunkStageOutput with text chunks.
+            ChunkStageOutput with text chunks tagged with data_type metadata.
         """
         chunk_size = chunk_size or settings.chunk_size
         chunk_overlap = chunk_overlap or settings.chunk_overlap
@@ -176,6 +283,9 @@ class DataPipeline:
         for doc in documents:
             texts = splitter.split_text(doc.page_content)
             for i, chunk_text in enumerate(texts):
+                # Determine data type from content analysis
+                data_type = self._analyze_chunk_content(chunk_text)
+
                 all_chunks.append(
                     ChunkData(
                         id=f"{doc_counter}_{i}",
@@ -184,10 +294,14 @@ class DataPipeline:
                             **doc.metadata,
                             "chunk_id_in_doc": i,
                             "total_chunks_in_doc": len(texts),
+                            "data_type": data_type,
                         },
                     )
                 )
             doc_counter += 1
+
+        # Apply quality filtering
+        all_chunks = self._filter_low_quality_chunks(all_chunks)
 
         return ChunkStageOutput(
             chunks=all_chunks,
