@@ -1,10 +1,14 @@
 """
 FILE: evaluate_phase5.py
 STATUS: Active
-RESPONSIBILITY: Phase 5 evaluation with extended hybrid test cases
+RESPONSIBILITY: Run full RAGAS evaluation with winning prompt template from quick test
 LAST MAJOR UPDATE: 2026-02-07
 MAINTAINER: Shahu
 """
+
+import os
+# Fix OpenMP conflict before any other imports
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import json
 import logging
@@ -22,13 +26,86 @@ from src.evaluation.models import (
     TestCategory,
 )
 from src.evaluation.test_cases import EVALUATION_TEST_CASES
-from src.evaluation.hybrid_test_cases import HYBRID_TEST_CASES
 from src.services.chat import ChatService
 
 logger = logging.getLogger(__name__)
 
-# Combine existing + new hybrid test cases
-ALL_TEST_CASES = EVALUATION_TEST_CASES + HYBRID_TEST_CASES
+
+# Default prompt variations (can be overridden via CLI arg)
+PROMPT_TEMPLATES = {
+    "phase4_current": """Tu es '{app_name} Analyst AI', un assistant expert en analyse sportive NBA.
+
+CONTEXTE:
+---
+{context}
+---
+
+QUESTION DE L'UTILISATEUR:
+{question}
+
+INSTRUCTIONS CRITIQUES:
+1. Réponds DIRECTEMENT à la question posée - ne dévie pas du sujet
+2. Base ta réponse UNIQUEMENT sur les informations du contexte ci-dessus
+3. N'ajoute JAMAIS d'informations qui ne sont pas dans le contexte
+4. Si le contexte ne contient pas l'information nécessaire, dis clairement "Je ne trouve pas cette information dans le contexte fourni"
+5. Sois précis et concis - va droit au but
+6. Cite les sources (noms de joueurs, équipes, statistiques) exactement comme indiqué dans le contexte
+
+RÉPONSE:""",
+
+    "balanced_french": """Tu es '{app_name} Analyst AI', un assistant expert en analyse sportive NBA.
+
+CONTEXTE:
+---
+{context}
+---
+
+QUESTION:
+{question}
+
+INSTRUCTIONS:
+- Réponds directement à la question en te basant sur le contexte fourni
+- Sois précis et factuel
+- Cite les sources quand c'est pertinent
+- Si l'information n'est pas dans le contexte, indique-le brièvement
+
+RÉPONSE:""",
+
+    "concise_french": """Tu es '{app_name} Analyst AI', assistant expert NBA.
+
+CONTEXTE: {context}
+
+QUESTION: {question}
+
+Réponds de manière précise en te basant sur le contexte ci-dessus.""",
+
+    "english_detailed": """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+
+CONTEXT:
+---
+{context}
+---
+
+USER QUESTION:
+{question}
+
+INSTRUCTIONS:
+1. Answer the question directly and precisely
+2. Base your answer on the context provided above
+3. Be concise and factual
+4. Cite sources when relevant
+5. If information is not in the context, briefly state that
+
+ANSWER:""",
+
+    "english_concise": """You are '{app_name} Analyst AI', an NBA analysis expert.
+
+CONTEXT: {context}
+
+QUESTION: {question}
+
+Provide a precise answer based on the context above.""",
+}
 
 
 def _build_evaluator_llm():
@@ -132,11 +209,17 @@ def _load_checkpoint() -> list[EvaluationSample]:
 
 
 @logfire.instrument("generate_phase5_samples")
-def generate_samples(chat_service: ChatService) -> list[EvaluationSample]:
-    """Generate samples with extended hybrid test cases.
+def generate_samples(
+    chat_service: ChatService,
+    prompt_template: str,
+    prompt_variation_name: str,
+) -> list[EvaluationSample]:
+    """Generate samples using Phase 5 improvements (winning prompt template).
 
     Args:
         chat_service: ChatService with SQL enabled.
+        prompt_template: The prompt template to use.
+        prompt_variation_name: Name of the prompt variation being tested.
 
     Returns:
         List of evaluation samples.
@@ -146,16 +229,17 @@ def generate_samples(chat_service: ChatService) -> list[EvaluationSample]:
 
     samples = _load_checkpoint()
     start_idx = len(samples)
-    total = len(ALL_TEST_CASES)
+    total = len(EVALUATION_TEST_CASES)
 
     if start_idx >= total:
         logger.info("All %d samples already generated", total)
         return samples
 
-    logger.info("Starting from sample %d/%d (Extended test cases)", start_idx + 1, total)
+    logger.info("Starting from sample %d/%d", start_idx + 1, total)
+    logger.info("Using prompt variation: %s", prompt_variation_name)
 
     for i in range(start_idx, total):
-        tc = ALL_TEST_CASES[i]
+        tc = EVALUATION_TEST_CASES[i]
         batch_pos = (i - start_idx) % BATCH_SIZE
 
         if batch_pos == 0 and i > start_idx:
@@ -165,6 +249,7 @@ def generate_samples(chat_service: ChatService) -> list[EvaluationSample]:
         logger.info("Sample %d/%d: %s", i + 1, total, tc.question[:60])
 
         try:
+            # Use hybrid search (SQL + Vector based on query classification)
             search_results = chat_service.search(query=tc.question, k=settings.search_k)
             contexts = [r.text for r in search_results]
             context_str = "\n\n---\n\n".join(
@@ -172,15 +257,11 @@ def generate_samples(chat_service: ChatService) -> list[EvaluationSample]:
                 for r in search_results
             )
 
-            prompt = (
-                f"Tu es '{settings.app_name} Analyst AI', un assistant expert.\n"
-                f"Réponds à la question en te basant sur le contexte fourni.\n\n"
-                f"CONTEXTE:\n---\n{context_str}\n---\n\n"
-                f"QUESTION:\n{tc.question}\n\n"
-                f"INSTRUCTIONS:\n"
-                f"- Réponds de manière précise et concise\n"
-                f"- Si le contexte ne contient pas l'information, dis-le\n"
-                f"- Cite les sources si possible\n"
+            # Build prompt using the template
+            prompt = prompt_template.format(
+                app_name=settings.app_name,
+                context=context_str,
+                question=tc.question,
             )
 
             answer = _generate_with_retry(
@@ -302,15 +383,14 @@ def _build_report(result, samples: list[EvaluationSample]) -> EvaluationReport:
     )
 
 
-def print_comparison_table(report: EvaluationReport) -> None:
+def print_comparison_table(report: EvaluationReport, prompt_variation: str) -> None:
     """Print evaluation results."""
     def _fmt(val: float | None) -> str:
         return f"{val:.3f}" if val is not None else "N/A"
 
     print("\n" + "=" * 80)
-    print(f"  PHASE 5 EVALUATION REPORT (Extended Test Cases)")
-    print(f"  Model: {report.model_used}  |  Samples: {report.sample_count}")
-    print(f"  SQL Integration: ENABLED  |  Test Cases: Existing + Hybrid")
+    print(f"  PHASE 5 EVALUATION REPORT  |  Model: {report.model_used}")
+    print(f"  Samples: {report.sample_count}  |  Prompt Variation: {prompt_variation}")
     print("=" * 80)
 
     print("\n  OVERALL SCORES")
@@ -345,8 +425,11 @@ def print_comparison_table(report: EvaluationReport) -> None:
     print("=" * 80 + "\n")
 
 
-def main() -> int:
-    """Run Phase 5 evaluation with extended test cases.
+def main(prompt_variation: str = "balanced_french") -> int:
+    """Run Phase 5 evaluation with specified prompt template.
+
+    Args:
+        prompt_variation: Name of the prompt variation to use (from PROMPT_TEMPLATES).
 
     Returns:
         Exit code (0 for success).
@@ -358,16 +441,21 @@ def main() -> int:
 
     configure_observability()
 
+    # Validate prompt variation
+    if prompt_variation not in PROMPT_TEMPLATES:
+        logger.error("Unknown prompt variation: %s", prompt_variation)
+        logger.error("Available variations: %s", ", ".join(PROMPT_TEMPLATES.keys()))
+        return 1
+
+    prompt_template = PROMPT_TEMPLATES[prompt_variation]
+
     logger.info("Initializing ChatService with SQL enabled (Phase 5)...")
     chat_service = ChatService(enable_sql=True)
     chat_service.ensure_ready()
 
-    logger.info("Total test cases: %d (Existing: %d + Hybrid: %d)",
-                len(ALL_TEST_CASES), len(EVALUATION_TEST_CASES), len(HYBRID_TEST_CASES))
-
-    logger.info("Generating evaluation samples with hybrid RAG...")
+    logger.info("Generating evaluation samples with prompt variation: %s", prompt_variation)
     try:
-        samples = generate_samples(chat_service)
+        samples = generate_samples(chat_service, prompt_template, prompt_variation)
     except Exception:
         logger.error("Sample generation interrupted. Re-run to continue.")
         return 1
@@ -375,24 +463,26 @@ def main() -> int:
     logger.info("Running RAGAS evaluation...")
     report = run_evaluation(samples)
 
-    print_comparison_table(report)
+    print_comparison_table(report, prompt_variation)
 
     # Save Phase 5 results
-    report_path = Path("evaluation_results/ragas_phase5_extended.json")
+    report_path = Path("evaluation_results/ragas_phase5.json")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with report_path.open("w", encoding="utf-8") as f:
         json.dump(
             {
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "phase": "Phase 5 - Extended Hybrid Test Cases",
+                "phase": "Phase 5 - Optimized Prompt Template",
+                "prompt_variation": prompt_variation,
+                "prompt_template": prompt_template,
                 "model": report.model_used,
                 "sample_count": report.sample_count,
-                "test_cases": {
-                    "existing": len(EVALUATION_TEST_CASES),
-                    "hybrid": len(HYBRID_TEST_CASES),
-                    "total": len(ALL_TEST_CASES),
-                },
-                "sql_enabled": True,
+                "improvements": [
+                    "hybrid_search",
+                    "conservative_classification",
+                    "sql_fallback",
+                    "optimized_prompt",
+                ],
                 "overall_scores": {
                     "faithfulness": report.overall_scores.faithfulness,
                     "answer_relevancy": report.overall_scores.answer_relevancy,
@@ -415,7 +505,7 @@ def main() -> int:
             indent=2,
             ensure_ascii=False,
         )
-    logger.info(f"Phase 3 report saved to {report_path}")
+    logger.info(f"Phase 5 report saved to {report_path}")
 
     # Clean up checkpoint
     if CHECKPOINT_PATH.exists():
@@ -426,4 +516,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Accept prompt variation as CLI argument
+    prompt_var = sys.argv[1] if len(sys.argv) > 1 else "balanced_french"
+    sys.exit(main(prompt_variation=prompt_var))
