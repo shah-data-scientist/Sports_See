@@ -102,7 +102,9 @@ class ChatService:
     def embedding_service(self) -> EmbeddingService:
         """Get embedding service (lazy initialization)."""
         if self._embedding_service is None:
-            self._embedding_service = EmbeddingService(api_key=self._api_key)
+            # EmbeddingService uses Mistral - don't pass Google API key!
+            # Let it use settings.mistral_api_key by default
+            self._embedding_service = EmbeddingService()
         return self._embedding_service
 
     @property
