@@ -20,8 +20,11 @@ if str(project_root) not in sys.path:
 from src.core.config import settings
 from src.core.exceptions import AppException, IndexNotFoundError
 from src.models.chat import ChatRequest
+from src.models.conversation import ConversationStatus
 from src.models.feedback import FeedbackRating
+from src.repositories.conversation import ConversationRepository
 from src.services.chat import ChatService
+from src.services.conversation import ConversationService
 from src.services.feedback import FeedbackService
 
 # Configure logging
@@ -70,6 +73,17 @@ def get_feedback_service() -> FeedbackService:
         Initialized FeedbackService
     """
     return FeedbackService()
+
+
+@st.cache_resource
+def get_conversation_service() -> ConversationService:
+    """Get cached ConversationService instance.
+
+    Returns:
+        Initialized ConversationService
+    """
+    repository = ConversationRepository()
+    return ConversationService(repository=repository)
 
 
 def render_message(role: str, content: str) -> None:
@@ -162,6 +176,103 @@ def render_feedback_buttons(interaction_id: str, index: int) -> None:
                     logger.warning("Feedback error: %s", e)
 
 
+def render_conversation_controls() -> None:
+    """Render conversation management controls in sidebar."""
+    conversation_service = get_conversation_service()
+
+    st.subheader("Conversations")
+
+    # New Conversation button
+    if st.button("🆕 Nouvelle conversation", use_container_width=True):
+        # Create new conversation
+        new_conv = conversation_service.start_conversation()
+        st.session_state.current_conversation_id = new_conv.id
+        st.session_state.turn_number = 1
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": f"Nouvelle conversation démarrée ! Comment puis-je vous aider ?",
+                "interaction_id": None,
+            }
+        ]
+        st.rerun()
+
+    # Load existing conversations
+    try:
+        conversations = conversation_service.list_conversations(
+            status=ConversationStatus.ACTIVE,
+            limit=20
+        )
+
+        if conversations:
+            # Current conversation indicator
+            current_id = st.session_state.get("current_conversation_id")
+            if current_id:
+                current_conv = conversation_service.get_conversation(current_id)
+                if current_conv:
+                    st.caption(f"Actuelle: {current_conv.title or 'Sans titre'}")
+
+            # Conversation selector
+            st.selectbox(
+                "Charger une conversation",
+                options=[""] + [c.id for c in conversations],
+                format_func=lambda x: "Sélectionner..." if x == "" else next(
+                    (c.title or f"Conversation {c.id[:8]}..." for c in conversations if c.id == x), x
+                ),
+                key="conversation_selector",
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("📂 Charger", disabled=not st.session_state.get("conversation_selector")):
+                    conv_id = st.session_state.conversation_selector
+                    history = conversation_service.get_conversation_history(conv_id)
+                    if history:
+                        # Load conversation messages
+                        st.session_state.current_conversation_id = conv_id
+                        st.session_state.turn_number = len(history.messages) + 1
+                        st.session_state.messages = [
+                            {
+                                "role": "assistant",
+                                "content": f"Conversation chargée: {history.title or 'Sans titre'}",
+                                "interaction_id": None,
+                            }
+                        ]
+                        # Add all previous messages
+                        for msg in history.messages:
+                            st.session_state.messages.append({
+                                "role": "user",
+                                "content": msg.query,
+                                "interaction_id": None,
+                            })
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": msg.response,
+                                "interaction_id": msg.id,
+                            })
+                        st.rerun()
+
+            with col2:
+                if st.button("🗄️ Archiver", disabled=not current_id):
+                    if current_id:
+                        conversation_service.archive(current_id)
+                        st.session_state.pop("current_conversation_id", None)
+                        st.session_state.turn_number = 1
+                        st.session_state.messages = [
+                            {
+                                "role": "assistant",
+                                "content": "Conversation archivée. Démarrez-en une nouvelle !",
+                                "interaction_id": None,
+                            }
+                        ]
+                        st.rerun()
+
+    except Exception as e:
+        logger.error("Error loading conversations: %s", e)
+        st.error("Erreur de chargement des conversations")
+
+
 def main() -> None:
     """Main Streamlit application."""
     # Page configuration
@@ -183,6 +294,9 @@ def main() -> None:
         st.error("Service non disponible. Vérifiez la configuration.")
         st.stop()
 
+    # Initialize conversation service
+    conversation_service = get_conversation_service()
+
     # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = [
@@ -193,6 +307,12 @@ def main() -> None:
                 "interaction_id": None,
             }
         ]
+
+    # Initialize conversation tracking
+    if "current_conversation_id" not in st.session_state:
+        st.session_state.current_conversation_id = None
+    if "turn_number" not in st.session_state:
+        st.session_state.turn_number = 1
 
     # Display chat history
     for i, message in enumerate(st.session_state.messages):
@@ -230,14 +350,23 @@ def main() -> None:
         with st.chat_message("assistant"):
             with st.spinner("Recherche en cours..."):
                 try:
-                    # Create request
+                    # Auto-create conversation on first message
+                    if st.session_state.current_conversation_id is None:
+                        new_conv = conversation_service.start_conversation()
+                        st.session_state.current_conversation_id = new_conv.id
+                        st.session_state.turn_number = 1
+                        logger.info(f"Created new conversation: {new_conv.id}")
+
+                    # Create request with conversation context
                     request = ChatRequest(
                         query=prompt,
                         k=settings.search_k,
                         include_sources=True,
+                        conversation_id=st.session_state.current_conversation_id,
+                        turn_number=st.session_state.turn_number,
                     )
 
-                    # Get response
+                    # Get response (with conversation context!)
                     response = service.chat(request)
 
                     # Display answer
@@ -249,14 +378,26 @@ def main() -> None:
                     # Display processing time
                     st.caption(f"⏱️ {response.processing_time_ms:.0f}ms")
 
-                    # Log interaction to database
+                    # Log interaction to database with conversation context
                     source_names = [s.source for s in response.sources] if response.sources else []
                     interaction = feedback_service.log_interaction(
                         query=prompt,
                         response=response.answer,
                         sources=source_names,
                         processing_time_ms=int(response.processing_time_ms),
+                        conversation_id=st.session_state.current_conversation_id,
+                        turn_number=st.session_state.turn_number,
                     )
+
+                    # Update conversation title after first message
+                    if st.session_state.turn_number == 1:
+                        conversation_service.update_conversation_after_message(
+                            st.session_state.current_conversation_id,
+                            prompt
+                        )
+
+                    # Increment turn number for next message
+                    st.session_state.turn_number += 1
 
                     # Add to history with interaction_id
                     st.session_state.messages.append({
@@ -296,6 +437,11 @@ def main() -> None:
             st.success(f"✅ Index chargé ({service.vector_store.index_size} vecteurs)")
         else:
             st.warning("⚠️ Index non chargé")
+
+        st.divider()
+
+        # Conversation controls
+        render_conversation_controls()
 
         st.divider()
 
