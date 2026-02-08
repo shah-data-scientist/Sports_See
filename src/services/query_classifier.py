@@ -87,14 +87,40 @@ class QueryClassifier:
     ]
 
     # Hybrid patterns (both sources needed)
+    # Phase 12: Enhanced detection - catches "X statistic AND Y explanation" queries
     HYBRID_PATTERNS = [
-        # Compare + explain
-        r"\bcompare\b.*\b(and|then)\b.*\b(explain|why|better)\b",
-        r"\b(stats|statistics)\b.*\b(and|then)\b.*\b(why|explain|understand)\b",
-        # Performance with reasoning
-        r"\b(performance|efficiency)\b.*\b(why|how|explain)\b",
-        # Best/worst with justification
-        r"\b(who is better|which is better)\b.*\b(and why|explain|based on)\b",
+        # Statistical + Explanation (most common hybrid pattern)
+        r"\b(who|which|what).*(most|top|best|highest|leading).*(and|then)\s*(explain|why|what makes|how)\b",
+        r"\b(top|most|best|highest|leading).*(and|then)\s*(why|explain|what makes|their|his|her)\b",
+
+        # "What makes X effective/good/great" (stats + qualitative)
+        r"\b(what makes|why is|why are).*(effective|good|great|successful|dominant|better)\b",
+        r"\b(who|which).*(and|then)\s*what makes\b",
+
+        # Impact/Effect queries (stats + context)
+        r"\b(top|most|best|leading).*(impact|effect|influence|contribution)\b",
+        r"\b(who|which).*(and|then)\s*(impact|effect|influence)\b",
+
+        # Style/Approach queries with stats
+        r"\b(scorer|player|rebounder).*(and|then)\s*(style|approach|playing|game)\b",
+        r"\b(compare|comparison).*(style|approach|playing|strategies?)\b",
+        r"\b(who|which).*(and|then)\s*(style|playing|approach)\b",
+
+        # "X and explain/analyze Y" patterns
+        r"\b(compare|list|show|top).*(and|then)\s*(explain|analyze|discuss|describe)\b",
+        r"\b(stats?|statistics?|numbers?).*(and|then)\s*(why|explain|analysis|context)\b",
+
+        # "Better/Best with reasoning" patterns
+        r"\b(who is better|which is better|who's better).*(why|explain|because|based on)\b",
+        r"\b(best|better).*(and|then)\s*(why|explain|what makes)\b",
+
+        # Performance/Efficiency with analysis
+        r"\b(performance|efficiency|effectiveness).*(why|how|explain|what makes)\b",
+        r"\b(efficient|effective).*(and|then)\s*(why|explain|what)\b",
+
+        # Two-part questions (CRITICAL for fixing evaluation failures)
+        r"(who|which|what).+(\?|and).+(why|how|what makes|explain|style|impact)",
+        r"(most|top|best|highest).+(\?|and).+(why|how|explain|what makes|style)",
     ]
 
     def __init__(self):
@@ -106,25 +132,39 @@ class QueryClassifier:
     def classify(self, query: str) -> QueryType:
         """Classify query type based on patterns.
 
+        Phase 12 improvements:
+        - Enhanced hybrid detection (15 patterns vs 4)
+        - Promote to HYBRID when both stat and context patterns match strongly
+        - Better tie-breaking logic
+
         Args:
             query: User query string
 
         Returns:
             QueryType (STATISTICAL, CONTEXTUAL, or HYBRID)
         """
-        query = query.strip().lower()
+        query_normalized = query.strip().lower()
 
         # Check hybrid patterns first (most specific)
-        hybrid_matches = sum(1 for pattern in self.hybrid_regex if pattern.search(query))
+        hybrid_matches = sum(1 for pattern in self.hybrid_regex if pattern.search(query_normalized))
         if hybrid_matches > 0:
-            logger.info(f"Query classified as HYBRID (matched {hybrid_matches} patterns)")
+            logger.info(f"Query classified as HYBRID (matched {hybrid_matches} hybrid patterns)")
             return QueryType.HYBRID
 
         # Check statistical patterns
-        stat_matches = sum(1 for pattern in self.statistical_regex if pattern.search(query))
+        stat_matches = sum(1 for pattern in self.statistical_regex if pattern.search(query_normalized))
 
         # Check contextual patterns
-        context_matches = sum(1 for pattern in self.contextual_regex if pattern.search(query))
+        context_matches = sum(1 for pattern in self.contextual_regex if pattern.search(query_normalized))
+
+        # NEW: If both stat and context patterns match strongly → HYBRID
+        # This catches queries like "top scorers and their playing styles"
+        if stat_matches >= 2 and context_matches >= 1:
+            logger.info(
+                f"Query classified as HYBRID (stat: {stat_matches}, context: {context_matches}) "
+                "- both components detected"
+            )
+            return QueryType.HYBRID
 
         # Classify based on match counts
         if stat_matches > context_matches:
