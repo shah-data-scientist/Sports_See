@@ -23,7 +23,9 @@ router = APIRouter()
     "/chat",
     response_model=ChatResponse,
     summary="Chat with RAG",
-    description="Send a question and get an AI-powered answer based on the knowledge base.",
+    description="Send a question and get an AI-powered answer based on the knowledge base. "
+    "Supports conversation context by optionally providing conversation_id and turn_number "
+    "to enable pronoun resolution and follow-up questions.",
     responses={
         200: {"description": "Successful response with answer and sources"},
         422: {"description": "Validation error in request"},

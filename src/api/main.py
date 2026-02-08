@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import get_chat_service, set_chat_service
-from src.api.routes import chat, feedback, health
+from src.api.routes import chat, conversation, feedback, health
 from src.core.config import settings
 from src.core.exceptions import (
     AppException,
@@ -135,6 +135,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health.router, tags=["Health"])
     app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+    app.include_router(conversation.router, prefix="/api/v1", tags=["Conversations"])
     app.include_router(feedback.router, prefix="/api/v1", tags=["Feedback"])
 
     return app
