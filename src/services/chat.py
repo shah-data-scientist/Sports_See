@@ -17,6 +17,7 @@ from src.core.exceptions import IndexNotFoundError, LLMError
 from src.core.observability import logfire
 from src.core.security import sanitize_query, validate_search_params
 from src.models.chat import ChatRequest, ChatResponse, SearchResult
+from src.repositories.feedback import FeedbackRepository
 from src.repositories.vector_store import VectorStoreRepository
 from src.services.embedding import EmbeddingService
 from src.services.query_classifier import QueryClassifier, QueryType
@@ -29,8 +30,11 @@ logger = logging.getLogger(__name__)
 # System prompt template
 # Phase 4 improvements: Explicit relevancy and faithfulness constraints
 # Phase 10 improvements: SQL data priority + English-only context
+# Phase 11 improvements: Conversation history support for follow-up questions
 # IMPORTANT: English language to ensure consistent English responses
 SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+
+{conversation_history}
 
 CONTEXT:
 ---
@@ -44,18 +48,19 @@ CRITICAL INSTRUCTIONS:
 1. Answer DIRECTLY to the question asked - do not deviate from the topic
 2. Base your answer ONLY on information from the context above
 3. NEVER add information that is not in the context
-4. **STATISTICAL DATA (FROM SQL DATABASE)** contains EXACT FACTS from the official database:
+4. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.) and understand follow-up questions
+5. **STATISTICAL DATA (FROM SQL DATABASE)** contains EXACT FACTS from the official database:
    - This is the PRIMARY source for all statistical queries
    - Use these exact numbers - they are authoritative and verified
    - Each numbered entry or bullet point is a complete database record
-5. **DOCUMENTS AND ANALYSIS** contains contextual information:
+6. **DOCUMENTS AND ANALYSIS** contains contextual information:
    - Use this for player stories, analysis, opinions, and qualitative insights
    - This supplements but does NOT replace statistical data
-6. When SQL data is present, you MUST use it to answer statistical questions
-7. If neither section contains the answer, state: "I cannot find this information in the provided context"
-8. Be precise and concise - provide exact numbers and names from the data
-9. For lists/rankings, present them clearly (numbered or bulleted)
-10. ALWAYS respond in English
+7. When SQL data is present, you MUST use it to answer statistical questions
+8. If neither section contains the answer, state: "I cannot find this information in the provided context"
+9. Be precise and concise - provide exact numbers and names from the data
+10. For lists/rankings, present them clearly (numbered or bulleted)
+11. ALWAYS respond in English
 
 RESPONSE:"""
 
@@ -75,27 +80,33 @@ class ChatService:
         self,
         vector_store: VectorStoreRepository | None = None,
         embedding_service: EmbeddingService | None = None,
+        feedback_repository: FeedbackRepository | None = None,
         api_key: str | None = None,
         model: str | None = None,
         enable_sql: bool = True,
+        conversation_history_limit: int = 5,
     ):
         """Initialize chat service.
 
         Args:
             vector_store: Vector store repository (created if not provided)
             embedding_service: Embedding service (created if not provided)
+            feedback_repository: Feedback repository for conversation history (created if not provided)
             api_key: Google API key (default from settings)
             model: Chat model name (default from settings)
             enable_sql: Enable SQL tool for statistical queries (default: True)
+            conversation_history_limit: Number of previous turns to include in context (default: 5)
         """
         self._api_key = api_key or settings.google_api_key
         self._model = model or "gemini-2.0-flash"  # Upgraded from flash-lite for better comprehension
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
+        self._conversation_history_limit = conversation_history_limit
 
         # Dependencies (lazy initialization)
         self._vector_store = vector_store
         self._embedding_service = embedding_service
+        self._feedback_repository = feedback_repository
         self._client: genai.Client | None = None
         self._sql_tool: NBAGSQLTool | None = None
         self._query_classifier: QueryClassifier | None = None
@@ -159,6 +170,13 @@ class ChatService:
         return self._query_expander
 
     @property
+    def feedback_repository(self) -> FeedbackRepository:
+        """Get feedback repository (lazy initialization)."""
+        if self._feedback_repository is None:
+            self._feedback_repository = FeedbackRepository()
+        return self._feedback_repository
+
+    @property
     def is_ready(self) -> bool:
         """Check if service is ready (index loaded)."""
         return self.vector_store.is_loaded
@@ -173,6 +191,39 @@ class ChatService:
             # Try to load
             if not self.vector_store.load():
                 raise IndexNotFoundError("Vector index not loaded. Run indexer first.")
+
+    def _build_conversation_context(self, conversation_id: str, current_turn: int) -> str:
+        """Build conversation history context for the prompt.
+
+        Args:
+            conversation_id: Conversation ID
+            current_turn: Current turn number
+
+        Returns:
+            Formatted conversation history string, or empty string if no history
+        """
+        # Get previous messages (excluding current turn)
+        messages = self.feedback_repository.get_messages_by_conversation(conversation_id)
+
+        # Filter to only previous turns (not including current)
+        previous_messages = [msg for msg in messages if msg.turn_number and msg.turn_number < current_turn]
+
+        # Limit to last N turns
+        if len(previous_messages) > self._conversation_history_limit:
+            previous_messages = previous_messages[-self._conversation_history_limit :]
+
+        # No history to show
+        if not previous_messages:
+            return ""
+
+        # Format history
+        history_lines = ["CONVERSATION HISTORY:"]
+        for msg in previous_messages:
+            history_lines.append(f"User: {msg.query}")
+            history_lines.append(f"Assistant: {msg.response}")
+
+        history_lines.append("---\n")
+        return "\n".join(history_lines)
 
     @logfire.instrument("ChatService.search {query=}")
     def search(
@@ -243,6 +294,7 @@ class ChatService:
         self,
         query: str,
         context: str,
+        conversation_history: str = "",
         prompt_template: str | None = None,
     ) -> str:
         """Generate LLM response with context.
@@ -250,6 +302,7 @@ class ChatService:
         Args:
             query: User query
             context: Retrieved context
+            conversation_history: Conversation history context (optional)
             prompt_template: Optional custom prompt template (for Phase 8 testing)
 
         Returns:
@@ -262,6 +315,7 @@ class ChatService:
         template = prompt_template if prompt_template is not None else SYSTEM_PROMPT_TEMPLATE
         prompt = template.format(
             app_name=settings.app_name,
+            conversation_history=conversation_history,
             context=context,
             question=query,
         )
@@ -314,6 +368,16 @@ class ChatService:
 
         # Sanitize query
         query = sanitize_query(request.query)
+
+        # Build conversation context if conversation_id provided
+        conversation_history = ""
+        if request.conversation_id:
+            conversation_history = self._build_conversation_context(
+                request.conversation_id,
+                request.turn_number
+            )
+            if conversation_history:
+                logger.info(f"Including conversation history ({request.turn_number - 1} previous turns)")
 
         # Classify query to determine routing
         query_type = self.query_classifier.classify(query) if self._enable_sql else QueryType.CONTEXTUAL
@@ -408,7 +472,7 @@ class ChatService:
             context = "No relevant information found."
 
         # Generate response
-        answer = self.generate_response(query=query, context=context)
+        answer = self.generate_response(query=query, context=context, conversation_history=conversation_history)
 
         # SMART FALLBACK: If SQL succeeded but LLM still says "cannot find", retry with vector search
         if sql_success and not sql_failed and "cannot find" in answer.lower():
@@ -429,7 +493,7 @@ class ChatService:
                 fallback_context = f"DOCUMENTS AND ANALYSIS:\n{vector_context}"
 
                 # Regenerate response with vector context
-                answer = self.generate_response(query=query, context=fallback_context)
+                answer = self.generate_response(query=query, context=fallback_context, conversation_history=conversation_history)
                 logger.info("Vector search fallback succeeded")
 
         # Calculate processing time
@@ -441,4 +505,6 @@ class ChatService:
             query=query,
             processing_time_ms=processing_time_ms,
             model=self._model,
+            conversation_id=request.conversation_id,
+            turn_number=request.turn_number,
         )
