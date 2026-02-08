@@ -1,11 +1,11 @@
 {
-  "test_set": "1",
+  "test_set": "3",
   "sample_count": 68,
   "samples": [
     {
       "query": "Who scored the most points this season?",
       "query_type": "sql_only",
-      "response": "Shai Gilgeous-Alexander scored the most points this season, with 2485 points.\n",
+      "response": "Shai Gilgeous-Alexander scored the most points this season, with 2,485 points.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -29,7 +29,7 @@
     {
       "query": "What is Stephen Curry's 3-point percentage?",
       "query_type": "sql_only",
-      "response": "Stephen Curry's 3-point percentage is 39.7.",
+      "response": "Stephen Curry's 3-point percentage is 39.7%. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -37,15 +37,15 @@
     {
       "query": "Who are the top 3 rebounders in the league?",
       "query_type": "sql_only",
-      "response": "The top 3 rebounders are:\n1. Ivica Zubac, with 1008 rebounds\n2. Domantas Sabonis, with 973 rebounds\n3. Karl-Anthony Towns, with 922 rebounds\n",
-      "overall_score": 0.7975,
+      "response": "The top 3 rebounders in the league are: 1. Ivica Zubac with 1,008 rebounds, 2. Domantas Sabonis with 973 rebounds, and 3. Karl-Anthony Towns with 922 rebounds.\n",
+      "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
     {
       "query": "How many games did Damian Lillard play?",
       "query_type": "sql_only",
-      "response": "Damian Lillard played 58 games.\n",
+      "response": "Damian Lillard played 58 games [SQL]. He averaged 36.1 minutes per game and had a usage rate of 29.9% [Source: regular NBA.xlsx (Feuille: Données NBA)]. Lillard is known as a strong scorer, as highlighted in the Reddit discussion, and was considered a clear notch below other top point guards in the West during his prime, such as CP3, Westbrook, and Harden [Source: Reddit 3.pdf]. Despite the competition, Lillard has been recognized as an All-NBA selection [Source: Reddit 3.pdf].\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -53,7 +53,7 @@
     {
       "query": "What is Kevin Durant's field goal percentage?",
       "query_type": "sql_only",
-      "response": "Kevin Durant's field goal percentage is 52.7.",
+      "response": "Kevin Durant's field goal percentage is 52.7%. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -69,7 +69,7 @@
     {
       "query": "How many points did Giannis Antetokounmpo score?",
       "query_type": "sql_only",
-      "response": "Giannis Antetokounmpo scored 2037 points.\n",
+      "response": "Giannis Antetokounmpo scored 2,037 points.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -85,7 +85,7 @@
     {
       "query": "Who has the best free throw percentage?",
       "query_type": "sql_only",
-      "response": "Sam Hauser has the best free throw percentage at 100.\n",
+      "response": "Sam Hauser has the best free throw percentage at 100%.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -93,15 +93,15 @@
     {
       "query": "Who are the top 5 players in steals?",
       "query_type": "sql_only",
-      "response": "The top 5 players in steals are:\n1. Dyson Daniels with 228 steals\n2. Shai Gilgeous-Alexander with 129 steals\n3. Nikola Jokić with 126 steals\n4. Kris Dunn with 126 steals\n5. Cason Wallace with 122 steals\n",
-      "overall_score": 0.91,
+      "response": "The top 5 players in steals are:\n\n1. Dyson Daniels, stl: 228\n2. Shai Gilgeous-Alexander, stl: 129\n3. Nikola Jokić, stl: 126\n4. Kris Dunn, stl: 126\n5. Cason Wallace, stl: 122\n",
+      "overall_score": 0.7952941176470588,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
     {
       "query": "How many games did Anthony Edwards play?",
       "query_type": "sql_only",
-      "response": "Anthony Edwards played 79 games.\n",
+      "response": "Anthony Edwards played 79 games [SQL]. While the provided contextual knowledge doesn't directly discuss Edwards' playing style or impact, it does highlight the competitive landscape for guards in the Western Conference [Source: Reddit 3.pdf]. The analysis suggests that even a top player like Edwards might have faced challenges in earning All-Star selections in certain eras due to the presence of multiple MVP-caliber guards [Source: Reddit 3.pdf]. This context underscores the depth of talent at the guard position and the potential difficulty in standing out, even with strong performance.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -125,7 +125,7 @@
     {
       "query": "List all players on the Golden State Warriors.",
       "query_type": "sql_only",
-      "response": "The players on the Golden State Warriors are:\n*   Jackson Rowe\n*   Kevon Looney\n*   Quinten Post\n*   Draymond Green",
+      "response": "The players on the Golden State Warriors are Jackson Rowe, Kevon Looney, Draymond Green and Quinten Post. [Source: regular NBA.xlsx]\n",
       "overall_score": 0.5225,
       "sql_accuracy": 0.5,
       "integration_score": null
@@ -133,7 +133,7 @@
     {
       "query": "What is the average player age in the NBA?",
       "query_type": "sql_only",
-      "response": "The average player age in the NBA is 26.152899824253076 years.\n",
+      "response": "The average player age in the NBA is 26.15 years.\n",
       "overall_score": 0.71,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -149,7 +149,7 @@
     {
       "query": "Who has more rebounds, Giannis or Anthony Davis?",
       "query_type": "sql_only",
-      "response": "Giannis Antetokounmpo has more rebounds with 797 compared to Anthony Davis with 592.\n",
+      "response": "Giannis Antetokounmpo has more rebounds (797) than Anthony Davis (592).\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -157,7 +157,7 @@
     {
       "query": "Compare LeBron James and Kevin Durant's scoring",
       "query_type": "sql_only",
-      "response": "Kevin Durant scored 1649 points and LeBron James scored 476 points.\n",
+      "response": "Based on the context, LeBron James is considered an elite, generational talent [Source: Reddit 2.pdf]. Kevin Durant played 36 games with 1649 points [Source: regular NBA.xlsx (Feuille: Données NBA)].\n",
       "overall_score": 0.8028571428571428,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -165,15 +165,15 @@
     {
       "query": "Who shoots better from 3, Curry or Lillard?",
       "query_type": "sql_only",
-      "response": "Stephen Curry shoots 39.7% from 3, while Damian Lillard shoots 37.6% from 3. Therefore, Curry shoots better from 3.",
-      "overall_score": 0.91,
+      "response": "Curry shoots better from 3 than Lillard. [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
+      "overall_score": 0.81,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
     {
       "query": "Compare Trae Young and Luka Dončić's assists",
       "query_type": "sql_only",
-      "response": "Trae Young has 882 assists while Luka Dončić has 385 assists.\n",
+      "response": "Luka Dončić has 385 assists while Trae Young has 882 assists. [Source: regular NBA.xlsx (Feuille: Analyse)]\n[Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.8671428571428571,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -181,7 +181,7 @@
     {
       "query": "Who is more efficient, Jokić or Embiid?",
       "query_type": "sql_only",
-      "response": "Jokić has a field goal percentage of 57.6, while Embiid has 44.4.\nJokić has a true shooting percentage of 66.3, while Embiid has 58.\nTherefore, Jokić is more efficient than Embiid.",
+      "response": "Nikola Jokić is more efficient than Joel Embiid. [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
       "overall_score": 0.79,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -189,15 +189,15 @@
     {
       "query": "Compare blocks: Giannis vs Brook Lopez",
       "query_type": "sql_only",
-      "response": "I cannot find specific block statistics for Giannis Antetokounmpo or Brook Lopez in the provided context to make a comparison.\n",
-      "overall_score": 0.67875,
+      "response": "The available context doesn't contain specific block statistics or a direct comparison of Giannis Antetokounmpo's and Brook Lopez's shot-blocking abilities.\n",
+      "overall_score": 0.6225,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Compare Shai Gilgeous-Alexander and Anthony Edwards scoring",
       "query_type": "sql_only",
-      "response": "Shai Gilgeous-Alexander scored 2485 points, while Anthony Edwards scored 2180 points.\nShai Gilgeous-Alexander's field goal percentage is 51.9%, and Anthony Edwards' is 44.7%.\nShai Gilgeous-Alexander's three-point percentage is 37.5%, while Anthony Edwards' is 39.5%.\nShai Gilgeous-Alexander's free throw percentage is 89.8%, while Anthony Edwards' is 83.7%.\n",
+      "response": "Shai Gilgeous-Alexander scored more points than Anthony Edwards. Shai Gilgeous-Alexander scored 2485 points, while Anthony Edwards scored 2180 points [Source: regular NBA.xlsx (Feuille: Données NBA)].\n",
       "overall_score": 0.8671428571428571,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -205,7 +205,7 @@
     {
       "query": "Who has more rebounds, Jokić or Sabonis?",
       "query_type": "sql_only",
-      "response": "Domantas Sabonis has more rebounds with 973 compared to Nikola Jokić with 889.\n",
+      "response": "Domantas Sabonis has more rebounds (973) than Nikola Jokić (889).\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -213,7 +213,7 @@
     {
       "query": "Compare Jayson Tatum and Kevin Durant scoring efficiency",
       "query_type": "sql_only",
-      "response": "Jayson Tatum scored 1930 points with a field goal percentage of 45.2 and a 3-point percentage of 34.3. Kevin Durant scored 1649 points with a field goal percentage of 52.7 and a 3-point percentage of 43.\n",
+      "response": "Jayson Tatum and Kevin Durant have different scoring efficiencies. According to the regular NBA data, Kevin Durant has a field goal percentage of 52.7% and a 3-point percentage of 43% [Source: regular NBA.xlsx (Feuille: Données NBA)]. Jayson Tatum has a field goal percentage of 45.2% and a 3-point percentage of 34.3% [Source: regular NBA.xlsx (Feuille: Analyse)].\n",
       "overall_score": 0.79,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -221,8 +221,8 @@
     {
       "query": "Who has more assists, James Harden or Chris Paul?",
       "query_type": "sql_only",
-      "response": "James Harden has more assists with 687, while Chris Paul has 607.\n",
-      "overall_score": 0.91,
+      "response": "James Harden has more assists with 687 compared to Chris Paul's 607.\n",
+      "overall_score": 0.8799999999999999,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
@@ -237,7 +237,7 @@
     {
       "query": "Who are the top 2 players by true shooting percentage?",
       "query_type": "sql_only",
-      "response": "The top 2 players by true shooting percentage are:\n1. Alondes Williams, ts_pct: 125\n2. Jahmir Young, ts_pct: 93.5\n",
+      "response": "The top 2 players by true shooting percentage are Alondes Williams (125) and Jahmir Young (93.5).\n",
       "overall_score": 0.61,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -245,7 +245,7 @@
     {
       "query": "Compare blocks between the top 2 leaders",
       "query_type": "sql_only",
-      "response": "Victor Wembanyama has 175 blocks, while Brook Lopez has 152 blocks.\n",
+      "response": "Victor Wembanyama had 175 blocks, while Brook Lopez had 152 blocks.\n",
       "overall_score": 0.7736363636363637,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -253,7 +253,7 @@
     {
       "query": "What is the average 3-point percentage for all players?",
       "query_type": "sql_only",
-      "response": "The average 3-point percentage for all players is 29.902460456942002.\n",
+      "response": "The average 3-point percentage for all players is 29.90.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -261,15 +261,15 @@
     {
       "query": "How many players scored over 1000 points?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.\n",
-      "overall_score": 0.66625,
+      "response": "84 players scored over 1000 points.\n",
+      "overall_score": 0.89125,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
     {
       "query": "What is the average field goal percentage in the league?",
       "query_type": "sql_only",
-      "response": "The average field goal percentage in the league is 44.61%.\n",
+      "response": "The average field goal percentage in the league is 44.61.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -277,7 +277,7 @@
     {
       "query": "How many players average over 20 points per game?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, 50 players average over 20 points per game.\n",
+      "response": "50 players average over 20 points per game.\n",
       "overall_score": 0.81,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -285,7 +285,7 @@
     {
       "query": "What is the highest PIE in the league?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.",
+      "response": "The available context doesn't contain this information\n",
       "overall_score": 0.7,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -301,7 +301,7 @@
     {
       "query": "What is the average number of assists per game league-wide?",
       "query_type": "sql_only",
-      "response": "The average number of assists per game league-wide is 2.0856741022612892.\n",
+      "response": "The average number of assists per game league-wide is 2.09.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -309,7 +309,7 @@
     {
       "query": "What is the average rebounds per game league-wide?",
       "query_type": "sql_only",
-      "response": "The average rebounds per game league-wide is 190.7908611599297.\n",
+      "response": "The average rebounds per game league-wide is 190.79.\n",
       "overall_score": 0.71,
       "sql_accuracy": 0.5,
       "integration_score": null
@@ -317,15 +317,15 @@
     {
       "query": "How many players have more than 500 assists?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.",
-      "overall_score": 0.51,
+      "response": "10 players have more than 500 assists.\n",
+      "overall_score": 0.81,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "What is the average free throw percentage?",
       "query_type": "sql_only",
-      "response": "The average free throw percentage is 72.02407732864674.\n",
+      "response": "The average free throw percentage is 72.02.\n",
       "overall_score": 0.81,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -333,7 +333,7 @@
     {
       "query": "How many players played more than 50 games?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, 282 players played more than 50 games.\n",
+      "response": "282 players played more than 50 games.\n",
       "overall_score": 0.81,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -341,7 +341,7 @@
     {
       "query": "What is the minimum points scored (excluding zeros)?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, the minimum points scored, excluding zeros, is 20 by Markieff Morris.",
+      "response": "The minimum points scored, excluding zeros, is 1709 by DeMar DeRozan [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -349,7 +349,7 @@
     {
       "query": "How many players have more than 100 blocks?",
       "query_type": "sql_only",
-      "response": "Based on the provided context, the following players have more than 100 blocks:\n\n*   Rudy Gobert: 130 blocks\n*   Jarace Walker: 113 blocks\n*   Jake LaRavia: 158 blocks\n*   Jusuf Nurkić: 117 blocks\n*   Mitchell Robinson: 14 blocks",
+      "response": "12 players have more than 100 blocks.\n",
       "overall_score": 0.81,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -365,7 +365,7 @@
     {
       "query": "What is the total number of three-pointers made by all players combined?",
       "query_type": "sql_only",
-      "response": "The total number of three-pointers made by all players combined is 844570.7.\n",
+      "response": "The total number of three-pointers made by all players combined is 844,570.7.\n",
       "overall_score": 0.71,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -373,15 +373,15 @@
     {
       "query": "How many players have a Player Impact Estimate (PIE) above 0.15?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, the following players have a Player Impact Estimate (PIE) above 15 (or 0.15):\n\n*   Shai Gilgeous-Alexander: 19.9\n*   Nikola Jokić: 20.6\n*   Giannis Antetokounmpo: 21\n*   Jayson Tatum: 15.8",
-      "overall_score": 0.56,
+      "response": "To determine how many players have a Player Impact Estimate (PIE) above 0.15, I need to look at the \"Estimation de l’impact du joueur\" column in the provided data. Based on the data from the \"regular NBA.xlsx\" (Feuille: Analyse), the following players have a PIE above 15%:\n\n*   Shai Gilgeous-Alexander: 19.9\n*   Nikola Jokić: 20.6\n*   Giannis Antetokounmpo: 21\n*   Jayson Tatum: 15.8\n\nTherefore, there are 4 players with a PIE above 0.15 [Source: regular NBA.xlsx (Feuille: Analyse)].",
+      "overall_score": 0.71,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "What is the maximum number of blocks recorded by any player?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.\n",
+      "response": "The maximum number of blocks recorded by a player is 88. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.6000000000000001,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -389,15 +389,15 @@
     {
       "query": "Which players score more points per game than the league average?",
       "query_type": "sql_only",
-      "response": "To determine which players score more points per game than the league average, I need to know what the league average PPG is. This information is not in the context provided, so I cannot definitively answer the question.\n",
-      "overall_score": 0.66,
+      "response": "Based on the provided data, the following players score more points per game than the league average:\n\n1.  Shai Gilgeous-Alexander (32.7 ppg)\n2.  Giannis Antetokounmpo (30.4 ppg)\n3.  Nikola Jokić (29.6 ppg)\n4.  Anthony Edwards (27.6 ppg)\n5.  Jayson Tatum (26.8 ppg)\n6.  Kevin Durant (26.6 ppg)\n7.  Cade Cunningham (26.1 ppg)\n8.  Jalen Brunson (26.0 ppg)\n9.  Devin Booker (25.6 ppg)\n10. Stephen Curry (24.5 ppg)\n11. Karl-Anthony Towns (24.4 ppg)\n12. LeBron James (24.4 ppg)\n13. Trae Young (24.2 ppg)\n14. Donovan Mitchell (24.0 ppg)\n15. Tyler Herro (23.9 ppg)\n16. Zach LaVine (23.3 ppg)\n17. James Harden (22.8 ppg)\n18. Jaren Jackson Jr, (22.2 ppg)\n19. DeMar DeRozan (22.2 ppg)\n20. Jalen Green (21.0 ppg)\n",
+      "overall_score": 0.585,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Find players with both high scoring (1500+ points) and high assists (300+ assists)",
       "query_type": "sql_only",
-      "response": "The players with at least 1500 points and at least 300 assists are:\n\n1. Shai Gilgeous-Alexander: 2485 points, 486 assists\n2. Anthony Edwards: 2180 points, 356 assists\n3. Nikola Jokić: 2072 points, 714 assists\n4. Giannis Antetokounmpo: 2037 points, 436 assists\n5. Jayson Tatum: 1930 points, 432 assists\n6. Devin Booker: 1920 points, 533 assists\n7. Tyler Herro: 1840 points, 424 assists\n8. Trae Young: 1839 points, 882 assists\n9. Cade Cunningham: 1827 points, 637 assists\n10. James Harden: 1801 points, 687 assists\n11. Zach LaVine: 1724 points, 311 assists\n12. Stephen Curry: 1715 points, 420 assists\n13. DeMar DeRozan: 1709 points, 339 assists\n14. LeBron James: 1708 points, 574 assists\n15. Donovan Mitchell: 1704 points, 355 assists\n16. Jalen Brunson: 1690 points, 475 assists\n17. Darius Garland: 1545 points, 503 assists\n18. Coby White: 1510 points, 333 assists\n",
+      "response": "The following players have scored over 1500 points and have over 300 assists:\n\n*   Shai Gilgeous-Alexander: 2485 points, 486 assists\n*   Anthony Edwards: 2180 points, 356 assists\n*   Nikola Jokić: 2072 points, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 436 assists\n*   Jayson Tatum: 1930 points, 432 assists\n*   Devin Booker: 1920 points, 533 assists\n*   Tyler Herro: 1840 points, 424 assists\n*   Trae Young: 1839 points, 882 assists\n*   Cade Cunningham: 1827 points, 637 assists\n*   James Harden: 1801 points, 687 assists\n*   Zach LaVine: 1724 points, 311 assists\n*   Stephen Curry: 1715 points, 420 assists\n*   DeMar DeRozan: 1709 points, 339 assists\n*   LeBron James: 1708 points, 574 assists\n*   Donovan Mitchell: 1704 points, 355 assists\n*   Jalen Brunson: 1690 points, 475 assists\n*   Darius Garland: 1545 points, 503 assists\n*   Coby White: 1510 points, 333 assists\n",
       "overall_score": 0.6225,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -405,7 +405,7 @@
     {
       "query": "Who are the most efficient scorers among players with 50+ games played?",
       "query_type": "sql_only",
-      "response": "Here are the most efficient scorers based on True Shooting Percentage (TS%) among players with 50+ games played:\n\n1. Jarrett Allen, ts_pct: 72.4\n2. Jaxson Hayes, ts_pct: 72\n3. Daniel Gafford, ts_pct: 71.6\n4. Dwight Powell, ts_pct: 71.3\n5. Jalen Duren, ts_pct: 70.3\n",
+      "response": "Based on the data provided, here are the most efficient scorers (measured by True Shooting Percentage, TS%) among players with 50+ games played:\n\n1. Jarrett Allen, TS%: 72.4\n2. Jaxson Hayes, TS%: 72\n3. Daniel Gafford, TS%: 71.6\n4. Adem Bona, TS%: 71.4\n5. Dwight Powell, TS%: 71.3\n6. Jalen Duren, TS%: 70.3\n7. Rudy Gobert, TS%: 68.7\n8. Luke Kornet, TS%: 68.3\n9. Neemias Queta, TS%: 67.4\n10. Jay Huff, TS%: 66.6\n",
       "overall_score": 0.7350000000000001,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -413,15 +413,15 @@
     {
       "query": "Which players have triple-digit stats in points, rebounds, and assists?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.",
-      "overall_score": 0.56,
+      "response": "The available context doesn't contain this information.\n",
+      "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Find the top 5 players by total defensive actions (steals + blocks)",
       "query_type": "sql_only",
-      "response": "The top 5 players by total defensive actions are:\n\n1. Dyson Daniels, 281\n2. Victor Wembanyama, 226\n3. Shai Gilgeous-Alexander, 205\n4. Myles Turner, 202\n5. Jaren Jackson Jr, 200\n",
+      "response": "The top 5 players by total defensive actions are:\n\n1. Dyson Daniels: 281\n2. Victor Wembanyama: 226\n3. Shai Gilgeous-Alexander: 205\n4. Myles Turner: 202\n5. Jaren Jackson Jr: 200\n",
       "overall_score": 0.67875,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -429,15 +429,15 @@
     {
       "query": "Which players have better than 50% field goal percentage AND 35%+ from three?",
       "query_type": "sql_only",
-      "response": "The following players have better than 50% field goal percentage and 35%+ from three:\n\n*   Harrison Barnes: 50.8% FG, 43.3% 3P\n*   Ryan Rollins: 48.7% FG, 40.8% 3P (Note: While his FG% is slightly below 50%, it's the closest in the provided data)\n*   Mikal Bridges: 50% FG, 35.4% 3P\n",
-      "overall_score": 0.61,
+      "response": "Here are the players who meet the criteria of having a field goal percentage better than 50% and a three-point percentage of 35% or higher, based on the provided data:\n\n*   **Harrison Barnes** (SAS): [Source: regular NBA.xlsx (Feuille: Données NBA)]\n*   **Ryan Rollins** (MIL): [Source: regular NBA.xlsx (Feuille: Données NBA)]\n*   **Mikal Bridges** (NYK): [Source: regular NBA.xlsx (Feuille: Données NBA)]\n*   **Max Strus** (CLE): [Source: regular NBA.xlsx (Feuille: Données NBA)]",
+      "overall_score": 0.56,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Find players averaging double-digits in points, rebounds, and assists",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.\n",
+      "response": "The available context doesn't contain this information\n",
       "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -445,15 +445,15 @@
     {
       "query": "Who are the top 3 players in points per game among those who played at least 70 games?",
       "query_type": "sql_only",
-      "response": "1. Shai Gilgeous-Alexander, 32.7 ppg\n2. Nikola Jokić, 29.6 ppg\n3. Anthony Edwards, 27.6 ppg\n",
-      "overall_score": 0.5475,
+      "response": "Shai Gilgeous-Alexander (32.7 ppg), Nikola Jokić (29.6 ppg), and Anthony Edwards (27.6 ppg) are the top 3 players in points per game.\n",
+      "overall_score": 0.6225,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Find all players who score more than they assist by at least 10 points per game",
       "query_type": "sql_only",
-      "response": "Here are the players who score at least 10 more points per game than they assist, based on the data provided:\n\nTo determine this, I calculated points per game (PPG) and assists per game (APG) for each player using the total points (pts) and total assists (ast) data. Then, I identified players where PPG - APG >= 10.\n\n1.  Shai Gilgeous-Alexander: PPG = 2485/82 = 30.30, APG = 486/82 = 5.93, Difference = 24.37\n2.  Anthony Edwards: PPG = 2180/82 = 26.59, APG = 356/82 = 4.34, Difference = 22.25\n3.  Nikola Jokić: PPG = 2072/82 = 25.27, APG = 714/82 = 8.71, Difference = 16.56\n4.  Giannis Antetokounmpo: PPG = 2037/82 = 24.84, APG = 436/82 = 5.32, Difference = 19.52\n5.  Jayson Tatum: PPG = 1930/82 = 23.54, APG = 432/82 = 5.27, Difference = 18.27\n6.  Devin Booker: PPG = 1920/82 = 23.41, APG = 533/82 = 6.50, Difference = 16.91\n7.  Tyler Herro: PPG = 1840/82 = 22.44, APG = 424/82 = 5.17, Difference = 17.27\n8.  Cade Cunningham: PPG = 1827/82 = 22.28, APG = 637/82 = 7.77, Difference = 14.51\n9.  Karl-Anthony Towns: PPG = 1757/82 = 21.43, APG = 223/82 = 2.72, Difference = 18.71\n10. Zach LaVine: PPG = 1724/82 = 21.02, APG = 311/82 = 3.79, Difference = 17.23\n11. Jalen Green: PPG = 1722/82 = 20.02, APG = 279/82 = 3.40, Difference = 17.62\n12. Stephen Curry: PPG = 1715/82 = 20.91, APG = 420/82 = 5.12, Difference = 15.79\n13. DeMar DeRozan: PPG = 1709/82 = 20.84, APG = 339/82 = 4.13, Difference = 16.71\n14. Donovan Mitchell: PPG = 1704/82 = 20.78, APG = 355/82 = 4.33, Difference = 16.45\n15. Kevin Durant: PPG = 1649/82 = 20.11, APG = 260/82 = 3.17, Difference = 16.94\n16. Jaren Jackson Jr,: PPG = 1643/82 = 20.04, APG = 148/82 = 1.80, Difference = 18.24",
+      "response": "Here are the players who score more than they assist by at least 10 points per game, based on the provided data:\n\nTo determine this, I calculated each player's points per game (PPG) and assists per game (APG), then found the difference. I only included players where PPG - APG was greater than or equal to 10.\n\nHere's the list:\n\n*   **Shai Gilgeous-Alexander:** PPG = 30.1, APG = 5.9, Difference = 24.2\n*   **Anthony Edwards:** PPG = 25.9, APG = 4.2, Difference = 21.7\n*   **Nikola Jokić:** PPG = 26.4, APG = 9.0, Difference = 17.4\n*   **Giannis Antetokounmpo:** PPG = 30.1, APG = 6.4, Difference = 23.7\n*   **Jayson Tatum:** PPG = 27.1, APG = 6.1, Difference = 21.0\n*   **Devin Booker:** PPG = 27.1, APG = 7.6, Difference = 19.5\n*   **Tyler Herro:** PPG = 21.2, APG = 4.9, Difference = 16.3\n*   **Karl-Anthony Towns:** PPG = 21.4, APG = 2.7, Difference = 18.7\n*   **Zach LaVine:** PPG = 24.2, APG = 3.9, Difference = 20.3\n*   **Jalen Green:** PPG = 22.0, APG = 4.0, Difference = 18.0\n*   **Stephen Curry:** PPG = 29.4, APG = 8.1, Difference = 21.3\n*   **DeMar DeRozan:** PPG = 24.7, APG = 4.9, Difference = 19.8\n*   **LeBron James:** PPG = 24.7, APG = 6.9, Difference = 17.8\n*   **Donovan Mitchell:** PPG = 26.4, APG = 6.1, Difference = 20.3\n*   **Kevin Durant:** PPG = 27.5, APG = 4.3, Difference = 23.2\n*   **Jaren Jackson Jr:** PPG = 22.3, APG = 2.1, Difference = 20.2",
       "overall_score": 0.5449999999999999,
       "sql_accuracy": 0.5,
       "integration_score": null
@@ -461,15 +461,15 @@
     {
       "query": "Which players have the best assist-to-turnover ratio among those with 300+ assists?",
       "query_type": "sql_only",
-      "response": "Here are the players with the best assist-to-steal ratio among those with at least 300 assists, based on the provided data:\n\n1.  Trae Young, ast_to_stl: 9.58695652173913\n2.  Cade Cunningham, ast_to_stl: 8.971830985915492\n3.  Domantas Sabonis, ast_to_stl: 8.4\n4.  LeBron James, ast_to_stl: 8.084507042253522\n5.  Jalen Brunson, ast_to_stl: 7.916666666666667\n6. Keyonte George, ast_to_stl: 7.8125\n7. Devin Booker, ast_to_stl: 7.72463768115942\n",
-      "overall_score": 0.66,
+      "response": "Based on the provided data, here are the players with 300 or more assists, ranked by their assist-to-steal ratio:\n\n1.  Trae Young: 9.59\n2.  Cade Cunningham: 8.97\n3.  Domantas Sabonis: 8.40\n4.  LeBron James: 8.08\n5.  Jalen Brunson: 7.92\n6.  Keyonte George: 7.81\n7.  Devin Booker: 7.72\n8.  Giannis Antetokounmpo: 7.15\n9.  Isaiah Collier: 6.88\n10. RJ Barrett: 6.66\n11. Julius Randle: 6.61\n12. LaMelo Ball: 6.57\n13. Tyrese Haliburton: 6.52\n14. Bub Carrington: 6.22\n15. Malik Monk: 6.07\n16. Tyler Herro: 6.06\n17. Ja Morant: 5.98\n18. Josh Giddey: 5.93\n19. Dennis Schroder: 5.87\n20. Damian Lillard: 5.80\n",
+      "overall_score": 0.61,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Find the most versatile players with at least 1000 points, 400 rebounds, and 200 assists",
       "query_type": "sql_only",
-      "response": "The most versatile players with at least 1000 points, 400 rebounds, and 200 assists are:\n\n1. Anthony Edwards, pts: 2180, reb: 450, ast: 356\n2. Nikola Jokić, pts: 2072, reb: 889, ast: 714\n3. Giannis Antetokounmpo, pts: 2037, reb: 797, ast: 436\n4. Jayson Tatum, pts: 1930, reb: 626, ast: 432\n5. Tyler Herro, pts: 1840, reb: 400, ast: 424\n6. Cade Cunningham, pts: 1827, reb: 427, ast: 637\n7. James Harden, pts: 1801, reb: 458, ast: 687\n8. Karl-Anthony Towns, pts: 1757, reb: 922, ast: 223\n9. LeBron James, pts: 1708, reb: 546, ast: 574\n10. Pascal Siakam, pts: 1576, reb: 538, ast: 265\n11. Alperen Sengun, pts: 1452, reb: 783, ast: 372\n12. Bam Adebayo, pts: 1412, reb: 749, ast: 335\n13. Luka Dončić, pts: 1410, reb: 410, ast: 385\n14. Nikola Vučević, pts: 1351, reb: 737, ast: 256\n15. Domantas Sabonis, pts: 1337, reb: 973, ast: 420\n16. Desmond Bane, pts: 1325, reb: 421, ast: 366\n17. Evan Mobley, pts: 1314, reb: 660, ast: 227\n18. Miles Bridges, pts: 1299, reb: 480, ast: 250\n19. Julius Randle, pts: 1290, reb: 490, ast: 324\n",
+      "response": "Based on the provided data, here are the most versatile players with at least 1000 points, 400 rebounds, and 200 assists:\n\n*   Anthony Edwards: 2180 points, 450 rebounds, 356 assists\n*   Nikola Jokić: 2072 points, 889 rebounds, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 797 rebounds, 436 assists\n*   Jayson Tatum: 1930 points, 626 rebounds, 432 assists\n*   Tyler Herro: 1840 points, 400 rebounds, 424 assists\n*   Cade Cunningham: 1827 points, 427 rebounds, 637 assists\n*   James Harden: 1801 points, 458 rebounds, 687 assists\n*   Karl-Anthony Towns: 1757 points, 922 rebounds, 223 assists\n*   LeBron James: 1708 points, 546 rebounds, 574 assists\n*   Pascal Siakam: 1576 points, 538 rebounds, 265 assists\n*   Alperen Sengun: 1452 points, 783 rebounds, 372 assists\n*   Bam Adebayo: 1412 points, 749 rebounds, 335 assists\n*   Luka Dončić: 1410 points, 410 rebounds, 385 assists\n*   Nikola Vučević: 1351 points, 737 rebounds, 256 assists\n*   Domantas Sabonis: 1337 points, 973 rebounds, 420 assists\n*   Desmond Bane: 1325 points, 421 rebounds, 366 assists\n*   Evan Mobley: 1314 points, 660 rebounds, 227 assists\n*   Miles Bridges: 1299 points, 480 rebounds, 250 assists\n*   Julius Randle: 1290 points, 490 rebounds, 324 assists",
       "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -477,7 +477,7 @@
     {
       "query": "What percentage of players have a true shooting percentage above 60%?",
       "query_type": "sql_only",
-      "response": "I cannot find this information in the provided context.",
+      "response": "The available context doesn't contain this information.\n",
       "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -485,7 +485,7 @@
     {
       "query": "Show me the top scorer",
       "query_type": "sql_only",
-      "response": "Shai Gilgeous-Alexander is the top scorer with 2485 points.\n",
+      "response": "Shai Gilgeous-Alexander is the top scorer with 2,485 points.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -493,7 +493,7 @@
     {
       "query": "What about his assists?",
       "query_type": "sql_only",
-      "response": "I need more context. Who are you asking about?\n",
+      "response": "The available context doesn't contain this information.\n",
       "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -501,7 +501,7 @@
     {
       "query": "Who's the best rebounder?",
       "query_type": "sql_only",
-      "response": "Based on the provided context, here are some players who are strong rebounders:\n\n*   **DeAndre Jordan (DEN):** Has a rebounding rate of 20.2%.\n*   **Steven Adams (HOU):** Has a rebounding rate of 20.1%.\n*   **Andre Jackson Jr. (MIL):** Has a rebounding rate of 23.8%.",
+      "response": "The available context doesn't contain this information.\n",
       "overall_score": 0.6599999999999999,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -509,23 +509,23 @@
     {
       "query": "How many games did he play?",
       "query_type": "sql_only",
-      "response": "Please provide context about who \"he\" refers to. I need a name to answer your question about games played.\n",
-      "overall_score": 0.5742857142857143,
+      "response": "Please provide the name of the player you are asking about. I need a name to find the number of games played in the statistical data. Once you provide the name, I will combine the statistical data with relevant contextual analysis.\n",
+      "overall_score": 0.6385714285714286,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
     {
       "query": "Tell me about LeBron's stats",
       "query_type": "sql_only",
-      "response": "LeBron James' stats include:\n- 70 games played\n- 44 games started\n- 34.9 minutes per game\n- 651 field goals made out of 1267 attempts (51.3%)\n- 147 three-point field goals made out of 399 attempts (37.6%)\n- 259 free throws made out of 329 attempts (78.2%)\n- 476 rebounds\n- 574 assists\n- 70 steals\n- 42 blocks\n- 3297 total points\n- 16.9 value over replacement player\n",
-      "overall_score": 0.7224999999999999,
+      "response": "LeBron James played 70 games [Source: regular NBA.xlsx (Feuille: Données NBA)], scored 3297 points [Source: regular NBA.xlsx (Feuille: Données NBA)], with a usage rate of 25.6 [Source: regular NBA.xlsx (Feuille: Données NBA)], and an offensive rating of 112.7 [Source: regular NBA.xlsx (Feuille: Données NBA)]. He averaged 16.9 points in the analysis data [Source: regular NBA.xlsx (Feuille: Analyse)].\n",
+      "overall_score": 0.66625,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
     {
       "query": "Compare him to Curry",
       "query_type": "sql_only",
-      "response": "Stephen Curry has 1715 total points, 567 field goals made, 44.8 field goal percentage, 39.7 3-point percentage, and 93.3 free throw percentage.\n",
+      "response": "Based on the provided data, Stephen Curry has a higher free throw percentage (93.3%) compared to Zach LaVine (82.5%) and Jalen Green (81.3%). [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
       "overall_score": 0.6000000000000001,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -533,7 +533,7 @@
     {
       "query": "Show the assist leaders",
       "query_type": "sql_only",
-      "response": "The assist leaders are:\n1. Trae Young with 882 assists\n2. Nikola Jokić with 714 assists\n3. James Harden with 687 assists\n4. Tyrese Haliburton with 672 assists\n5. Cade Cunningham with 637 assists\n6. Chris Paul with 607 assists\n7. LeBron James with 574 assists\n8. Devin Booker with 533 assists\n9. Josh Giddey with 504 assists\n10. Darius Garland with 503 assists\n",
+      "response": "The assist leaders are:\n\n1. Trae Young, ast: 882\n2. Nikola Jokić, ast: 714\n3. James Harden, ast: 687\n4. Tyrese Haliburton, ast: 672\n5. Cade Cunningham, ast: 637\n6. Chris Paul, ast: 607\n7. LeBron James, ast: 574\n8. Devin Booker, ast: 533\n9. Josh Giddey, ast: 504\n10. Darius Garland, ast: 503\n",
       "overall_score": 0.6225,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -541,8 +541,8 @@
     {
       "query": "Which of them plays for the Hawks?",
       "query_type": "sql_only",
-      "response": "Based on the provided context, Georges Niang plays for the Atlanta Hawks (ATL).",
-      "overall_score": 0.5736363636363636,
+      "response": "Georges Niang plays for the Atlanta Hawks. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
+      "overall_score": 0.5327272727272727,
       "sql_accuracy": 0.5,
       "integration_score": null
     }
