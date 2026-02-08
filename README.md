@@ -8,6 +8,8 @@ An intelligent NBA statistics assistant powered by Mistral AI and FAISS vector s
 - 🤖 **AI-Powered Responses**: Mistral AI for embeddings and chat completion
 - 📄 **Multi-Format Support**: PDF, Word, TXT, CSV, Excel with OCR for scanned documents
 - 💬 **Interactive Chat**: Streamlit-based conversational interface
+- 🗨️ **Conversation History**: Multi-turn conversations with context retention and pronoun resolution
+- 👍 **Feedback Collection**: Thumbs up/down with optional comments for continuous improvement
 - ⚙️ **Customizable**: Configurable models, chunk sizes, and search parameters
 
 ## Quick Start
@@ -55,6 +57,54 @@ poetry run streamlit run src/chat_app.py
 ```
 
 Open browser to [http://localhost:8501](http://localhost:8501)
+
+## Conversation History
+
+The chatbot now supports **multi-turn conversations** with full context retention, enabling natural follow-up questions with pronoun resolution.
+
+### Features
+
+- **Context Retention**: System remembers previous exchanges (last 5 turns)
+- **Pronoun Resolution**: Resolves "he", "his", "they" based on conversation history
+- **Persistent Sessions**: Conversations survive browser refresh
+- **Session Management**: Create, load, archive conversations via sidebar
+
+### Example Usage
+
+```
+User: "Who has the most points in NBA history?"
+Bot: "LeBron James has the most points with 40,474."
+
+User: "What about his assists?"  ← "his" resolves to LeBron James
+Bot: "LeBron James has 10,420 assists in his career."
+
+User: "How many rebounds did he get?"  ← "he" still refers to LeBron
+Bot: "LeBron James recorded 10,550 rebounds."
+```
+
+### UI Controls
+
+In the **sidebar**, you'll find:
+- **🆕 New Conversation** - Start fresh conversation
+- **Conversation Selector** - Load from last 20 conversations
+- **📂 Load** - Retrieve full conversation history
+- **🗄️ Archive** - Archive current conversation
+
+### API Usage
+
+```python
+# Chat with conversation context
+POST /api/v1/chat
+{
+    "query": "What about his assists?",
+    "conversation_id": "uuid-here",  # Optional
+    "turn_number": 2,
+    "k": 5,
+    "include_sources": true
+}
+```
+
+See [CONVERSATION_HISTORY_FEATURE.md](CONVERSATION_HISTORY_FEATURE.md) for complete documentation.
 
 ## Project Structure
 
