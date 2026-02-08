@@ -1,0 +1,642 @@
+{
+  "evaluation_type": "sql_only",
+  "test_count": 42,
+  "target_accuracy": 0.85,
+  "samples": [
+    {
+      "question": "Who scored the most points this season?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
+      "generated_sql": "SELECT p.name, ps.pts\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.pts DESC\nLIMIT 1;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is LeBron James' average points per game?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ROUND(ps.pts*1.0/ps.gp, 1) as ppg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'",
+      "generated_sql": "SELECT p.name, ROUND(CAST(ps.pts AS REAL) / ps.gp, 1) AS ppg\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%LeBron%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many assists did Chris Paul record?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Chris Paul%'",
+      "generated_sql": "SELECT p.name, ps.ast\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Chris Paul%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is Stephen Curry's 3-point percentage?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.three_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Curry%'",
+      "generated_sql": "SELECT p.name, ps.three_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Stephen Curry%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who are the top 3 rebounders in the league?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 3",
+      "generated_sql": "SELECT p.name, ps.reb\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.reb DESC\nLIMIT 3;",
+      "execution_error": null,
+      "results_count": 3,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many games did Damian Lillard play?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Lillard%'",
+      "generated_sql": "SELECT p.name, ps.gp\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Damian Lillard%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is Kevin Durant's field goal percentage?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Durant%'",
+      "generated_sql": "SELECT p.name, ps.fg_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Kevin Durant%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has the most assists this season?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.ast DESC LIMIT 1",
+      "generated_sql": "SELECT p.name, ps.ast\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.ast DESC\nLIMIT 1;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many points did Giannis Antetokounmpo score?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Giannis%'",
+      "generated_sql": "SELECT p.name, ps.pts\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Giannis Antetokounmpo%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is Nikola Jokić's total rebounds?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Jokić%'",
+      "generated_sql": "SELECT p.name, ps.reb\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Nikola Jokić%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has the best free throw percentage?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.ft_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ft_pct IS NOT NULL ORDER BY ps.ft_pct DESC LIMIT 1",
+      "generated_sql": "SELECT p.name, ps.ft_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.ft_pct DESC\nLIMIT 1;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who are the top 5 players in steals?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.stl FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.stl DESC LIMIT 5",
+      "generated_sql": "SELECT p.name, ps.stl\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.stl DESC\nLIMIT 5;",
+      "execution_error": null,
+      "results_count": 5,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many games did Anthony Edwards play?",
+      "category": "simple_sql_player_stats",
+      "expected_sql": "SELECT p.name, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Anthony Edwards%'",
+      "generated_sql": "SELECT p.name, ps.gp\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name LIKE '%Anthony Edwards%';",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has the highest true shooting percentage?",
+      "category": "simple_sql_top_n",
+      "expected_sql": "SELECT p.name, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ts_pct IS NOT NULL AND ps.gp > 20 ORDER BY ps.ts_pct DESC LIMIT 1",
+      "generated_sql": "SELECT p.name, ps.ts_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.ts_pct DESC\nLIMIT 1;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "Compare Jokić and Embiid's stats",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid')",
+      "generated_sql": "SELECT p.name, ps.pts, ps.reb, ps.ast\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Nikola Jokić', 'Joel Embiid');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has more rebounds, Giannis or Anthony Davis?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Giannis Antetokounmpo', 'Anthony Davis') ORDER BY ps.reb DESC",
+      "generated_sql": "SELECT p.name, ps.reb\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Giannis Antetokounmpo', 'Anthony Davis');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Compare LeBron James and Kevin Durant's scoring",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('LeBron James', 'Kevin Durant')",
+      "generated_sql": "SELECT p.name, ps.pts\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('LeBron James', 'Kevin Durant');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who shoots better from 3, Curry or Lillard?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.three_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Stephen Curry', 'Damian Lillard') ORDER BY ps.three_pct DESC",
+      "generated_sql": "SELECT p.name, ps.three_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Stephen Curry', 'Damian Lillard');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Compare Trae Young and Luka Dončić's assists",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Trae Young', 'Luka Dončić') ORDER BY ps.ast DESC",
+      "generated_sql": "SELECT p.name, ps.ast\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Trae Young', 'Luka Dončić');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who is more efficient, Jokić or Embiid?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid') ORDER BY ps.pie DESC",
+      "generated_sql": "SELECT p.name, ps.ts_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Nikola Jokić', 'Joel Embiid');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Compare blocks: Giannis vs Brook Lopez",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.blk FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Giannis Antetokounmpo', 'Brook Lopez') ORDER BY ps.blk DESC",
+      "generated_sql": "SELECT p.name, ps.blk\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Giannis Antetokounmpo', 'Brook Lopez');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "Compare Shai Gilgeous-Alexander and Anthony Edwards scoring",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Shai Gilgeous-Alexander', 'Anthony Edwards') ORDER BY ps.pts DESC",
+      "generated_sql": "SELECT p.name, ps.pts\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Shai Gilgeous-Alexander', 'Anthony Edwards');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has more rebounds, Jokić or Sabonis?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Domantas Sabonis') ORDER BY ps.reb DESC",
+      "generated_sql": "SELECT p.name, ps.reb\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Nikola Jokić', 'Domantas Sabonis');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Compare Jayson Tatum and Kevin Durant scoring efficiency",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.pts, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Jayson Tatum', 'Kevin Durant') ORDER BY ps.pts DESC",
+      "generated_sql": "SELECT p.name, ps.ts_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('Jayson Tatum', 'Kevin Durant');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who has more assists, James Harden or Chris Paul?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Harden%' OR p.name LIKE '%Chris Paul%' ORDER BY ps.ast DESC LIMIT 2",
+      "generated_sql": "SELECT p.name, ps.ast\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE p.name IN ('James Harden', 'Chris Paul');",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Compare the top 2 steals leaders",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.stl FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.stl DESC LIMIT 2",
+      "generated_sql": "SELECT p.name, ps.stl\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.stl DESC\nLIMIT 2;",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "Who are the top 2 players by true shooting percentage?",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 20 ORDER BY ps.ts_pct DESC LIMIT 2",
+      "generated_sql": "SELECT p.name, ps.ts_pct\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.ts_pct DESC\nLIMIT 2;",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "Compare blocks between the top 2 leaders",
+      "category": "comparison_sql_players",
+      "expected_sql": "SELECT p.name, ps.blk FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.blk DESC LIMIT 2",
+      "generated_sql": "SELECT p.name, ps.blk\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nORDER BY ps.blk DESC\nLIMIT 2;",
+      "execution_error": null,
+      "results_count": 2,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is the average 3-point percentage for all players?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(three_pct) as avg_3p_pct FROM player_stats WHERE three_pct IS NOT NULL",
+      "generated_sql": "SELECT AVG(three_pct) AS avg_3p_pct\nFROM player_stats\nWHERE three_pct IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many players scored over 1000 points?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as player_count FROM player_stats WHERE pts > 1000",
+      "generated_sql": "SELECT COUNT(*) AS player_count\nFROM player_stats\nWHERE pts > 1000;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is the average field goal percentage in the league?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(fg_pct) as avg_fg_pct FROM player_stats WHERE fg_pct IS NOT NULL",
+      "generated_sql": "SELECT AVG(fg_pct) AS avg_fg_pct\nFROM player_stats\nWHERE fg_pct IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many players average over 20 points per game?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as player_count FROM player_stats WHERE pts*1.0/gp > 20",
+      "generated_sql": "SELECT COUNT(*)\nFROM players p\nJOIN player_stats ps ON p.id = ps.player_id\nWHERE CAST(ps.pts AS REAL) / ps.gp > 20;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "What is the highest PIE in the league?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT MAX(pie) as max_pie FROM player_stats",
+      "generated_sql": "SELECT MAX(pie) AS max_pie\nFROM player_stats;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many players have a true shooting percentage over 60%?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as player_count FROM player_stats WHERE ts_pct > 60",
+      "generated_sql": "SELECT COUNT(*)\nFROM player_stats\nWHERE ts_pct > 0.6;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "What is the average number of assists per game league-wide?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(ast*1.0/gp) as avg_apg FROM player_stats WHERE gp > 0",
+      "generated_sql": "SELECT AVG(CAST(ast AS REAL) / gp) AS avg_apg\nFROM player_stats\nWHERE gp > 0 AND ast IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "What is the average rebounds per game league-wide?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(CAST(reb AS REAL) / gp) as avg_rpg FROM player_stats WHERE gp > 0",
+      "generated_sql": "SELECT AVG(reb) AS avg_reb\nFROM player_stats\nWHERE reb IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": false,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.5
+      }
+    },
+    {
+      "question": "How many players have more than 500 assists?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as count FROM player_stats WHERE ast > 500",
+      "generated_sql": "SELECT COUNT(*) AS player_count\nFROM player_stats\nWHERE ast > 500;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "What is the average free throw percentage?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(ft_pct) as avg FROM player_stats WHERE ft_pct IS NOT NULL",
+      "generated_sql": "SELECT AVG(ft_pct) AS avg_ft_pct\nFROM player_stats\nWHERE ft_pct IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "How many players played more than 50 games?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as count FROM player_stats WHERE gp > 50",
+      "generated_sql": "SELECT COUNT(*)\nFROM player_stats\nWHERE gp > 50;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "What is the minimum points scored (excluding zeros)?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT MIN(pts) as min_pts FROM player_stats WHERE pts > 0",
+      "generated_sql": "SELECT MIN(pts) AS min_pts\nFROM player_stats\nWHERE pts > 0;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    },
+    {
+      "question": "How many players have more than 100 blocks?",
+      "category": "aggregation_sql_count",
+      "expected_sql": "SELECT COUNT(*) as count FROM player_stats WHERE blk > 100",
+      "generated_sql": "SELECT COUNT(*) AS player_count\nFROM player_stats\nWHERE blk > 100;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": false,
+        "execution_success": true,
+        "overall_score": 0.75
+      }
+    },
+    {
+      "question": "What is the average PIE in the league?",
+      "category": "aggregation_sql_league",
+      "expected_sql": "SELECT AVG(pie) as avg_pie FROM player_stats WHERE pie IS NOT NULL",
+      "generated_sql": "SELECT AVG(pie) AS avg_pie\nFROM player_stats\nWHERE pie IS NOT NULL;",
+      "execution_error": null,
+      "results_count": 1,
+      "metrics": {
+        "sql_syntax_correct": true,
+        "sql_semantic_correct": true,
+        "results_accurate": true,
+        "execution_success": true,
+        "overall_score": 1.0
+      }
+    }
+  ],
+  "overall_metrics": {
+    "average_accuracy": 0.9345238095238095,
+    "pass_rate": 0.9761904761904762,
+    "target_met": true
+  }
+}

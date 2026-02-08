@@ -9,8 +9,8 @@ MAINTAINER: Shahu
 import logging
 import time
 
-from mistralai import Mistral
-from mistralai.models import SDKError
+from google import genai
+from google.genai.errors import ClientError
 
 from src.core.config import settings
 from src.core.exceptions import IndexNotFoundError, LLMError
@@ -73,19 +73,19 @@ class ChatService:
         Args:
             vector_store: Vector store repository (created if not provided)
             embedding_service: Embedding service (created if not provided)
-            api_key: Mistral API key (default from settings)
+            api_key: Google API key (default from settings)
             model: Chat model name (default from settings)
             enable_sql: Enable SQL tool for statistical queries (default: True)
         """
-        self._api_key = api_key or settings.mistral_api_key
-        self._model = model or settings.chat_model
+        self._api_key = api_key or settings.google_api_key
+        self._model = model or "gemini-2.0-flash-lite"
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
 
         # Dependencies (lazy initialization)
         self._vector_store = vector_store
         self._embedding_service = embedding_service
-        self._client: Mistral | None = None
+        self._client: genai.Client | None = None
         self._sql_tool: NBAGSQLTool | None = None
         self._query_classifier: QueryClassifier | None = None
         self._query_expander: QueryExpander | None = None
@@ -106,10 +106,10 @@ class ChatService:
         return self._embedding_service
 
     @property
-    def client(self) -> Mistral:
-        """Get Mistral client (lazy initialization)."""
+    def client(self) -> genai.Client:
+        """Get Gemini client (lazy initialization)."""
         if self._client is None:
-            self._client = Mistral(api_key=self._api_key)
+            self._client = genai.Client(api_key=self._api_key)
         return self._client
 
     @property
@@ -124,7 +124,7 @@ class ChatService:
             return None
         if self._sql_tool is None:
             try:
-                self._sql_tool = NBAGSQLTool(mistral_api_key=self._api_key)
+                self._sql_tool = NBAGSQLTool(google_api_key=self._api_key)
                 logger.info("SQL tool initialized successfully")
             except Exception as e:
                 logger.warning(f"SQL tool initialization failed: {e}")
@@ -254,22 +254,27 @@ class ChatService:
         )
 
         try:
-            logger.info("Calling LLM with model %s", self._model)
+            logger.info("Calling Gemini LLM with model %s", self._model)
 
-            response = self.client.chat.complete(
+            response = self.client.models.generate_content(
                 model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=self._temperature,
+                contents=prompt,
+                config={
+                    "temperature": self._temperature,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "max_output_tokens": 2048,
+                },
             )
 
-            if response.choices and len(response.choices) > 0:
-                return response.choices[0].message.content
+            if response.text:
+                return response.text
 
-            logger.warning("LLM returned no choices")
+            logger.warning("Gemini returned no text")
             return "Je n'ai pas pu générer de réponse."
 
-        except SDKError as e:
-            logger.error("Mistral API error: %s", e)
+        except ClientError as e:
+            logger.error("Gemini API error: %s", e)
             raise LLMError(f"LLM API error: {e}") from e
 
         except Exception as e:

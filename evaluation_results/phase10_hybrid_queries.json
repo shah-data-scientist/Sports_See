@@ -1,0 +1,13 @@
+{
+  "evaluation_type": "hybrid_queries",
+  "test_count": 0,
+  "target_integration_quality": 0.75,
+  "samples": [],
+  "overall_metrics": {
+    "average_integration_score": 0,
+    "pass_rate": 0,
+    "target_met": false,
+    "sql_usage_rate": 0,
+    "vector_usage_rate": 0
+  }
+}

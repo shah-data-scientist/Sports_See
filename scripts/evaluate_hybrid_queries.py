@@ -1,7 +1,7 @@
 """
 FILE: evaluate_hybrid_queries.py
 STATUS: Active
-RESPONSIBILITY: Hybrid query evaluation (Phase SQL-2: SQL + Vector integration)
+RESPONSIBILITY: Phase 10: Hybrid query evaluation (SQL + Vector integration)
 LAST MAJOR UPDATE: 2026-02-08
 MAINTAINER: Shahu
 """
@@ -147,8 +147,8 @@ def print_results(results: list):
         results: List of (test_case, response, metrics) tuples
     """
     print("\n" + "=" * 80)
-    print("  HYBRID QUERY EVALUATION RESULTS (PHASE SQL-2)")
-    print("  4 Test Cases | Target: >75% Integration Quality")
+    print("  HYBRID QUERY EVALUATION RESULTS (PHASE 10: HYBRID QUERIES)")
+    print(f"  {len(results)} Test Cases | Target: >75% Integration Quality")
     print("=" * 80 + "\n")
 
     # Print individual results
@@ -277,7 +277,7 @@ def save_results(results: list, output_path: Path):
 
 
 def main():
-    """Run hybrid query evaluation (Phase SQL-2)."""
+    """Run hybrid query evaluation (Phase 10: Hybrid Queries)."""
     # Configure UTF-8 encoding for Windows console
     import sys
     if sys.platform == "win32":
@@ -292,14 +292,23 @@ def main():
     )
 
     print("\n" + "=" * 80)
-    print("  PHASE SQL-2: HYBRID QUERY EVALUATION")
-    print("  Test SQL + Vector integration quality")
+    print("  PHASE 10: HYBRID QUERY EVALUATION")
+    print("  Test SQL + Vector integration quality across 4 complexity tiers")
     print("  Prerequisites: Phase SQL-1 passed (>85% SQL accuracy)")
     print("=" * 80 + "\n")
 
-    print("Hybrid test cases (4 queries):")
-    for i, tc in enumerate(HYBRID_TEST_CASES, 1):
-        print(f"  {i}. {tc.question}")
+    # Group test cases by tier
+    tiers = {}
+    for tc in HYBRID_TEST_CASES:
+        tier = tc.category.split('_')[0]
+        tiers.setdefault(tier, []).append(tc)
+
+    print(f"Hybrid test cases ({len(HYBRID_TEST_CASES)} total):")
+    for tier in sorted(tiers.keys()):
+        tier_name = tier.upper().replace('TIER', 'Tier ')
+        print(f"\n  {tier_name} ({len(tiers[tier])} cases):")
+        for i, tc in enumerate(tiers[tier], 1):
+            print(f"    {i}. {tc.question[:70]}...")
 
     print(f"\nRunning evaluation on {len(HYBRID_TEST_CASES)} hybrid queries...\n")
 
@@ -310,7 +319,7 @@ def main():
     print_results(results)
 
     # Save results
-    output_file = Path("evaluation_results/hybrid_queries_phase2.json")
+    output_file = Path("evaluation_results/phase10_hybrid_queries.json")
     save_results(results, output_file)
 
     return 0

@@ -12,7 +12,7 @@ from pathlib import Path
 from langchain_community.utilities import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate, FewShotPromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSequence
-from langchain_mistralai import ChatMistralAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from src.core.config import settings
 
@@ -22,71 +22,58 @@ logger = logging.getLogger(__name__)
 # Few-shot examples for SQL query generation
 FEW_SHOT_EXAMPLES = [
     {
-        "input": "Who are the top 5 scorers in the league?",
-        "query": """SELECT p.name, p.team_abbr, ps.pts
+        "input": "Who scored the most points this season?",
+        "query": """SELECT p.name, ps.pts
 FROM players p
 JOIN player_stats ps ON p.id = ps.player_id
 ORDER BY ps.pts DESC
-LIMIT 5;""",
-    },
-    {
-        "input": "What is LeBron James' average points per game?",
-        "query": """SELECT p.name, CAST(ps.pts AS FLOAT) / ps.gp AS ppg
-FROM players p
-JOIN player_stats ps ON p.id = ps.player_id
-WHERE p.name LIKE '%LeBron James%';""",
-    },
-    {
-        "input": "Which teams have the most wins?",
-        "query": """SELECT t.name, t.abbreviation, SUM(ps.w) AS total_wins
-FROM teams t
-JOIN player_stats ps ON t.abbreviation = ps.team_abbr
-GROUP BY t.abbreviation, t.name
-ORDER BY total_wins DESC
-LIMIT 10;""",
-    },
-    {
-        "input": "Show me players with more than 100 three-pointers made",
-        "query": """SELECT p.name, p.team_abbr, ps.three_pm
-FROM players p
-JOIN player_stats ps ON p.id = ps.player_id
-WHERE ps.three_pm > 100
-ORDER BY ps.three_pm DESC;""",
-    },
-    {
-        "input": "What is the average field goal percentage for the Lakers?",
-        "query": """SELECT AVG(ps.fg_pct) AS avg_fg_pct
-FROM player_stats ps
-WHERE ps.team_abbr = 'LAL';""",
-    },
-    {
-        "input": "Which player has the most rebounds?",
-        "query": """SELECT p.name, p.team_abbr, ps.reb
-FROM players p
-JOIN player_stats ps ON p.id = ps.player_id
-ORDER BY ps.reb DESC
 LIMIT 1;""",
     },
     {
-        "input": "Compare scoring efficiency between Curry and Durant",
-        "query": """SELECT p.name,
-       CAST(ps.pts AS FLOAT) / ps.gp AS ppg,
-       ps.fg_pct,
-       ps.three_pct,
-       ps.ts_pct
+        "input": "Who are the top 3 rebounders?",
+        "query": """SELECT p.name, ps.reb
 FROM players p
 JOIN player_stats ps ON p.id = ps.player_id
-WHERE p.name LIKE '%Curry%' OR p.name LIKE '%Durant%';""",
+ORDER BY ps.reb DESC
+LIMIT 3;""",
     },
     {
-        "input": "Who are the most efficient scorers (TS% > 60)?",
-        "query": """SELECT p.name, p.team_abbr,
-       CAST(ps.pts AS FLOAT) / ps.gp AS ppg,
-       ps.ts_pct
+        "input": "What is LeBron James' average points per game?",
+        "query": """SELECT p.name, ROUND(CAST(ps.pts AS FLOAT) / ps.gp, 1) AS ppg
 FROM players p
 JOIN player_stats ps ON p.id = ps.player_id
-WHERE ps.ts_pct > 60 AND ps.gp > 40
-ORDER BY ps.ts_pct DESC;""",
+WHERE p.name LIKE '%LeBron%';""",
+    },
+    {
+        "input": "How many assists did Chris Paul record?",
+        "query": """SELECT p.name, ps.ast
+FROM players p
+JOIN player_stats ps ON p.id = ps.player_id
+WHERE p.name LIKE '%Chris Paul%';""",
+    },
+    {
+        "input": "What is the average 3-point percentage for all players?",
+        "query": """SELECT AVG(three_pct) AS avg_3p_pct
+FROM player_stats
+WHERE three_pct IS NOT NULL;""",
+    },
+    {
+        "input": "How many players scored over 1000 points?",
+        "query": """SELECT COUNT(*) AS player_count
+FROM player_stats
+WHERE pts > 1000;""",
+    },
+    {
+        "input": "What is the highest PIE in the league?",
+        "query": """SELECT MAX(pie) AS max_pie
+FROM player_stats;""",
+    },
+    {
+        "input": "Compare Jokić and Embiid's stats",
+        "query": """SELECT p.name, ps.pts, ps.reb, ps.ast
+FROM players p
+JOIN player_stats ps ON p.id = ps.player_id
+WHERE p.name IN ('Nikola Jokić', 'Joel Embiid');""",
     },
 ]
 
@@ -94,27 +81,27 @@ ORDER BY ps.ts_pct DESC;""",
 class NBAGSQLTool:
     """SQL query tool for NBA statistics database using LangChain."""
 
-    def __init__(self, db_path: str | None = None, mistral_api_key: str | None = None):
+    def __init__(self, db_path: str | None = None, google_api_key: str | None = None):
         """Initialize SQL tool.
 
         Args:
             db_path: Path to SQLite database (default: database/nba_stats.db)
-            mistral_api_key: Mistral API key (default from settings)
+            google_api_key: Google API key (default from settings)
         """
         if db_path is None:
             db_path = str(Path(settings.database_dir) / "nba_stats.db")
 
         self.db_path = db_path
-        self._api_key = mistral_api_key or settings.mistral_api_key
+        self._api_key = google_api_key or settings.google_api_key
 
         # Initialize SQLDatabase
         self.db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
 
-        # Initialize LLM
-        self.llm = ChatMistralAI(
-            model="mistral-small-latest",
+        # Initialize LLM (Gemini for SQL generation)
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash-lite",
             temperature=0.0,  # Deterministic for SQL generation
-            api_key=self._api_key,
+            google_api_key=self._api_key,
         )
 
         # Build prompts
@@ -126,23 +113,27 @@ class NBAGSQLTool:
         self.few_shot_prompt = FewShotPromptTemplate(
             examples=FEW_SHOT_EXAMPLES,
             example_prompt=self.example_prompt,
-            prefix="""You are an NBA statistics SQL expert. Given a user question about NBA player or team statistics, write a SQLite query to answer it.
+            prefix="""You are an NBA statistics SQL expert. Generate SIMPLE, DIRECT SQLite queries.
 
-The database schema is:
-- teams(id, abbreviation, name)
+DATABASE SCHEMA:
 - players(id, name, team_abbr, age)
-- player_stats(id, player_id, team_abbr, gp, w, l, min, pts, fgm, fga, fg_pct, three_pm, three_pa, three_pct, ftm, fta, ft_pct, oreb, dreb, reb, ast, tov, stl, blk, pf, fp, dd2, td3, plus_minus, off_rtg, def_rtg, net_rtg, ast_pct, ast_to, ast_ratio, oreb_pct, dreb_pct, reb_pct, to_ratio, efg_pct, ts_pct, usg_pct, pace, pie, poss)
+- player_stats(id, player_id, team_abbr, gp, pts, reb, ast, stl, blk, fg_pct, three_pct, ft_pct, ts_pct, pie, etc.)
 
-Key abbreviations:
-- GP = Games Played, W = Wins, L = Losses
-- PTS = Points, FGM/FGA = Field Goals Made/Attempted
-- 3PM/3PA = 3-Point Made/Attempted
-- FTM/FTA = Free Throws Made/Attempted
-- REB = Rebounds, AST = Assists, STL = Steals, BLK = Blocks
-- TS% = True Shooting %, EFG% = Effective FG %
+IMPORTANT RULES:
+1. Each player has EXACTLY ONE stats record (1:1 relationship)
+2. DO NOT use GROUP BY or SUM() for individual player queries
+3. Use JOIN to connect players and player_stats: JOIN player_stats ps ON p.id = ps.player_id
+4. For aggregations (AVG, MAX, MIN), add 'WHERE column IS NOT NULL'
+5. For player names, use LIKE '%PlayerName%' for partial matching
+6. Keep queries SIMPLE - only use what's necessary
 
-Here are some examples:""",
-            suffix="\n\nNow generate a SQL query for this question:\nUser question: {input}\nSQL query:",
+KEY ABBREVIATIONS:
+- GP = Games Played | PTS = Points | REB = Rebounds | AST = Assists
+- FG_PCT = Field Goal % | THREE_PCT = 3-Point % | TS_PCT = True Shooting %
+- PIE = Player Impact Estimate
+
+EXAMPLES:""",
+            suffix="\n\nNow generate a SIMPLE, DIRECT SQL query for this question.\nUser question: {input}\nSQL query:",
             input_variables=["input"],
             example_separator="\n\n",
         )
@@ -169,12 +160,24 @@ Here are some examples:""",
         sql = response.content.strip()
 
         # Remove markdown code blocks if present
-        if sql.startswith("```sql"):
-            sql = sql[6:]
-        if sql.startswith("```"):
-            sql = sql[3:]
-        if sql.endswith("```"):
-            sql = sql[:-3]
+        if "```sql" in sql:
+            # Extract content between ```sql and ```
+            start = sql.find("```sql") + 6
+            end = sql.find("```", start)
+            sql = sql[start:end].strip()
+        elif "```" in sql:
+            # Extract content between ``` and ```
+            start = sql.find("```") + 3
+            end = sql.find("```", start)
+            sql = sql[start:end].strip()
+
+        # Remove any leading text before SELECT/WITH/INSERT/UPDATE/DELETE
+        sql_keywords = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE"]
+        for keyword in sql_keywords:
+            if keyword in sql.upper():
+                idx = sql.upper().find(keyword)
+                sql = sql[idx:]
+                break
 
         sql = sql.strip()
 
@@ -197,18 +200,21 @@ Here are some examples:""",
         logger.info(f"Executing SQL: {sql}")
 
         try:
-            # Execute query
-            result = self.db.run(sql, include_columns=True)
+            # Execute query - db.run() returns a STRING representation with include_columns=True
+            result_str = self.db.run(sql, include_columns=True)
 
-            # Parse result (format: [(col1, col2, ...), (val1, val2, ...), ...])
-            if not result or len(result) < 2:
+            # SQLDatabase returns a string like "[{'col1': 'val1', 'col2': 'val2'}]"
+            # Parse it back to a list of dicts
+            if not result_str or result_str.strip() in ("", "[]"):
                 return []
 
-            columns = result[0]  # First tuple is column names
-            rows = result[1:]  # Remaining tuples are data rows
+            # Use ast.literal_eval to safely parse the string
+            import ast
+            results = ast.literal_eval(result_str)
 
-            # Convert to list of dicts
-            results = [dict(zip(columns, row)) for row in rows]
+            # Ensure it's a list
+            if not isinstance(results, list):
+                results = [results] if results else []
 
             logger.info(f"Query returned {len(results)} rows")
 

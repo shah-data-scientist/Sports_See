@@ -1,0 +1,371 @@
+{
+  "verification_type": "phase10_hybrid_ground_truth",
+  "total_test_cases": 22,
+  "cases_verified": 8,
+  "verification_note": "Sample verification of 2 cases per tier (8 total)",
+  "results": [
+    {
+      "question": "What are LeBron James' stats and how does his playstyle work?",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "LeBron James",
+          "pts": 1708,
+          "reb": 546,
+          "ast": 574,
+          "gp": 70
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 83.5732102394104,
+          "text": "54                                        LeBron James                       70                          476                              16.9                                          574             "
+        },
+        {
+          "source": "Reddit 2.pdf",
+          "score": 81.64294362068176,
+          "text": "LeBron.\nTwo teams playing great team ball, one with the \"boring\" MVP and the other the most overrated\nplayer in the game: The media domt know what yo do.\n4\nRépondre\nIfYouKnowYouKnowYaNo\n-14 j\nhttps://"
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 80.31718134880066,
+          "text": "44                                       Austin Reaves                       58                          270                              11.8                                          423             "
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier1_simple",
+      "ground_truth_answer": "LeBron James: 1708 PTS, 546 REB, 574 AST in 70 GP (24.4 PPG, 7.8 RPG, 8.2 APG). His playstyle combines elite court vision with physical dominance. He acts as a point-forward, orchestrating the offense while also scoring efficiently in transition and in the paint. His high basketball IQ allows him to make the right play whether scoring, passing, or facilitating for teammates."
+    },
+    {
+      "question": "Show me Giannis' stats and explain why he's a good defender",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Giannis Antetokounmpo",
+          "pts": 2037,
+          "reb": 797,
+          "blk": 80,
+          "stl": 60
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 80.49112558364868,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 79.9065351486206,
+          "text": "49                                 Dorian Finney-Smith                       82                          170                                 6                                           88             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 79.88598346710205,
+          "text": "54                                        LeBron James                       70                          476                              16.9                                          574             "
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier1_simple",
+      "ground_truth_answer": "Giannis Antetokounmpo: 2037 PTS, 797 REB, 80 BLK, 60 STL. His defensive prowess stems from his exceptional length (7'3\" wingspan), quick lateral movement for his size, and versatility to guard 1-5. He can protect the rim with blocks, disrupt passing lanes with steals, and switch onto guards and bigs effectively. His high motor and instincts make him a two-time Defensive Player of the Year."
+    },
+    {
+      "question": "Compare Jokić and Embiid's stats and explain who's better",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Joel Embiid",
+          "pts": 452,
+          "reb": 156,
+          "ast": 86,
+          "fg_pct": 44.4
+        },
+        {
+          "name": "Nikola Jokić",
+          "pts": 2072,
+          "reb": 889,
+          "ast": 714,
+          "fg_pct": 57.6
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Données NBA)",
+          "score": 81.66279792785645,
+          "text": "243             Jarace Walker   IND   21  75  45  30  15.8   458  173   360  47.2        75  188  40.5   45   68  66.7    23   203   233  113   75   53   23  113  1058    0    0  -1.9     107   112.1 "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Données NBA)",
+          "score": 79.8005223274231,
+          "text": "235              Nikola Jović   MIA   22  46  21  25  25.1   492  170   377  45.6        78  212  37.1   74   87  82.8    28   152   179  129   60   37   14   83   998    0    0  -0.4   109.6   110.7 "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 79.52251434326172,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier2_moderate",
+      "ground_truth_answer": "Nikola Jokić: 2072 PTS, 889 REB, 714 AST, 57.6% FG. Joel Embiid: 452 PTS, 156 REB, 86 AST, 44.4% FG. Jokić is clearly superior this season with much higher volume and efficiency. His exceptional playmaking (714 vs 86 assists) and passing ability make him the more complete player. Jokić's efficiency (57.6% FG) and triple-double threat, combined with elite rebounding (889 REB) and scoring (2072 PTS), give him the edge for MVP."
+    },
+    {
+      "question": "Compare Shai Gilgeous-Alexander and Anthony Edwards as scorers",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Anthony Edwards",
+          "pts": 2180,
+          "gp": 79,
+          "ppg": 27.6,
+          "fg_pct": 44.7
+        },
+        {
+          "name": "Shai Gilgeous-Alexander",
+          "pts": 2485,
+          "gp": 76,
+          "ppg": 32.7,
+          "fg_pct": 51.9
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Données NBA)",
+          "score": 78.49255800247192,
+          "text": "1     2    3   4   5   6     7     8    9     10    11        12   13    14   15   16    17    18    19    20   21   22   23   24   25    26   27   28    29      30      31      32    33      34      "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 73.55159521102905,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 73.29975366592407,
+          "text": "84   Analyse du top 15 des joueurs en nombre de points                      NaN                          NaN                               NaN                                          NaN             "
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier2_moderate",
+      "ground_truth_answer": "Shai Gilgeous-Alexander: 2485 PTS in 76 GP (32.7 PPG). Anthony Edwards: 2180 PTS in 79 GP (27.6 PPG). Shai is the superior scorer with a 5.1 PPG advantage. His scoring comes from elite mid-range game and ability to get to the rim, while Edwards relies more on athleticism and three-point shooting. Shai's efficiency and consistency in getting his own shot make him more reliable as a primary scoring option."
+    },
+    {
+      "question": "Which high-scoring players are also elite defenders?",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Shai Gilgeous-Alexander",
+          "pts": 2485,
+          "defensive_actions": 205
+        },
+        {
+          "name": "James Harden",
+          "pts": 1801,
+          "defensive_actions": 174
+        },
+        {
+          "name": "Nikola Jokić",
+          "pts": 2072,
+          "defensive_actions": 168
+        },
+        {
+          "name": "Anthony Edwards",
+          "pts": 2180,
+          "defensive_actions": 142
+        },
+        {
+          "name": "Giannis Antetokounmpo",
+          "pts": 2037,
+          "defensive_actions": 140
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 71.36315107345581,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 70.71216106414795,
+          "text": "94                                         Tyler Herro                     1840                          655                              47.2                                         37.5             "
+        },
+        {
+          "source": "Reddit 3.pdf",
+          "score": 69.7833776473999,
+          "text": "shots near the rim. And in the case\nof Jordan and\n(or even Kawhi and Durant)\nare more dangerous as hybrid threats.\nSo; while he was deadly efficient; Miller wasn't always the most unstoppable skill se"
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier3_complex",
+      "ground_truth_answer": "Among elite scorers (1800+ PTS), two-way excellence is rare. Shai Gilgeous-Alexander (2485 PTS, 205 defensive actions) and Giannis Antetokounmpo (2037 PTS, 140 defensive actions) stand out as legitimate two-way stars who can carry offensive load while providing elite defense. Their combination of scoring volume and defensive impact makes them among the league's most valuable players."
+    },
+    {
+      "question": "Compare the top 3 scorers and explain their different scoring approaches",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Shai Gilgeous-Alexander",
+          "pts": 2485,
+          "gp": 76,
+          "ppg": 32.7,
+          "fg_pct": 51.9,
+          "three_pct": 37.5
+        },
+        {
+          "name": "Anthony Edwards",
+          "pts": 2180,
+          "gp": 79,
+          "ppg": 27.6,
+          "fg_pct": 44.7,
+          "three_pct": 39.5
+        },
+        {
+          "name": "Nikola Jokić",
+          "pts": 2072,
+          "gp": 70,
+          "ppg": 29.6,
+          "fg_pct": 57.6,
+          "three_pct": 41.7
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 76.99882388114929,
+          "text": "99                                         Zach LaVine                     1724                          622                              51.1                                         44.6             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 76.41951441764832,
+          "text": "94                                         Tyler Herro                     1840                          655                              47.2                                         37.5             "
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 76.17227435112,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier3_complex",
+      "ground_truth_answer": "Top 3 scorers: 1. Shai Gilgeous-Alexander (2485 PTS, 32.7 PPG) - Elite mid-range and rim finisher 2. Anthony Edwards (2180 PTS, 27.6 PPG) - Athletic scorer with three-point range 3. Nikola Jokić (2072 PTS, 29.6 PPG) - Versatile big with elite efficiency (57.6% FG). Each represents a different archetype: Shai's crafty scoring, Edwards' explosive athleticism, and Jokić's high-IQ versatile game show multiple paths to elite scoring."
+    },
+    {
+      "question": "How has positionless basketball changed the NBA, and which players exemplify this?",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Nikola Jokić",
+          "pts": 2072,
+          "reb": 889,
+          "ast": 714
+        },
+        {
+          "name": "Giannis Antetokounmpo",
+          "pts": 2037,
+          "reb": 797,
+          "ast": 436
+        },
+        {
+          "name": "Jayson Tatum",
+          "pts": 1930,
+          "reb": 626,
+          "ast": 432
+        },
+        {
+          "name": "LeBron James",
+          "pts": 1708,
+          "reb": 546,
+          "ast": 574
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "Reddit 1.pdf",
+          "score": 74.34351444244385,
+          "text": "pristine brand of basketball.\nRépondre\nNotManyBuses\nm.\nComm. du top 1%\nare; the difference is\nhave Steph.\nYou have Van Vleet.\n4 1\nRépondre\nréponse supplémentaire\nMannerSuperb AO\n-1m\nThat's on the offi"
+        },
+        {
+          "source": "Reddit 2.pdf",
+          "score": 73.66783618927002,
+          "text": "~15 j\nNBA is here for the highlights and promoting superstars, basketball is like the 3rd most important\nthing\n178\nRépondre\nForsakenDragonfruit4\n~15j\nComplaining about the modern game; comparing all t"
+        },
+        {
+          "source": "Reddit 2.pdf",
+          "score": 73.19148778915405,
+          "text": "Se connecter\nWhile\nthink NBA marketing has something to do with it; you also can't manufacture hype and interest\nnothing.\nThis is where eras of parity are bad for casual viewers. It takes time and pro"
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier4_advanced",
+      "ground_truth_answer": "Positionless basketball emphasizes versatility over traditional positions. Players like Nikola Jokić (2072 PTS, 889 REB, 714 AST), LeBron James (1708 PTS, 546 REB, 574 AST), and Giannis Antetokounmpo (2037 PTS, 797 REB, 436 AST) exemplify this with complete stat lines. They can handle, pass, score, and rebound, making them matchup nightmares. This evolution prioritizes skill and basketball IQ over size, transforming offensive and defensive schemes."
+    },
+    {
+      "question": "What makes a player MVP-caliber? Compare the top candidates statistically",
+      "query_type": "HYBRID",
+      "sql_results": [
+        {
+          "name": "Shai Gilgeous-Alexander",
+          "pts": 2485,
+          "reb": 380,
+          "ast": 486,
+          "gp": 76,
+          "ppg": 32.7
+        },
+        {
+          "name": "Anthony Edwards",
+          "pts": 2180,
+          "reb": 450,
+          "ast": 356,
+          "gp": 79,
+          "ppg": 27.6
+        },
+        {
+          "name": "Nikola Jokić",
+          "pts": 2072,
+          "reb": 889,
+          "ast": 714,
+          "gp": 70,
+          "ppg": 29.6
+        },
+        {
+          "name": "Giannis Antetokounmpo",
+          "pts": 2037,
+          "reb": 797,
+          "ast": 436,
+          "gp": 67,
+          "ppg": 30.4
+        },
+        {
+          "name": "Jayson Tatum",
+          "pts": 1930,
+          "reb": 626,
+          "ast": 432,
+          "gp": 72,
+          "ppg": 26.8
+        }
+      ],
+      "vector_results": [
+        {
+          "source": "Reddit 2.pdf",
+          "score": 81.08423352241516,
+          "text": "LeBron.\nTwo teams playing great team ball, one with the \"boring\" MVP and the other the most overrated\nplayer in the game: The media domt know what yo do.\n4\nRépondre\nIfYouKnowYouKnowYaNo\n-14 j\nhttps://"
+        },
+        {
+          "source": "regular NBA.xlsx (Feuille: Analyse)",
+          "score": 79.86937165260315,
+          "text": "89                                     Anthony Edwards                     2180                          719                              44.7                                         39.5             "
+        },
+        {
+          "source": "Reddit 3.pdf",
+          "score": 79.81244325637817,
+          "text": "it's hard to stack their list of accomplishments and make a great case for Reggie: Like Jerry West\nwas first team all-NBA ten times and Reggie was third team three times\nNo comparison really.\nThey had"
+        }
+      ],
+      "recommended_ground_truth": null,
+      "category": "tier4_advanced",
+      "ground_truth_answer": "MVP candidates combine elite production with team success and narrative. Shai Gilgeous-Alexander (32.7 PPG) leads in scoring. Nikola Jokić (29.6 PPG, 12.7 RPG, 10.2 APG) offers unmatched all-around excellence. Giannis (30.4 PPG, 11.9 RPG) provides two-way dominance. MVP requires not just stats but efficiency, winning, and irreplaceability. Jokić's rare combination of scoring, playmaking, and rebounding while leading his team makes him the frontrunner."
+    }
+  ]
+}
