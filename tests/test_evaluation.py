@@ -130,9 +130,13 @@ class TestTestCases:
 
 
 class TestGenerateSamples:
-    @patch("src.evaluation.evaluate_ragas.ChatService")
-    def test_generate_samples(self, MockChatService):
+    @patch("src.evaluation.evaluate_ragas._load_checkpoint")
+    @patch("src.evaluation.evaluate_ragas._save_checkpoint")
+    def test_generate_samples(self, mock_save_checkpoint, mock_load_checkpoint):
         from src.evaluation.evaluate_ragas import generate_samples
+
+        # Mock checkpoint to return empty list (no cached samples)
+        mock_load_checkpoint.return_value = []
 
         mock_service = MagicMock()
         mock_search_result = MagicMock()

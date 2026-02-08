@@ -34,12 +34,11 @@ def mock_embedding_service():
 
 @pytest.fixture
 def mock_client():
+    """Mock Gemini client."""
     client = MagicMock()
-    choice = MagicMock()
-    choice.message.content = "The Denver Nuggets won the 2023 NBA Championship."
     response = MagicMock()
-    response.choices = [choice]
-    client.chat.complete.return_value = response
+    response.text = "The Denver Nuggets won the 2023 NBA Championship."
+    client.models.generate_content.return_value = response
     return client
 
 
@@ -166,24 +165,24 @@ class TestChatServiceGenerateResponse:
         assert answer == "The Denver Nuggets won the 2023 NBA Championship."
 
     def test_generate_response_no_choices(self, chat_service, mock_client):
-        mock_client.chat.complete.return_value.choices = []
+        mock_client.models.generate_content.return_value.text = ""
 
         answer = chat_service.generate_response(query="test", context="ctx")
 
         assert answer == "Je n'ai pas pu générer de réponse."
 
     def test_generate_response_sdk_error_raises_llm_error(self, chat_service, mock_client):
-        from mistralai.models import SDKError
+        from google.genai.errors import ClientError
 
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_client.chat.complete.side_effect = SDKError("API error", raw_response=mock_response)
+        mock_client.models.generate_content.side_effect = ClientError(
+            "API error", response_json={"error": "rate limit"}
+        )
 
         with pytest.raises(LLMError, match="LLM API error"):
             chat_service.generate_response(query="test", context="ctx")
 
     def test_generate_response_generic_error_raises_llm_error(self, chat_service, mock_client):
-        mock_client.chat.complete.side_effect = ConnectionError("timeout")
+        mock_client.models.generate_content.side_effect = ConnectionError("timeout")
 
         with pytest.raises(LLMError, match="LLM call failed"):
             chat_service.generate_response(query="test", context="ctx")
@@ -191,14 +190,14 @@ class TestChatServiceGenerateResponse:
     def test_generate_response_calls_correct_model(self, chat_service, mock_client):
         chat_service.generate_response(query="q", context="c")
 
-        call_kwargs = mock_client.chat.complete.call_args.kwargs
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
         assert call_kwargs["model"] == "test-model"
 
     def test_generate_response_includes_query_in_prompt(self, chat_service, mock_client):
         chat_service.generate_response(query="Who is MVP?", context="ctx")
 
-        call_kwargs = mock_client.chat.complete.call_args.kwargs
-        prompt = call_kwargs["messages"][0]["content"]
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
+        prompt = call_kwargs["contents"]
         assert "Who is MVP?" in prompt
         assert "ctx" in prompt
 
@@ -236,8 +235,8 @@ class TestChatServiceChat:
         request = ChatRequest(query="Something unknown")
         chat_service.chat(request)
 
-        call_kwargs = mock_client.chat.complete.call_args.kwargs
-        prompt = call_kwargs["messages"][0]["content"]
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
+        prompt = call_kwargs["contents"]
         assert "Aucune information pertinente" in prompt
 
     def test_chat_include_sources_false(self, chat_service, mock_vector_store, mock_client):
@@ -261,8 +260,8 @@ class TestChatServiceChat:
         request = ChatRequest(query="test")
         chat_service.chat(request)
 
-        call_kwargs = mock_client.chat.complete.call_args.kwargs
-        prompt = call_kwargs["messages"][0]["content"]
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
+        prompt = call_kwargs["contents"]
         assert "Source: a.pdf" in prompt
         assert "Source: b.pdf" in prompt
         assert "Chunk A" in prompt
