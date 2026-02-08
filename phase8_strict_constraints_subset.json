@@ -1,0 +1,103 @@
+{
+  "prompt_name": "strict_constraints",
+  "prompt_template": "You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.\n\nCRITICAL RULES - FOLLOW EXACTLY:\n1. ONLY use facts explicitly stated in the CONTEXT below\n2. NEVER add information from your general knowledge\n3. If the CONTEXT doesn't contain the answer, say: \"I don't have that information in the current data.\"\n4. Quote statistics EXACTLY as they appear in the CONTEXT\n5. Be direct and concise\n\nCONTEXT:\n---\n{context}\n---\n\nUSER QUESTION:\n{question}\n\nANSWER (following rules above):",
+  "sample_count": 12,
+  "results": [
+    {
+      "question": "Which player has the best 3-point percentage over the last 5 games?",
+      "category": "simple",
+      "ground_truth": "The player with the best 3-point percentage over the last 5 games can be found in the regular NBA statistics. This requires checking the 3PT% column for recent game logs.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 6913,
+      "search_results_count": 5
+    },
+    {
+      "question": "What are LeBron James' average points per game this season?",
+      "category": "simple",
+      "ground_truth": "LeBron James' season averages can be found in the NBA regular season statistics table, showing his points per game average.",
+      "response": "16.9\n",
+      "context_length": 7233,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which team leads the league in rebounds per game?",
+      "category": "simple",
+      "ground_truth": "The team leading in rebounds per game is determined by the team statistics in the regular NBA data, sorting by RPG column.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 6793,
+      "search_results_count": 5
+    },
+    {
+      "question": "Compare the offensive efficiency of the top 3 scoring teams and explain what makes them effective.",
+      "category": "complex",
+      "ground_truth": "Comparing offensive efficiency requires analyzing multiple metrics including points per game, field goal percentage, 3-point percentage, and pace. The top scoring teams typically combine high shooting efficiency with fast pace of play.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7554,
+      "search_results_count": 5
+    },
+    {
+      "question": "Based on the Reddit discussions and stats, what are the most debated player comparisons this season and what do the numbers say?",
+      "category": "complex",
+      "ground_truth": "Reddit NBA discussions frequently debate player comparisons. The statistics can provide objective context for these debates by comparing key metrics like PER, Win Shares, and box score stats.",
+      "response": "I am sorry, but I can't answer your question. I don't have information about Reddit discussions or player comparisons.\n",
+      "context_length": 7269,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which players have shown the most improvement in their shooting percentages compared to earlier discussions about their performance?",
+      "category": "complex",
+      "ground_truth": "Player improvement can be assessed by comparing current shooting percentages (FG%, 3PT%, FT%) against earlier discussions and historical performance data in the documents.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7522,
+      "search_results_count": 5
+    },
+    {
+      "question": "who iz the best player ever??? lebron or jordan",
+      "category": "noisy",
+      "ground_truth": "This is a subjective debate. The documents may contain Reddit discussions about GOAT debates but there is no definitive statistical answer to who is the best player ever.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7307,
+      "search_results_count": 5
+    },
+    {
+      "question": "stats for that tall guy from milwaukee",
+      "category": "noisy",
+      "ground_truth": "This likely refers to Giannis Antetokounmpo of the Milwaukee Bucks. His stats would be in the regular NBA statistics data.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7091,
+      "search_results_count": 5
+    },
+    {
+      "question": "What is the best strategy for winning in NBA 2K video game?",
+      "category": "noisy",
+      "ground_truth": "This question is about a video game, not real NBA data. The knowledge base contains real NBA statistics and discussions, not video game strategies.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7436,
+      "search_results_count": 5
+    },
+    {
+      "question": "Who is the leading scorer in the NBA this season?",
+      "category": "conversational",
+      "ground_truth": "The leading scorer can be found in the player statistics table sorted by points per game descending.",
+      "response": "LeBron James has 70 points.\n",
+      "context_length": 7180,
+      "search_results_count": 5
+    },
+    {
+      "question": "And what about their biggest rival in the division?",
+      "category": "conversational",
+      "ground_truth": "This asks about the Milwaukee Bucks' divisional rival. Requires knowing 'their' refers to the Bucks and understanding NBA divisional structure.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7382,
+      "search_results_count": 5
+    },
+    {
+      "question": "Going back to the Bucks, what are their weaknesses?",
+      "category": "conversational",
+      "ground_truth": "This redirects the conversation back to the Milwaukee Bucks discussed earlier. 'Going back to' signals a topic switch. Team weaknesses can be inferred from stats and discussions.",
+      "response": "I don't have that information in the current data.\n",
+      "context_length": 7221,
+      "search_results_count": 5
+    }
+  ]
+}

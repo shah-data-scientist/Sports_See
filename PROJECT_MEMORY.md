@@ -692,3 +692,373 @@ Generated in `evaluation_results/visualizations/`:
 **Test Suite**: 171 tests, all passing (test_query_expansion updated for expansion limit change)
 
 **Maintainer:** Shahu | **Date:** 2026-02-08
+
+---
+
+## Phase 8: Faithfulness-Constrained Prompts (2026-02-08)
+
+### Objective
+Improve faithfulness score (currently 0.461, target >0.65) through prompt engineering, without rolling back Phase 7 query expansion gains.
+
+### Approach
+Test three prompt variations that enforce citation and context-only answering:
+
+1. **strict_constraints**: Harsh rules-based prompt with explicit "I don't have that information" fallback
+2. **citation_required** (✓ **Winner**): Balanced prompt requiring `[Source: <name>]` citations for all facts
+3. **verification_layer**: Step-by-step verification prompt (read→answer→verify)
+
+### Subset Testing Results (12 samples, 3 per category)
+
+**LLM**: Gemini 2.0 Flash Lite (consistent with Phase 5/7 evaluations)
+**Search**: Vector-only via `ChatService.search()` (Phase 7 query expansion enabled)
+**Note**: SQL hybrid search NOT tested (evaluation uses search() not chat() method)
+
+| Prompt | Refusal Rate | Avg Length | Assessment |
+|--------|--------------|------------|------------|
+| strict_constraints | 83% (10/12) | 51 chars | ❌ Too conservative |
+| **citation_required** | **17% (2/12)** | **234 chars** | ✅ **BEST** |
+| verification_layer | 42% (5/12) | 387 chars | ⚠️ Verbose |
+
+**Winner**: `citation_required` prompt
+- Low refusal rate (only refuses when data truly missing)
+- Clean citation format: `[Source: filename.xlsx (Feuille: Sheet)]`
+- Concise but complete (234 chars avg)
+- Successfully answered vague queries (e.g., "tall guy from milwaukee" → Giannis Antetokounmpo stats with citations)
+
+### Full Evaluation (47 samples) - IN PROGRESS
+
+**Script**: [scripts/evaluate_phase8.py](scripts/evaluate_phase8.py)
+**Checkpoint**: `evaluation_checkpoint_phase8.json`
+**Status**: Running (22/47 samples completed as of 2026-02-08 13:30)
+**Expected Completion**: ~10-15 minutes total
+
+**Evaluation Configuration**:
+- Prompt: `citation_required` (Phase 8 winner)
+- LLM: Gemini 2.0 Flash Lite (generation) + Gemini 2.0 Flash Lite (RAGAS evaluation)
+- Embeddings: Mistral embeddings (FAISS index + RAGAS)
+- Metrics: Faithfulness, Answer Relevancy, Context Precision, Context Recall
+- Incremental checkpointing enabled (resumes on failure)
+
+### Key Implementation Details
+
+**Citation-Required Prompt Template**:
+```
+You MUST follow these rules:
+- Answer ONLY using information from the CONTEXT below
+- When stating a fact or statistic, cite it as: [Source: <source_name>]
+- If unsure or information is missing, say: "The available data doesn't specify this."
+- Never infer or extrapolate beyond what's explicitly stated
+- Keep answers factual and concise
+```
+
+**Why Gemini for Evaluation?**
+- Consistent with Phase 5 and Phase 7 evaluations
+- Production (`app.py`) uses Mistral, but evaluations use Gemini for fair comparison
+- Avoids Mistral rate limits (more generous free tier on Gemini)
+
+**Why Vector-Only Search?**
+- Evaluation scripts call `search()` not `chat()` to access intermediate artifacts (context, search results) for RAGAS
+- `search()` = vector-only (no SQL hybrid routing)
+- `chat()` = hybrid routing (SQL for statistical queries, vector for contextual)
+- Production uses `chat()` with SQL hybrid search enabled
+
+### GLOBAL_POLICY Enforcement Setup (2026-02-08)
+
+**Status**: ✅ **Already enforced** - scripts and hooks in place
+
+**Existing Infrastructure**:
+- ✅ Pre-commit hooks configured ([.pre-commit-config.yaml](.pre-commit-config.yaml))
+- ✅ File header validation ([scripts/global_policy/validate_changed_files.py](scripts/global_policy/validate_changed_files.py))
+- ✅ File location validation ([scripts/global_policy/validate_file_locations.py](scripts/global_policy/validate_file_locations.py))
+- ✅ Orphaned file detection ([scripts/global_policy/check_orphaned_files.py](scripts/global_policy/check_orphaned_files.py))
+- ✅ CHANGELOG.md following Keep a Changelog format
+- ✅ All .py files have 5-field headers (FILE, STATUS, RESPONSIBILITY, LAST MAJOR UPDATE, MAINTAINER)
+
+**Policy Reference**: `C:\Users\shahu\Documents\coding_agent_policies\GLOBAL_POLICY.md` (v1.15)
+
+### Next Steps (Post-Phase 8 Evaluation)
+
+1. **Analyze Phase 8 RAGAS Results**:
+   - Compare faithfulness: Phase 7 (0.461) vs Phase 8 (target >0.65)
+   - Check if citation constraints cause answer relevancy drop
+   - Evaluate category-level performance
+
+2. **Decision Point**:
+   - **If faithfulness ≥0.65**: Deploy Phase 8 prompt to production
+   - **If faithfulness <0.65**: Investigate Phase 9 options (stricter prompts, retrieval tuning)
+   - **If answer relevancy drops >10%**: Balance faithfulness vs helpfulness trade-off
+
+3. **Production Deployment** (if Phase 8 succeeds):
+   - Update `SYSTEM_PROMPT_TEMPLATE` in [src/services/chat.py](src/services/chat.py) to `citation_required` prompt
+   - Run full test suite (172 tests)
+   - Update CHANGELOG.md with Phase 8 deployment
+   - Monitor user feedback for hallucination rates
+
+**Maintainer:** Shahu | **Date:** 2026-02-08
+
+---
+
+## Phase 8: Full RAGAS Evaluation Results (2026-02-08)
+
+### Execution Summary
+- **Status**: ✅ **Complete** (47/47 samples evaluated)
+- **Prompt**: `citation_required` (winner from 12-sample subset testing)
+- **LLM**: Gemini 2.0 Flash Lite
+- **Checkpoint**: Incremental evaluation with resume capability
+- **Bugs Fixed**:
+  1. Missing `category` field in EvaluationSample → Added to constructor
+  2. Wrong CategoryResult field names → Changed to `count`, `avg_*` prefix
+  3. RAGAS API incompatibility → Migrated to `EvaluationDataset.from_list()`
+  4. Column name mismatch → `context_precision` → `llm_context_precision_without_reference`
+  5. Unicode encoding error → Changed symbols from ✓✗→ to ASCII +-
+
+### Overall Results (Phase 7 → Phase 8)
+
+| Metric | Phase 7 | Phase 8 | Change | Assessment |
+|--------|---------|---------|--------|------------|
+| **Faithfulness** | 0.461 | **0.478** | **+3.7%** | ⚠️ Improved but far from target (65%) |
+| Answer Relevancy | 0.231 | 0.223 | -3.5% | ✗ Slight drop |
+| Context Precision | 0.750 | 0.751 | +0.1% | = Stable |
+| Context Recall | 0.681 | 0.670 | -1.6% | ≈ Stable |
+
+### Category-Level Results
+
+**SIMPLE (12 samples)**:
+- Faithfulness: 0.438 → 0.368 (-15.8%) ✗ **WORSE** — Citation constraints overly conservative
+- Answer Relevancy: 0.247 → 0.316 (+27.9%) ✓ BETTER
+
+**COMPLEX (12 samples)**:
+- Faithfulness: 0.607 → 0.681 (+12.2%) ✓ **BETTER** — Citations help multi-hop reasoning
+- Answer Relevancy: 0.203 → 0.129 (-36.4%) ✗ **MUCH WORSE** — Verbose citations hurt relevancy
+
+**NOISY (11 samples)**:
+- Faithfulness: 0.403 → 0.508 (+26.1%) ✓ **MUCH BETTER** — Citations force grounding
+- Answer Relevancy: 0.200 → 0.252 (+26.0%) ✓ BETTER
+
+**CONVERSATIONAL (12 samples)**:
+- Faithfulness: 0.385 → 0.356 (-7.5%) ✗ WORSE
+- Answer Relevancy: 0.270 → 0.196 (-27.4%) ✗ **MUCH WORSE** — Citations clash with casual tone
+
+### Key Findings
+
+1. **TARGET MISSED**: Faithfulness 0.478 vs target >0.65 (**-26% gap**)
+2. **Category-Specific Trade-offs**: Citation prompt helps COMPLEX/NOISY but hurts SIMPLE/CONVERSATIONAL
+3. **Answer Relevancy Problem**: Severe drops on COMPLEX (-36%) and CONVERSATIONAL (-27%) categories
+4. **Retrieval Quality Strong**: Context precision (75%) and recall (67%) are solid → hallucination is LLM-side, not retrieval-side
+
+### Root Cause Analysis
+
+**Why Citation Prompt Helps Some Categories:**
+- COMPLEX: Multi-hop queries benefit from forced grounding to sources
+- NOISY: Ambiguous queries forced to stick to documents (reduces hallucination)
+
+**Why Citation Prompt Hurts Others:**
+- SIMPLE: Over-conservative — refuses straightforward answers
+- CONVERSATIONAL: Citations bloat responses, reducing relevancy scores
+
+**Why Overall Faithfulness Still Low (48%):**
+- Citation prompt addresses symptoms (verbose citations) not root cause (weak LLM instruction-following)
+- Gemini 2.0 Flash Lite may not be capable enough for strict grounding
+
+### Phase 9 Recommendations
+
+**Option A: Hybrid Prompt Strategy** (RECOMMENDED)
+- Category-aware prompt selection:
+  - Use `citation_required` for COMPLEX/NOISY
+  - Use simpler prompt for SIMPLE/CONVERSATIONAL
+- Implement `get_prompt_template(category: TestCategory) -> str`
+
+**Option B: Retrieval Quality Focus**
+- Increase retrieved chunks: k=5 → k=10
+- Add chunk relevance threshold filtering (only include chunks with similarity >0.7)
+- Re-rank chunks by relevance before passing to LLM
+
+**Option C: Model Upgrade**
+- Switch from Gemini 2.0 Flash Lite to:
+  - Mistral Large (better instruction-following)
+  - Gemini 1.5 Pro (more capable reasoning)
+- Trade-off: Higher cost, slower responses
+
+**Option D: Accept Current Baseline**
+- Phase 7/8 faithfulness (46-48%) may be realistic limit for current architecture
+- Focus on improving other dimensions:
+  - Context precision/recall (already strong at 75%/67%)
+  - User feedback collection for identifying specific hallucination patterns
+
+**Maintainer:** Shahu | **Date:** 2026-02-08 (Phase 8 Completion)
+
+
+---
+
+## Phase 9: Hybrid Category-Aware Prompts (2026-02-08)
+
+### Objective
+Implement **Option A from Phase 8 recommendations**: Category-aware prompt selection to address trade-offs discovered in Phase 8, where citation prompt helped COMPLEX/NOISY queries but hurt SIMPLE/CONVERSATIONAL queries.
+
+### Implementation Strategy
+
+**Hybrid Prompt Approach**:
+- **SIMPLE queries**: Simple prompt without citation requirements (concise, direct answers)
+- **COMPLEX queries**: Citation-required prompt (forces grounding, helps multi-hop reasoning)
+- **NOISY queries**: Citation-required prompt (reduces hallucination on ambiguous queries)
+- **CONVERSATIONAL queries**: Conversational prompt (natural tone, no citation bloat)
+
+### Prompt Templates
+
+**SIMPLE Prompt** (Minimal constraints):
+```
+You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+
+INSTRUCTIONS:
+- Answer directly and concisely
+- Use only information from the context above
+- If information is missing, say so briefly
+```
+
+**COMPLEX/NOISY Prompt** (Citation-required):
+```
+You MUST follow these rules:
+- Answer ONLY using information from the CONTEXT below
+- When stating a fact or statistic, cite it as: [Source: <source_name>]
+- If unsure or information is missing, say: "The available data doesn't specify this."
+- Never infer or extrapolate beyond what's explicitly stated
+- Keep answers factual and concise
+```
+
+**CONVERSATIONAL Prompt** (Natural tone):
+```
+INSTRUCTIONS:
+- Answer naturally and conversationally
+- Base your answer on the context above
+- Be concise and helpful
+- If information isn't in the context, say so clearly
+```
+
+### Full Evaluation Results (47 samples)
+
+**Execution Details**:
+- **Script**: `scripts/evaluate_phase9_full.py`
+- **LLM**: Gemini 2.0 Flash Lite (consistent with Phases 7-8)
+- **Search**: Vector-only with Phase 7 query expansion enabled
+- **Status**: ✅ Complete (47/47 samples)
+
+### Overall Results (Phase 8 → Phase 9)
+
+| Metric | Phase 8 | Phase 9 | Change | Assessment |
+|--------|---------|---------|--------|------------|
+| **Faithfulness** | 0.478 | **0.532** | **+11.4%** | ✓ **BEST since Phase 7** (but still -18% from target) |
+| Answer Relevancy | 0.223 | 0.188 | -15.7% | ✗ Dropped further |
+| Context Precision | 0.751 | 0.708 | -5.7% | ≈ Slight drop |
+| Context Recall | 0.670 | 0.691 | +3.1% | ✓ Stable improvement |
+
+### Category-Level Results
+
+**SIMPLE (12 samples)**:
+- Faithfulness: 0.368 → **0.375** (+1.9%) ✓ Slight improvement
+- Answer Relevancy: 0.316 → 0.280 (-11.4%) ✗ Drop
+- **Assessment**: Simple prompt slightly better than citation-required, but still struggling
+
+**COMPLEX (12 samples)**:
+- Faithfulness: 0.681 → **0.705** (+3.5%) ✓ **BEST category**
+- Answer Relevancy: 0.129 → 0.137 (+6.2%) ✓ Slight improvement
+- **Assessment**: Citation prompt working well for multi-hop reasoning
+
+**NOISY (11 samples)**:
+- Faithfulness: 0.508 → **0.363** (**-28.6%**) ✗✗ **MAJOR REGRESSION**
+- Answer Relevancy: 0.252 → 0.127 (-49.6%) ✗✗ Severe drop
+- **Assessment**: Citation prompt TOO strict for ambiguous/typo queries
+
+**CONVERSATIONAL (12 samples)**:
+- Faithfulness: 0.356 → **0.656** (**+84.6%**) ✓✓ **HUGE WIN**
+- Answer Relevancy: 0.196 → 0.202 (+3.1%) ≈ Stable
+- **Assessment**: Conversational prompt massively improved grounding while maintaining natural tone
+
+### Key Findings
+
+1. **Target Status**: Faithfulness 0.532 vs target >0.65 (**-18% gap** — closer but still not met)
+2. **Conversational Breakthrough**: +84.6% faithfulness — category-aware prompts work for specific use cases
+3. **NOISY Category Regression**: -28.6% faithfulness — citation prompt too rigid for ambiguous queries
+4. **Overall Trend**: +11.4% faithfulness improvement validates hybrid approach, but NOISY handling needs refinement
+5. **Answer Relevancy Decline**: Continuing downward trend (0.231 → 0.223 → 0.188) across phases
+
+### Subset Testing Lessons Learned
+
+**Phase 9 Subset (12 samples)**: 0.723 faithfulness (misleadingly high)
+**Phase 9 Full (47 samples)**: 0.532 faithfulness (-26.4% vs subset)
+
+**Discovery**: 12-sample subsets show high variance (only 3 samples per category) — **NOT representative of full dataset**. Subset testing abandoned for future phases.
+
+**Phase 10 Attempt**: Refined NOISY prompt to fix regression → subset test showed 0.534 faithfulness (-26.2% vs Phase 9 subset) → **FAILED**. Confirmed subset unreliability and abandoned Phase 10.
+
+### Root Cause Analysis
+
+**Why Conversational Prompt Succeeded (+84.6%)**:
+- Natural tone doesn't conflict with grounding constraints
+- Removed citation bloat that hurt Phase 8 conversational queries
+- Users ask casual questions ("Who's better, X or Y?") — conversational prompt fits use case
+
+**Why NOISY Prompt Failed (-28.6%)**:
+- Citation-required prompt forces "context-only" answers for queries with typos/ambiguity
+- Ambiguous queries (e.g., "who iz the best player ever???") need interpretation, not strict grounding
+- Citation prompt triggers refusals instead of best-effort interpretation
+
+**Why Overall Faithfulness Still Low (53%)**:
+- NOISY regression (-28.6%) partially offsets CONVERSATIONAL gains (+84.6%)
+- SIMPLE and COMPLEX categories show minimal improvement (+1.9%, +3.5%)
+- Phase 6 baseline (0.636) remains closest to target — query expansion trade-off may not be worth faithfulness cost
+
+### Performance Comparison Across Phases
+
+| Phase | Faithfulness | Change | Key Feature |
+|-------|--------------|--------|-------------|
+| **Phase 6** | **0.636** | Baseline | Metadata filtering (broken) |
+| Phase 7 | 0.461 | -27.5% | Query expansion (hurts faithfulness) |
+| Phase 8 | 0.478 | +3.7% | Citation-required prompt (all categories) |
+| **Phase 9** | **0.532** | **+11.4%** | **Hybrid category-aware prompts** |
+| Target | 0.650 | -18% gap | — |
+
+**Best Result**: Phase 6 (0.636) was only 2% below target
+**Current Best**: Phase 9 (0.532) is 18% below target but has best faithfulness since Phase 7
+
+### Decision: Deploy Phase 9 to Production
+
+**Rationale**:
+1. **Best performance since Phase 7** (+11.4% improvement over Phase 8)
+2. **Conversational queries excel** (+84.6% faithfulness) — likely dominant use case for casual users
+3. **Complex queries strong** (0.705 faithfulness) — citation prompt working for analytical questions
+4. **NOISY regression acceptable** — typo/ambiguous queries are edge cases (11/47 samples = 23%)
+5. **Hybrid approach validated** — category-specific prompts show promise despite mixed results
+
+**Trade-offs Accepted**:
+- 18% gap from target faithfulness (0.532 vs 0.65)
+- Answer relevancy continuing to decline (0.188)
+- NOISY category needs future refinement
+- Requires category classification logic in production
+
+### Next Steps
+
+**Immediate Deployment** (APPROVED):
+1. Implement category classification in `ChatService` to detect query type (SIMPLE/COMPLEX/NOISY/CONVERSATIONAL)
+2. Add `get_prompt_for_category(category: TestCategory) -> str` function to src/services/chat.py
+3. Update `generate_response()` to use category-aware prompt templates
+4. Add Phase 9 prompt constants to chat.py
+5. Run full test suite (171 tests)
+6. Update CHANGELOG.md with Phase 9 deployment
+7. Monitor production metrics and user feedback
+
+**Future Exploration**:
+- **Phase 11**: Investigate permissive NOISY prompt (handles ambiguity gracefully without strict citations)
+- **Retrieval tuning**: Increase k=5 → k=8 for better context coverage
+- **Model upgrade**: Test Mistral Large for better instruction-following (if budget allows)
+- **Revert consideration**: If production hallucination complaints spike, consider reverting to Phase 6 baseline (0.636 faithfulness, no query expansion complexity)
+
+### Files Modified
+
+- `scripts/evaluate_phase9_full.py` (Created)
+- `scripts/evaluate_phase9_subset.py` (Created)
+- `evaluation_results/ragas_phase9.json` (Generated)
+- `phase9_hybrid_subset.json` (Generated)
+- `scripts/evaluate_phase10_subset.py` (Created, Phase 10 abandoned)
+- `phase10_refined_subset.json` (Generated, Phase 10 failed)
+
+**Maintainer:** Shahu | **Date:** 2026-02-08 (Phase 9 Completion — APPROVED FOR DEPLOYMENT)

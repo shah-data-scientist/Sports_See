@@ -1,0 +1,103 @@
+{
+  "prompt_name": "verification_layer",
+  "prompt_template": "You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.\n\nSTEP 1: Read the CONTEXT carefully\nSTEP 2: Answer the QUESTION using ONLY information from the CONTEXT\nSTEP 3: Verify each claim in your answer against the CONTEXT\nSTEP 4: Remove any claim not directly supported by the CONTEXT\n\nCONTEXT:\n---\n{context}\n---\n\nQUESTION:\n{question}\n\nINSTRUCTIONS:\n- Base your answer entirely on the context above\n- If the context lacks necessary information, explicitly state what's missing\n- Be precise with numbers and names\n- Cite sources when mentioning statistics\n\nANSWER:",
+  "sample_count": 12,
+  "results": [
+    {
+      "question": "Which player has the best 3-point percentage over the last 5 games?",
+      "category": "simple",
+      "ground_truth": "The player with the best 3-point percentage over the last 5 games can be found in the regular NBA statistics. This requires checking the 3PT% column for recent game logs.",
+      "response": "I am sorry, but the provided context does not contain the necessary information to determine the 3-point percentage over the last 5 games for each player.\n",
+      "context_length": 6913,
+      "search_results_count": 5
+    },
+    {
+      "question": "What are LeBron James' average points per game this season?",
+      "category": "simple",
+      "ground_truth": "LeBron James' season averages can be found in the NBA regular season statistics table, showing his points per game average.",
+      "response": "LeBron James has 16.9 average points per game this season (Source: regular NBA.xlsx (Feuille: Analyse)).\nLeBron James has 16.9 points per game this season (Source: regular NBA.xlsx (Feuille: Données NBA)).\n",
+      "context_length": 7233,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which team leads the league in rebounds per game?",
+      "category": "simple",
+      "ground_truth": "The team leading in rebounds per game is determined by the team statistics in the regular NBA data, sorting by RPG column.",
+      "response": "I am sorry, but the provided context does not contain the information needed to determine which team leads the league in rebounds per game.\n",
+      "context_length": 6793,
+      "search_results_count": 5
+    },
+    {
+      "question": "Compare the offensive efficiency of the top 3 scoring teams and explain what makes them effective.",
+      "category": "complex",
+      "ground_truth": "Comparing offensive efficiency requires analyzing multiple metrics including points per game, field goal percentage, 3-point percentage, and pace. The top scoring teams typically combine high shooting efficiency with fast pace of play.",
+      "response": "I am sorry, but the provided context does not contain the information needed to compare the offensive efficiency of the top 3 scoring teams and explain what makes them effective.\n",
+      "context_length": 7554,
+      "search_results_count": 5
+    },
+    {
+      "question": "Based on the Reddit discussions and stats, what are the most debated player comparisons this season and what do the numbers say?",
+      "category": "complex",
+      "ground_truth": "Reddit NBA discussions frequently debate player comparisons. The statistics can provide objective context for these debates by comparing key metrics like PER, Win Shares, and box score stats.",
+      "response": "I am sorry, but the provided context does not contain information about Reddit discussions or player comparisons. Therefore, I cannot answer the question.\n",
+      "context_length": 7269,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which players have shown the most improvement in their shooting percentages compared to earlier discussions about their performance?",
+      "category": "complex",
+      "ground_truth": "Player improvement can be assessed by comparing current shooting percentages (FG%, 3PT%, FT%) against earlier discussions and historical performance data in the documents.",
+      "response": "The context does not provide information about players' shooting percentages or improvement in shooting percentages.\n",
+      "context_length": 7522,
+      "search_results_count": 5
+    },
+    {
+      "question": "who iz the best player ever??? lebron or jordan",
+      "category": "noisy",
+      "ground_truth": "This is a subjective debate. The documents may contain Reddit discussions about GOAT debates but there is no definitive statistical answer to who is the best player ever.",
+      "response": "The context does not explicitly state who the best player ever is between LeBron James and Michael Jordan. However, it does mention that LeBron James has 3 postseasons at 32 +5 (Reddit 3.pdf). It also mentions that Michael Jordan's calling card was a volume that Reggie or anyone else couldn't match year after year (Reddit 3.pdf).\n",
+      "context_length": 7307,
+      "search_results_count": 5
+    },
+    {
+      "question": "stats for that tall guy from milwaukee",
+      "category": "noisy",
+      "ground_truth": "This likely refers to Giannis Antetokounmpo of the Milwaukee Bucks. His stats would be in the regular NBA statistics data.",
+      "response": "Chris Livingston from Milwaukee has the following stats:\n*   Games played: 21 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Minutes played: 15 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Points: 5 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Field goals made: 29 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Field goals attempted: 8 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Field goal percentage: 27 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   3-point field goals made: 0 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   3-point field goals attempted: 8 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   3-point percentage: 0 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Free throws made: 13 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Free throws attempted: 17 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Free throw percentage: 75 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Offensive rebounds: 11 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Defensive rebounds: 25 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Total rebounds: 36 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Assists: 4 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Steals: 6 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Blocks: 4 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Turnovers: 0 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Personal fouls: 8 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Points per game: 11.1 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   True Shooting Percentage: 0.83 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Offensive rating: 89.6 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Defensive rating: 102.2 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Net rating: -12.6 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Assist percentage: 7.8 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Usage percentage: 11.1 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Points produced: 19.8 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Turnover percentage: 15 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Effective Field Goal Percentage: 33.3 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Free Throw Rate: 104.34 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Games started: 9.9 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n*   Plus/Minus: 230 (Source: regular NBA.xlsx (Feuille: Données NBA) - row 502)\n",
+      "context_length": 7091,
+      "search_results_count": 5
+    },
+    {
+      "question": "What is the best strategy for winning in NBA 2K video game?",
+      "category": "noisy",
+      "ground_truth": "This question is about a video game, not real NBA data. The knowledge base contains real NBA statistics and discussions, not video game strategies.",
+      "response": "I am sorry, but the provided context does not contain any information about the best strategy for winning in the NBA 2K video game.\n",
+      "context_length": 7436,
+      "search_results_count": 5
+    },
+    {
+      "question": "Who is the leading scorer in the NBA this season?",
+      "category": "conversational",
+      "ground_truth": "The leading scorer can be found in the player statistics table sorted by points per game descending.",
+      "response": "Based on the provided context, LeBron James is the leading scorer with 1708 points (Source: regular NBA.xlsx (Feuille: Données NBA)).\n",
+      "context_length": 7180,
+      "search_results_count": 5
+    },
+    {
+      "question": "And what about their biggest rival in the division?",
+      "category": "conversational",
+      "ground_truth": "This asks about the Milwaukee Bucks' divisional rival. Requires knowing 'their' refers to the Bucks and understanding NBA divisional structure.",
+      "response": "The provided text does not mention the Pittsburgh Steelers' biggest rival in the division.\n",
+      "context_length": 7382,
+      "search_results_count": 5
+    },
+    {
+      "question": "Going back to the Bucks, what are their weaknesses?",
+      "category": "conversational",
+      "ground_truth": "This redirects the conversation back to the Milwaukee Bucks discussed earlier. 'Going back to' signals a topic switch. Team weaknesses can be inferred from stats and discussions.",
+      "response": "The context states \"the Bucks are awful.\" However, the context doesn't provide specific details about the Bucks' weaknesses.\n",
+      "context_length": 7221,
+      "search_results_count": 5
+    }
+  ]
+}

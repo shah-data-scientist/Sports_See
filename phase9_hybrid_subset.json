@@ -1,0 +1,46 @@
+{
+  "phase": "Phase 9 - Hybrid Category-Aware Prompts (Subset)",
+  "strategy": "Simple prompt for SIMPLE/CONVERSATIONAL, Citation prompt for COMPLEX/NOISY",
+  "sample_count": 12,
+  "model": "gemini-2.0-flash-lite",
+  "overall_scores": {
+    "faithfulness": 0.7234126984126984,
+    "answer_relevancy": 0.30937235377751987,
+    "context_precision": 0.6135416666351591,
+    "context_recall": 0.75
+  },
+  "category_scores": [
+    {
+      "category": "simple",
+      "count": 3,
+      "avg_faithfulness": 0.5,
+      "avg_answer_relevancy": 0.21597892376105068,
+      "avg_context_precision": 0.6819444444189698,
+      "avg_context_recall": 1.0
+    },
+    {
+      "category": "complex",
+      "count": 3,
+      "avg_faithfulness": 0.8333333333333334,
+      "avg_answer_relevancy": 0.24995706128240333,
+      "avg_context_precision": 0.48333333329666667,
+      "avg_context_recall": 0.3333333333333333
+    },
+    {
+      "category": "noisy",
+      "count": 3,
+      "avg_faithfulness": 0.7380952380952381,
+      "avg_answer_relevancy": 0.4760175752315992,
+      "avg_context_precision": 0.38888888884999995,
+      "avg_context_recall": 1.0
+    },
+    {
+      "category": "conversational",
+      "count": 3,
+      "avg_faithfulness": 0.8222222222222223,
+      "avg_answer_relevancy": 0.2955358548350263,
+      "avg_context_precision": 0.8999999999749999,
+      "avg_context_recall": 0.6666666666666666
+    }
+  ]
+}

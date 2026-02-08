@@ -1,0 +1,103 @@
+{
+  "prompt_name": "citation_required",
+  "prompt_template": "You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.\n\nYou MUST follow these rules:\n- Answer ONLY using information from the CONTEXT below\n- When stating a fact or statistic, cite it as: [Source: <source_name>]\n- If unsure or information is missing, say: \"The available data doesn't specify this.\"\n- Never infer or extrapolate beyond what's explicitly stated\n- Keep answers factual and concise\n\nCONTEXT:\n---\n{context}\n---\n\nQUESTION:\n{question}\n\nANSWER WITH CITATIONS:",
+  "sample_count": 12,
+  "results": [
+    {
+      "question": "Which player has the best 3-point percentage over the last 5 games?",
+      "category": "simple",
+      "ground_truth": "The player with the best 3-point percentage over the last 5 games can be found in the regular NBA statistics. This requires checking the 3PT% column for recent game logs.",
+      "response": "The available data doesn't specify 3-point percentage over the last 5 games.\n",
+      "context_length": 6913,
+      "search_results_count": 5
+    },
+    {
+      "question": "What are LeBron James' average points per game this season?",
+      "category": "simple",
+      "ground_truth": "LeBron James' season averages can be found in the NBA regular season statistics table, showing his points per game average.",
+      "response": "LeBron James' average points per game this season is 16.9 [Source: regular NBA.xlsx (Feuille: Analyse)].\n",
+      "context_length": 7233,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which team leads the league in rebounds per game?",
+      "category": "simple",
+      "ground_truth": "The team leading in rebounds per game is determined by the team statistics in the regular NBA data, sorting by RPG column.",
+      "response": "The available data doesn't specify this.\n",
+      "context_length": 6793,
+      "search_results_count": 5
+    },
+    {
+      "question": "Compare the offensive efficiency of the top 3 scoring teams and explain what makes them effective.",
+      "category": "complex",
+      "ground_truth": "Comparing offensive efficiency requires analyzing multiple metrics including points per game, field goal percentage, 3-point percentage, and pace. The top scoring teams typically combine high shooting efficiency with fast pace of play.",
+      "response": "I am sorry, but the provided context does not contain the data needed to answer the question about the offensive efficiency of the top 3 scoring teams.\n",
+      "context_length": 7554,
+      "search_results_count": 5
+    },
+    {
+      "question": "Based on the Reddit discussions and stats, what are the most debated player comparisons this season and what do the numbers say?",
+      "category": "complex",
+      "ground_truth": "Reddit NBA discussions frequently debate player comparisons. The statistics can provide objective context for these debates by comparing key metrics like PER, Win Shares, and box score stats.",
+      "response": "The available data doesn't specify which player comparisons are most debated.\n",
+      "context_length": 7269,
+      "search_results_count": 5
+    },
+    {
+      "question": "Which players have shown the most improvement in their shooting percentages compared to earlier discussions about their performance?",
+      "category": "complex",
+      "ground_truth": "Player improvement can be assessed by comparing current shooting percentages (FG%, 3PT%, FT%) against earlier discussions and historical performance data in the documents.",
+      "response": "Jaden has taken an incremental step on offense, becoming much more willing/able to dribble-drive into short range pull-ups and attempts at the rim [Source: Reddit 1.pdf].\n",
+      "context_length": 7522,
+      "search_results_count": 5
+    },
+    {
+      "question": "who iz the best player ever??? lebron or jordan",
+      "category": "noisy",
+      "ground_truth": "This is a subjective debate. The documents may contain Reddit discussions about GOAT debates but there is no definitive statistical answer to who is the best player ever.",
+      "response": "The available data doesn't specify who the best player ever is. However, LeBron James is mentioned [Source: Reddit 2.pdf], and Michael Jordan is also discussed [Source: Reddit 3.pdf].\n",
+      "context_length": 7307,
+      "search_results_count": 5
+    },
+    {
+      "question": "stats for that tall guy from milwaukee",
+      "category": "noisy",
+      "ground_truth": "This likely refers to Giannis Antetokounmpo of the Milwaukee Bucks. His stats would be in the regular NBA statistics data.",
+      "response": "Chris Livingston from MIL has the following stats: 21 games played, 15 games started, 6 assists, 5 points per game [Source: regular NBA.xlsx (Feuille: Données NBA)]. He scored 29 total points, 8 total rebounds, and 27 total assists [Source: regular NBA.xlsx (Feuille: Données NBA)]. His field goal percentage is 33.3%, and he has 0% three-point percentage [Source: regular NBA.xlsx (Feuille: Données NBA)]. He made 13 free throws with a 75% free throw percentage [Source: regular NBA.xlsx (Feuille: Données NBA)]. He has 11 total offensive rebounds and 25 total defensive rebounds [Source: regular NBA.xlsx (Feuille: Données NBA)]. He has a total of 36 rebounds, 4 steals, 6 blocks, and 8 turnovers [Source: regular NBA.xlsx (Feuille: Données NBA)]. His true shooting percentage is 89.6, his offensive rating is 102.2, and his defensive rating is -12.6 [Source: regular NBA.xlsx (Feuille: Données NBA)]. His usage percentage is 7.8, and his assist percentage is 0.83 [Source: regular NBA.xlsx (Feuille: Données NBA)]. He averages 11.1 points per 36 minutes, 9.1 rebounds per 36 minutes, 19.8 assists per 36 minutes, and 14.8 steals per 36 minutes [Source: regular NBA.xlsx (Feuille: Données NBA)]. He has 13.3% of turnovers and 33.3% of fouls [Source: regular NBA.xlsx (Feuille: Données NBA)]. His effective field goal percentage is 44.1%, and his turnover percentage is 15% [Source: regular NBA.xlsx (Feuille: Données NBA)]. His player efficiency rating is 104.34, and his win shares are 9.9 [Source: regular NBA.xlsx (Feuille: Données NBA)]. He played a total of 230 minutes [Source: regular NBA.xlsx (Feuille: Données NBA)].\n",
+      "context_length": 7091,
+      "search_results_count": 5
+    },
+    {
+      "question": "What is the best strategy for winning in NBA 2K video game?",
+      "category": "noisy",
+      "ground_truth": "This question is about a video game, not real NBA data. The knowledge base contains real NBA statistics and discussions, not video game strategies.",
+      "response": "I am sorry, but there is no information about the best strategy for winning in the NBA 2K video game in the provided context.\n",
+      "context_length": 7436,
+      "search_results_count": 5
+    },
+    {
+      "question": "Who is the leading scorer in the NBA this season?",
+      "category": "conversational",
+      "ground_truth": "The leading scorer can be found in the player statistics table sorted by points per game descending.",
+      "response": "LeBron James scored 1708 points [Source: regular NBA.xlsx (Feuille: Données NBA)], which is the most points among the listed players.\n",
+      "context_length": 7180,
+      "search_results_count": 5
+    },
+    {
+      "question": "And what about their biggest rival in the division?",
+      "category": "conversational",
+      "ground_truth": "This asks about the Milwaukee Bucks' divisional rival. Requires knowing 'their' refers to the Bucks and understanding NBA divisional structure.",
+      "response": "The available data doesn't specify this.\n",
+      "context_length": 7382,
+      "search_results_count": 5
+    },
+    {
+      "question": "Going back to the Bucks, what are their weaknesses?",
+      "category": "conversational",
+      "ground_truth": "This redirects the conversation back to the Milwaukee Bucks discussed earlier. 'Going back to' signals a topic switch. Team weaknesses can be inferred from stats and discussions.",
+      "response": "The provided context says \"the bucks are awful\" [Source: Reddit 1.pdf].\n",
+      "context_length": 7221,
+      "search_results_count": 5
+    }
+  ]
+}

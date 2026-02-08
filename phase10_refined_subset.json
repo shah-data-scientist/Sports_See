@@ -1,0 +1,46 @@
+{
+  "phase": "Phase 10 - Refined Hybrid Prompts (Subset)",
+  "changes": "NEW permissive prompt for NOISY (no citations, handles ambiguity)",
+  "sample_count": 12,
+  "model": "gemini-2.0-flash-lite",
+  "overall_scores": {
+    "faithfulness": 0.5341183574879227,
+    "answer_relevancy": 0.21028903208495953,
+    "context_precision": 0.783333333304861,
+    "context_recall": 0.75
+  },
+  "category_scores": [
+    {
+      "category": "simple",
+      "count": 3,
+      "avg_faithfulness": 0.3333333333333333,
+      "avg_answer_relevancy": 0.3323129926799124,
+      "avg_context_precision": 0.9444444444172223,
+      "avg_context_recall": 1.0
+    },
+    {
+      "category": "complex",
+      "count": 3,
+      "avg_faithfulness": 0.7753623188405797,
+      "avg_answer_relevancy": 0.0,
+      "avg_context_precision": 0.7333333333133334,
+      "avg_context_recall": 0.3333333333333333
+    },
+    {
+      "category": "noisy",
+      "count": 3,
+      "avg_faithfulness": 0.75,
+      "avg_answer_relevancy": 0.21369578580276263,
+      "avg_context_precision": 0.5555555555138888,
+      "avg_context_recall": 1.0
+    },
+    {
+      "category": "conversational",
+      "count": 3,
+      "avg_faithfulness": 0.27777777777777773,
+      "avg_answer_relevancy": 0.295147349857163,
+      "avg_context_precision": 0.8999999999749999,
+      "avg_context_recall": 0.6666666666666666
+    }
+  ]
+}
