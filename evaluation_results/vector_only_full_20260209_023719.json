@@ -1,0 +1,530 @@
+{
+  "evaluation_type": "Vector-Only (FAISS + Mistral)",
+  "timestamp": "20260209_023719",
+  "duration_seconds": 262.862885,
+  "sample_count": 47,
+  "model": "gemini-2.0-flash-lite",
+  "search_method": "FAISS vector search (k=5)",
+  "sql_enabled": false,
+  "overall_scores": {
+    "faithfulness": 0.5569709250560314,
+    "answer_relevancy": 0.2372232426712619,
+    "context_precision": 0.7410460992594228,
+    "context_recall": 0.6914893617021277
+  },
+  "category_scores": [
+    {
+      "category": "simple",
+      "count": 12,
+      "avg_faithfulness": 0.5138888888888888,
+      "avg_answer_relevancy": 0.2680591922107707,
+      "avg_context_precision": 0.8290509258916733,
+      "avg_context_recall": 0.75
+    },
+    {
+      "category": "complex",
+      "count": 12,
+      "avg_faithfulness": 0.653030303030303,
+      "avg_answer_relevancy": 0.21662862728859045,
+      "avg_context_precision": 0.5947916666407668,
+      "avg_context_recall": 0.5416666666666666
+    },
+    {
+      "category": "noisy",
+      "count": 11,
+      "avg_faithfulness": 0.6976911976911976,
+      "avg_answer_relevancy": 0.2643866188683217,
+      "avg_context_precision": 0.7963383838038499,
+      "avg_context_recall": 0.9545454545454546
+    },
+    {
+      "category": "conversational",
+      "count": 12,
+      "avg_faithfulness": 0.37499999999999994,
+      "avg_answer_relevancy": 0.20208214700045313,
+      "avg_context_precision": 0.7486111110801043,
+      "avg_context_recall": 0.5416666666666666
+    }
+  ],
+  "failure_analysis": {
+    "total_failures": 34,
+    "top_5_failures": [
+      {
+        "index": 0,
+        "category": "simple",
+        "question": "Which player has the best 3-point percentage over the last 5 games?",
+        "response": "I am sorry, but I do not have the data for the last 5 games. Therefore, I cannot answer this question.\n",
+        "faithfulness": 0.0,
+        "relevancy": 0.0,
+        "context_recall": 1.0
+      },
+      {
+        "index": 1,
+        "category": "simple",
+        "question": "What are LeBron James' average points per game this season?",
+        "response": "LeBron James' average points per game this season is 25.6.\n",
+        "faithfulness": 0.0,
+        "relevancy": 0.9969389780397372,
+        "context_recall": 1.0
+      },
+      {
+        "index": 7,
+        "category": "simple",
+        "question": "Which player leads the league in steals per game?",
+        "response": "I am sorry, but the provided data does not contain the steals per game for each player.\n",
+        "faithfulness": 0.0,
+        "relevancy": 0.0,
+        "context_recall": 1.0
+      },
+      {
+        "index": 15,
+        "category": "complex",
+        "question": "Analyze the correlation between a team's pace of play and their defensive rating. Which teams break the typical pattern?",
+        "response": "I am sorry, but the provided context does not contain the necessary information to analyze the correlation between a team's pace of play and their defensive rating, nor does it identify teams that mig",
+        "faithfulness": 0.0,
+        "relevancy": 0.0,
+        "context_recall": 1.0
+      },
+      {
+        "index": 21,
+        "category": "complex",
+        "question": "Evaluate the trade deadline moves this season. Which trades have had the biggest positive and negative impacts on team performance according to pre and post-trade statistics?",
+        "response": "[ERROR: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat]",
+        "faithfulness": 0.0,
+        "relevancy": 0.0,
+        "context_recall": 0.5
+      }
+    ],
+    "failures_by_category": {
+      "simple": 9,
+      "complex": 9,
+      "noisy": 7,
+      "conversational": 9
+    }
+  },
+  "detailed_results": [
+    {
+      "question": "Which player has the best 3-point percentage over the last 5 games?",
+      "category": "simple",
+      "response": "I am sorry, but I do not have the data for the last 5 games. Therefore, I cannot answer this question.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What are LeBron James' average points per game this season?",
+      "category": "simple",
+      "response": "LeBron James' average points per game this season is 25.6.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.9969389780397372,
+      "context_precision": 0.3333333333,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Which team leads the league in rebounds per game?",
+      "category": "simple",
+      "response": "I am sorry, but I do not have the information needed to answer this question. The provided context does not contain team rebounding statistics.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.8041666666465626,
+      "context_recall": 1.0
+    },
+    {
+      "question": "How many assists does the league leader have this season?",
+      "category": "simple",
+      "response": "Based on the provided data, Giannis Antetokounmpo has the most assists with 791.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.823382625123538,
+      "context_precision": 0.49999999995,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What is Stephen Curry's free throw percentage this season?",
+      "category": "simple",
+      "response": "93.3%\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.7320727958469037,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Which team has the best win-loss record in the Eastern Conference?",
+      "category": "simple",
+      "response": "I am sorry, but the provided context does not contain the win-loss records for teams in the Eastern Conference.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.47777777776185176,
+      "context_recall": 1.0
+    },
+    {
+      "question": "How many points per game does Nikola Jokic average?",
+      "category": "simple",
+      "response": "20.6\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.6643159075190695,
+      "context_precision": 0.8333333332916666,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Which player leads the league in steals per game?",
+      "category": "simple",
+      "response": "I am sorry, but the provided data does not contain the steals per game for each player.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What is the average attendance for NBA games this season?",
+      "category": "simple",
+      "response": "I am sorry, but the average attendance for NBA games this season is not available in the provided context.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Who won the NBA Most Valuable Player award last season?",
+      "category": "simple",
+      "response": "I am sorry, but the context does not contain the answer to which player won the NBA Most Valuable Player award last season.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 0.0
+    },
+    {
+      "question": "How many games has the longest current winning streak lasted?",
+      "category": "simple",
+      "response": "I am sorry, but I cannot answer the question. The provided context does not contain information about any current winning streaks or their lengths.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Which rookie has scored the most total points this season?",
+      "category": "simple",
+      "response": "Based on the provided data, I am unable to determine which rookie has scored the most total points this season. The 'Données NBA' sheet contains data, but does not explicitly show the total points scored.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Compare the offensive efficiency of the top 3 scoring teams and explain what makes them effective.",
+      "category": "complex",
+      "response": "Based on the provided data from the \"regular NBA.xlsx\" file:\n\n1.  **Anthony Edwards:** Scored 2180 points with a 44.7% field goal percentage, 39.5% from three-point range, and 83.7% from the free-throw line.\n2.  **Nikola Jokić:** Scored 2072 points with a 57.6% field goal percentage, 41.7% from three-point range, and 80% from the free-throw line.\n3.  **Giannis Antetokounmpo:** Scored 2037 points with a 60.1% field goal percentage, 22.2% from three-point range, and 61.7% from the free-throw line.\n\nThe data suggests that Nikola Jokic and Giannis Antetokounmpo are the most efficient scorers based on their field goal percentages. Anthony Edwards is a more efficient three-point shooter.\n",
+      "faithfulness": 0.8666666666666667,
+      "relevancy": 0.8191148335637308,
+      "context_precision": 0.19999999998,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Based on the Reddit discussions and stats, what are the most debated player comparisons this season and what do the numbers say?",
+      "category": "complex",
+      "response": "Based on the provided data, I can identify some player comparisons and offer some insights:\n\n*   **Luka Dončić vs. Other Top Players:** Luka Dončić (LAL) has a usage rate of 34.2, 2625 total points, and a PER of 21.8. It's not possible to definitively compare him with other top players to see who is the most debated. More data would be needed from \"regular NBA.xlsx (Feuille: Données NBA)\" to conduct these comparisons.\n*   **Nikola Jokić vs. Giannis Antetokounmpo:** Nikola Jokić (20.6 PPG, 57.6% FG) vs. Giannis Antetokounmpo (21 PPG, 60.1% FG): The data suggests a debate between these two. Antetokounmpo has a higher field goal percentage, and Jokic is known for his scoring and efficiency, but further context would be needed to clarify the debates.\n*   **Other Potential Comparisons**: The stats for Tyler Herro, Trae Young, Cade Cunningham, James Harden, Karl-Anthony Towns, Anthony Edwards, Jayson Tatum, and Devin Booker could be used for comparison, but without any context, it is not possible to determine if they are debated.\n\nI am missing data to fully answer this question, and more player statistics would be needed from the source.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.499999999975,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Which players have shown the most improvement in their shooting percentages compared to earlier discussions about their performance?",
+      "category": "complex",
+      "response": "Based on the provided context, the following players have shown improvement in their shooting:\n\n*   **Anthony Edwards (Ant)**: His offense looks much better, and he trusts his teammates more.\n*   **Jaden**: He has become more willing and able to take dribble-drive pull-ups and attempts at the rim with greater consistency.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.8930115564455482,
+      "context_precision": 0.8666666666377778,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Analyze the correlation between a team's pace of play and their defensive rating. Which teams break the typical pattern?",
+      "category": "complex",
+      "response": "I am sorry, but the provided context does not contain the necessary information to analyze the correlation between a team's pace of play and their defensive rating, nor does it identify teams that might break any typical patterns.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.36666666664833336,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What impact has the 3-point revolution had on the playing style of traditional centers according to the stats and discussions?",
+      "category": "complex",
+      "response": "Based on the provided data, the impact of the 3-point revolution on traditional centers is not directly apparent. The data includes various stats, but it doesn't offer a specific comparison of how the playing styles of traditional centers have changed due to the 3-point revolution.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.8666666666377778,
+      "context_recall": 0.5
+    },
+    {
+      "question": "Identify the teams that are most dependent on a single player for scoring and evaluate the risk this creates for playoff success.",
+      "category": "complex",
+      "response": "The context doesn't explicitly identify teams most dependent on a single player for scoring. However, it mentions:\n\n*   **Julius**: Described as a \"get-a-bucket\" iso guy, but the context doesn't indicate how reliant the team is on him.\n\nWithout further information, it's impossible to evaluate the risk associated with this type of dependence.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 0.0
+    },
+    {
+      "question": "How do the advanced analytics (PER, Win Shares, VORP) compare between this season's MVP candidates? Provide a statistical argument for each candidate.",
+      "category": "complex",
+      "response": "Based on the provided data, I can compare advanced stats for some MVP candidates:\n\n**Nikola Jokić:** (From Analyse sheet)\n*   **PER:** 57.6\n*   **Win Shares:** 20.6\n*   **VORP:** 20.6\n\n**Giannis Antetokounmpo:** (From Analyse sheet)\n*   **PER:** 60.1\n*   **Win Shares:** 21\n*   **VORP:** 21\n\n**Jayson Tatum:** (From Analyse sheet)\n*   **PER:** 45.2\n*   **Win Shares:** 15.8\n*   **VORP:** 15.8\n\n**Devin Booker:** (From Analyse sheet)\n*   **PER:** 46.1\n*   **Win Shares:** 12.2\n*   **VORP:** 12.2\n\n**Anthony Edwards:** (From Analyse sheet)\n*   **PER:** 44.7\n*   **Win Shares:** 14\n*   **VORP:** 14\n\n**Statistical Argument:**\n\n*   **Nikola Jokić:** Has a very high PER and VORP, indicative of significant all-around contributions.\n*   **Giannis Antetokounmpo:** Also boasts high PER, Win Shares and VORP, which means he is a strong candidate, with great impact on the game.\n*   **Jayson Tatum:** Has good stats but not as impactful as the other candidates.\n*   **Devin Booker:** Also has good stats but not as impactful as the other candidates.\n*   **Anthony Edwards:** Also has good stats but not as impactful as the other candidates.\n\n**Missing Information:** The document doesn't provide the complete advanced stats for all potential MVP candidates like Shai Gilgeous-Alexander (SGA) mentioned in the Reddit post. It also doesn't contain information on the current season's MVP race from 2024-2025.\n",
+      "faithfulness": 0.9696969696969697,
+      "relevancy": 0.8874171374538061,
+      "context_precision": 0.4499999999775,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What trends in player salary vs performance efficiency can be identified from the data? Are the highest-paid players providing proportional value?",
+      "category": "complex",
+      "response": "I am sorry, but the salary information is missing from the provided data. Therefore, I cannot determine trends in player salary vs. performance efficiency or assess if the highest-paid players provide proportional value.\n",
+      "faithfulness": 0.25,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Based on home vs away records, travel schedules, and Reddit fan discussions, which teams struggle the most on the road and why?",
+      "category": "complex",
+      "response": "Based on the provided context, I cannot definitively determine which specific NBA teams struggle the most on the road. The discussions focus on teams reaching the Finals without home-court advantage and general playoff predictions. Information about specific teams' road records or travel schedules is missing.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.999999999975,
+      "context_recall": 0.5
+    },
+    {
+      "question": "Evaluate the trade deadline moves this season. Which trades have had the biggest positive and negative impacts on team performance according to pre and post-trade statistics?",
+      "category": "complex",
+      "response": "[ERROR: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat]",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    {
+      "question": "Cross-reference injury reports with team performance dips to determine which teams are most affected by their star player's absence.",
+      "category": "complex",
+      "response": "I am unable to answer this question. The provided documents do not contain information on injury reports or team performance dips related to star player absences.\n",
+      "faithfulness": 0.75,
+      "relevancy": 0.0,
+      "context_precision": 0.8874999999778125,
+      "context_recall": 0.0
+    },
+    {
+      "question": "How has the rise of analytics-driven coaching changed timeout usage and rotation patterns compared to what Reddit fans discuss?",
+      "category": "complex",
+      "response": "The provided context doesn't offer any direct information on how analytics-driven coaching has changed timeout usage or rotation patterns.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "question": "who iz the best player ever??? lebron or jordan",
+      "category": "noisy",
+      "response": "The provided context does not explicitly state who the best player ever is between LeBron and Jordan.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.3333333333,
+      "context_recall": 1.0
+    },
+    {
+      "question": "stats for that tall guy from milwaukee",
+      "category": "noisy",
+      "response": "Chris Livingston from MIL: 21 years old, played 21 games, averaged 5 minutes per game, scored 29 points, 8 rebounds, 27 assists, 33.3% field goal percentage, 0% three-point percentage, 75% free throw percentage, 11 steals, 25 blocks, 36 turnovers, 89.6 offensive rating, 102.2 defensive rating.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.7105311910461071,
+      "context_precision": 0.3333333333,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What is the best strategy for winning in NBA 2K video game?",
+      "category": "noisy",
+      "response": "I am sorry, but the provided context does not contain any information about the best strategy for winning in the NBA 2K video game.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.5833333333041666,
+      "context_recall": 1.0
+    },
+    {
+      "question": "lmao bro did u see that dunk last nite it was insane fr fr",
+      "category": "noisy",
+      "response": "I am sorry, but I do not have information about a dunk from last night.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "waht are teh top 10 plyers in teh leage rite now??",
+      "category": "noisy",
+      "response": "Based on the provided data, the top 10 players in the league, ranked by total points scored, are:\n\n1.  Shai Gilgeous-Alexander (2485)\n2.  Anthony Edwards (2180)\n3.  Nikola Jokić (2072)\n4.  Giannis Antetokounmpo (2037)\n5.  Jayson Tatum (1930)\n6.  Devin Booker (1920)\n7.  Tyler Herro (1840)\n8.  Trae Young (1839)\n9.  Cade Cunningham (1827)\n10. James Harden (1801)\n\nNote: Zach LaVine, Jalen Green, Stephen Curry, DeMar DeRozan, and Karl-Anthony Towns are also listed in the data, but their point totals are lower than the top 10.\n",
+      "faithfulness": 0.9523809523809523,
+      "relevancy": 0.7558447182791919,
+      "context_precision": 0.7555555555303703,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Tell me about the weather forecast for tomorrow in New York",
+      "category": "noisy",
+      "response": "I am sorry, but I cannot answer your question. The provided context does not contain any information about the weather forecast for tomorrow in New York.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "?",
+      "category": "noisy",
+      "response": "I am sorry, but the answer to your question cannot be found within the provided context.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.8041666666465626,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Curry Curry Curry Curry points points points average",
+      "category": "noisy",
+      "response": "Stephen Curry: 14.5 points average.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.8064867879896408,
+      "context_precision": 0.99999999995,
+      "context_recall": 0.5
+    },
+    {
+      "question": "<script>alert('xss')</script> SELECT * FROM players",
+      "category": "noisy",
+      "response": "I am sorry, but I am unable to execute the JavaScript code and SQL query provided. I am designed to provide factual and helpful responses based on the provided NBA data.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.94999999997625,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Give me a 5000 word essay on the history of basketball",
+      "category": "noisy",
+      "response": "I am sorry, but I am unable to answer the question, \"Give me a 5000 word essay on the history of basketball,\" because the provided context is not sufficient to fulfill this request. The context consists of short snippets of Reddit posts and does not contain enough information to construct a comprehensive essay on the history of basketball.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "question": "nba",
+      "category": "noisy",
+      "response": "*   **Tom Thibodeau's Knicks:** In the five years with Tom Thibodeau, the Knicks had a .565 winning percentage.\n*   **Anthony Edwards Fine:** Anthony Edwards was fined $50K for a remark to a Lakers fan.\n*   **Reggie Miller:** Reggie Miller is the most efficient first option in NBA playoff history.\n*   **Pacers Finals Appearance:** The Pacers are the most unexpected finalist team of all time.\n*   **Shai Gilgeous-Alexander:** Shai Gilgeous-Alexander has been the starting PG for the two biggest comebacks in NBA Playoff history.\n*   **Luxury Tax in Finals:** The upcoming Thunder vs. Pacers NBA Finals will be the first since the luxury tax was in effect where neither team was a taxpayer for that season.\n*   **Knicks Playoff Losses:** The Knicks have now lost to a lower seed in 5 straight playoff appearances; 3 of those losses came against the Pacers.\n*   **Winning 4 Game 7s:** A team has not been mentioned that has won an NBA title by winning 4 Game 7s.\n",
+      "faithfulness": 0.8888888888888888,
+      "relevancy": 0.6353901102365993,
+      "context_precision": 0.999999999975,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Who is the leading scorer in the NBA this season?",
+      "category": "conversational",
+      "response": "LeBron James is the leading scorer in the NBA this season with 1708 points.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.9282496669661325,
+      "context_precision": 0.699999999965,
+      "context_recall": 1.0
+    },
+    {
+      "question": "What about his assist numbers?",
+      "category": "conversational",
+      "response": "I am sorry, I do not have enough information to answer your question. I do not have the assists numbers.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 0.3333333333333333
+    },
+    {
+      "question": "How does that compare to last season?",
+      "category": "conversational",
+      "response": "I am sorry, but I do not have enough information to answer that question. I do not have the data from last season to make a comparison.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.999999999975,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Which team does Giannis play for?",
+      "category": "conversational",
+      "response": "The context does not contain information about which team Giannis plays for.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    {
+      "question": "How are they doing in the standings?",
+      "category": "conversational",
+      "response": "I am sorry, but I cannot answer the question because the provided context does not contain information about the current standings of any NBA teams.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 0.0
+    },
+    {
+      "question": "And what about their biggest rival in the division?",
+      "category": "conversational",
+      "response": "The provided context does not mention anything about a team's biggest rival in the division.\n",
+      "faithfulness": 0.0,
+      "relevancy": 0.0,
+      "context_precision": 0.499999999975,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Tell me about the Lakers' recent performance.",
+      "category": "conversational",
+      "response": "The Lakers played the Mavericks on February 25, 2025, according to a game thread. Alex Caruso still thinks about what could have been with the Lakers.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.71089176025343,
+      "context_precision": 0.3333333333,
+      "context_recall": 0.0
+    },
+    {
+      "question": "Who is their best player statistically?",
+      "category": "conversational",
+      "response": "Based on the provided data, Nikola Jokić has the highest points (2072), rebounds (784) and assists (57.6).\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.7858443367858751,
+      "context_precision": 0.49999999995,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Is he in the MVP race?",
+      "category": "conversational",
+      "response": "Based on the provided context, the answer to the question \"Is he in the MVP race?\" is:\n\nThe context doesn't explicitly mention any specific player being in the MVP race.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Compare his numbers to the other top candidates.",
+      "category": "conversational",
+      "response": "I am sorry, but there is no \"his\" to refer to in the context you provided. Therefore, I am unable to compare \"his\" numbers to other top candidates.\n",
+      "faithfulness": 0.5,
+      "relevancy": 0.0,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "question": "Going back to the Bucks, what are their weaknesses?",
+      "category": "conversational",
+      "response": "The provided context doesn't directly state the Bucks' weaknesses. More information would be needed to answer the question.\n",
+      "faithfulness": 1.0,
+      "relevancy": 0.0,
+      "context_precision": 0.94999999997625,
+      "context_recall": 0.6666666666666666
+    },
+    {
+      "question": "Could they address those in a trade?",
+      "category": "conversational",
+      "response": "The provided context discusses talent and secondary scoring options, but it does not mention specific players or teams that could be addressed in a trade.\n",
+      "faithfulness": 0.3333333333333333,
+      "relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 0.0
+    }
+  ]
+}

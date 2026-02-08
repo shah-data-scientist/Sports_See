@@ -1,13 +1,238 @@
 {
   "evaluation_type": "hybrid_queries",
-  "test_count": 0,
+  "test_count": 16,
   "target_integration_quality": 0.75,
-  "samples": [],
+  "samples": [
+    {
+      "question": "Who scored the most points this season and what makes them an effective scorer?",
+      "category": "tier1_stat_plus_context",
+      "response": "Shai Gilgeous-Alexander scored the most points this season with 2485 points. His field goal percentage is 51.9% and true shooting percentage is 63.7%, which makes him an effective scorer.\n",
+      "sources_count": 0,
+      "processing_time_ms": 3835.9837532043457,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Compare LeBron James and Kevin Durant's scoring this season and explain their scoring styles.",
+      "category": "tier1_comparison_plus_context",
+      "response": "LeBron James scored 1708 points this season, while Kevin Durant scored 1649 points. The statistical data does not provide information about their scoring styles.\n",
+      "sources_count": 5,
+      "processing_time_ms": 3558.8245391845703,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "What is Nikola Jokić's scoring average and why is he considered an elite offensive player?",
+      "category": "tier1_stat_plus_explanation",
+      "response": "Nikola Jokić's scoring average is 28.7 points per game. He is considered an elite offensive player because he scored 2072 points in the regular season, with a field goal percentage of 57.6%.\n",
+      "sources_count": 5,
+      "processing_time_ms": 1626.0547637939453,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Who are the top 3 rebounders and what impact do they have on their teams?",
+      "category": "tier1_leaders_plus_impact",
+      "response": "The top 3 rebounders are:\n1. Ivica Zubac with 1008 rebounds and a PIE of 15.7.\n2. Domantas Sabonis with 973 rebounds and a PIE of 16.4.\n3. Karl-Anthony Towns with 922 rebounds and a PIE of 16.1.\nI cannot provide information on the impact they have on their teams from the provided context.\n",
+      "sources_count": 0,
+      "processing_time_ms": 3175.708293914795,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Compare Jokić and Embiid's stats and explain which one is more valuable based on their playing style.",
+      "category": "tier2_comparison_advanced",
+      "response": "Based on the provided data:\n\n*   **Nikola Jokić**: 2072 points, 889 rebounds, 714 assists, and a PIE of 20.6.\n*   **Joel Embiid**: 452 points, 156 rebounds, 86 assists, and a PIE of 16.9.\n\nJokić has significantly more points, rebounds, and assists, and a higher PIE than Embiid. Therefore, based purely on these stats, Nikola Jokić appears to be more valuable.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2930.293560028076,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Who are the most efficient scorers by true shooting percentage and what makes them efficient?",
+      "category": "tier2_efficiency_analysis",
+      "response": "Based on the provided documents, here's what I can tell you about efficient scorers:\n\n*   The modern NBA's offensive strategy is centered around maximizing efficiency, and players are collectively more talented than ever.\n*   True Shooting percentage (TS%) rewards three-point shooters.\n*   Stephen Curry is mentioned as being a 6'2\" player high on efficiency lists.\n*   Reggie Miller is considered the most efficient first option in NBA playoff history.\n*   It is mentioned that Duncan has never been efficient, despite the narrative.\n*   It is mentioned that Zach LaVine has a true shooting percentage of 60.9%.\n*   It is mentioned that Stephen Curry has a true shooting percentage of 57.2%.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2184.248924255371,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Compare Giannis and Anthony Davis's rebounds and explain how their rebounding styles differ.",
+      "category": "tier2_style_comparison",
+      "response": "Giannis Antetokounmpo has 797 rebounds, while Anthony Davis has 592 rebounds. I cannot explain how their rebounding styles differ with the information I have.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2185.079574584961,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Who has the best assist-to-turnover ratio among high-volume passers and why is this important?",
+      "category": "tier2_efficiency_metric",
+      "response": "I cannot find the assist-to-turnover ratio or information about high-volume passers in the provided context. Therefore, I cannot answer who has the best ratio or why it is important.\n",
+      "sources_count": 5,
+      "processing_time_ms": 1407.6881408691406,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Find players averaging triple-double stats and explain what makes this achievement so rare and valuable.",
+      "category": "tier3_rare_achievement",
+      "response": "Based on the provided data, Nikola Jokić and Giannis Antetokounmpo come closest to averaging triple-double stats.\n\n*   **Nikola Jokić:** Averages 20.6 assists and 203 rebounds.\n*   **Giannis Antetokounmpo:** Averages 21 assists and 147 rebounds.\n\nI cannot explain what makes this achievement so rare and valuable based on the provided context.",
+      "sources_count": 5,
+      "processing_time_ms": 5308.321952819824,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "Which players have high scoring but low efficiency, and why might teams still rely on them?",
+      "category": "tier3_strategic_tradeoff",
+      "response": "I cannot find this information in the provided context.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2239.8526668548584,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Compare the top defensive players by blocks and steals and explain different defensive styles.",
+      "category": "tier3_defensive_styles",
+      "response": "Based on the provided data, here's a comparison of the top defensive players by blocks (blk) and steals (stl):\n\n*   **Victor Wembanyama:** stl: 51, blk: 175\n*   **Brook Lopez:** stl: 48, blk: 152\n*   **Myles Turner:** stl: 58, blk: 144\n*   **Walker Kessler:** stl: 35, blk: 139\n*   **Evan Mobley:** stl: 64, blk: 114\n\nThe documents do not provide information to explain different defensive styles.\n",
+      "sources_count": 5,
+      "processing_time_ms": 3039.5004749298096,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Analyze players with 1500+ points and 400+ assists - what does this dual threat mean strategically?",
+      "category": "tier3_dual_threat_strategy",
+      "response": "Analyzing players with 1500+ points and 400+ assists reveals key dual-threat playmakers. Here's a breakdown based on the provided data:\n\nThe players who meet this criteria are:\n\n1.  Shai Gilgeous-Alexander: 2485 points, 486 assists\n2.  Nikola Jokić: 2072 points, 714 assists\n3.  Giannis Antetokounmpo: 2037 points, 436 assists\n4.  Jayson Tatum: 1930 points, 432 assists\n5.  Devin Booker: 1920 points, 533 assists\n6.  Tyler Herro: 1840 points, 424 assists\n7.  Trae Young: 1839 points, 882 assists\n8.  Cade Cunningham: 1827 points, 637 assists\n9.  James Harden: 1801 points, 687 assists\n10. LeBron James: 1708 points, 574 assists\n11. Jalen Brunson: 1690 points, 475 assists\n12. Darius Garland: 1545 points, 503 assists\n\nStrategically, these players are significant offensive hubs for their teams, capable of both scoring and creating opportunities for teammates. This dual-threat ability makes them difficult to defend, requiring opponents to account for both their scoring prowess and their passing skills. Trae Young stands out with the highest assist total (882), indicating a pass-first mentality, while Shai Gilgeous-Alexander leads in points (2485), showcasing a scoring-oriented approach. Nikola Jokic also demonstrates a high assist total (714) paired with significant scoring (2072 points).\n",
+      "sources_count": 0,
+      "processing_time_ms": 4387.319087982178,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "What's the relationship between three-point shooting volume and efficiency, and how has this changed the modern NBA?",
+      "category": "tier4_league_trend_analysis",
+      "response": "The modern NBA maximizes efficiency with its offensive strategy, which is centered around three-point shooting. True shooting is affected by how good a player is at three-point shooting.\n",
+      "sources_count": 5,
+      "processing_time_ms": 7176.018714904785,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Compare advanced efficiency metrics (PIE, TS%) for MVP candidates and explain what these metrics reveal about player impact.",
+      "category": "tier4_advanced_metrics_interpretation",
+      "response": "Here's a comparison of advanced efficiency metrics for MVP candidates:\n\n*   **Nikola Jokić:** PIE: 20.6, TS%: 66.3\n*   **Giannis Antetokounmpo:** PIE: 21, TS%: 62.5\n*   **Luka Dončić:** PIE: 17, TS%: 58.7\n*   **Joel Embiid:** PIE: 16.9, TS%: 58\n\nThese metrics reveal the following about player impact:\n\n*   **PIE (Player Impact Estimate)** aims to show a player's overall statistical contribution to the game.\n*   **TS% (True Shooting Percentage)** measures shooting efficiency, taking into account field goals, 3-point field goals, and free throws. A player with a higher TS% is generally considered a more efficient scorer. The modern NBA offensive strategy is centered around maximizing efficiency.\n",
+      "sources_count": 5,
+      "processing_time_ms": 3480.211019515991,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": true,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    },
+    {
+      "question": "How do young players (high stats) compare to established stars, and what does this suggest about the league's future?",
+      "category": "tier4_generational_shift",
+      "response": "Based on the data, young players like Anthony Edwards (2180 points), Nikola Jokić (2072 points), and Giannis Antetokounmpo (2037 points) have high stats. Established stars like Jayson Tatum (1930 points) and Devin Booker (1920 points) also have high stats. This suggests that the league's future is bright with the emergence of talented young players who can compete with established stars.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2711.0049724578857,
+      "metrics": {
+        "sql_component_used": false,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.25
+      }
+    },
+    {
+      "question": "Analyze the correlation between assists and team success - which high-assist players drive winning?",
+      "category": "tier4_correlation_analysis",
+      "response": "To analyze the correlation between assists and team success, I will examine players with high assist numbers and their team's performance based on the provided data.\n\nThe data includes the following players with assist-related information:\n\n*   **LaMelo Ball (CHA):** 348 assists. Team record: 16 wins, 31 losses. Net Rating: -3.9\n*   **Ja Morant (MEM):** 365 assists. Team record: 30 wins, 20 losses. Net Rating: 6.8\n*   **Scottie Barnes (TOR):** 377 assists. Team record: 26 wins, 39 losses. Net Rating: -2\n*   **Derrick White (BOS):** 365 assists. Team record: 58 wins, 18 losses. Net Rating: 10.2\n\nBased on this limited data, Derrick White of the Boston Celtics shows a strong correlation between assists (365) and team success (58 wins, 18 losses, and a Net Rating of 10.2). Ja Morant also shows a positive Net Rating (6.8) with 365 assists, though his team's record is 30-20. LaMelo Ball and Scottie Barnes, despite having high assist numbers, have negative Net Ratings and losing records.\n",
+      "sources_count": 5,
+      "processing_time_ms": 2877.594232559204,
+      "metrics": {
+        "sql_component_used": true,
+        "vector_component_used": false,
+        "components_blended": true,
+        "answer_complete": false,
+        "integration_score": 0.5
+      }
+    }
+  ],
   "overall_metrics": {
-    "average_integration_score": 0,
-    "pass_rate": 0,
+    "average_integration_score": 0.40625,
+    "pass_rate": 0.0,
     "target_met": false,
-    "sql_usage_rate": 0,
-    "vector_usage_rate": 0
+    "sql_usage_rate": 0.5625,
+    "vector_usage_rate": 0.0625
   }
 }

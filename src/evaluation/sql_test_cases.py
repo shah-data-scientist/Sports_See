@@ -734,11 +734,175 @@ SQL_TEST_CASES = (
     CONVERSATIONAL_SQL_CASES
 )
 
+# ============================================================================
+# HYBRID QUERIES (SQL + Vector Integration)
+# Queries requiring both statistical data AND contextual analysis
+# ============================================================================
+
+HYBRID_TEST_CASES = [
+    # Tier 1: Simple stat + basic context
+    SQLEvaluationTestCase(
+        question="Who scored the most points this season and what makes them an effective scorer?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
+        ground_truth_answer="Shai Gilgeous-Alexander scored 2485 points. His effectiveness comes from his ability to get to the rim and draw fouls.",
+        ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485},
+        category="tier1_stat_plus_context",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare LeBron James and Kevin Durant's scoring this season and explain their scoring styles.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('LeBron James', 'Kevin Durant')",
+        ground_truth_answer="LeBron James: 1708 PTS. Kevin Durant: 1649 PTS. LeBron uses strength and playmaking while Durant relies on elite shooting.",
+        ground_truth_data=[
+            {"name": "LeBron James", "pts": 1708},
+            {"name": "Kevin Durant", "pts": 1649},
+        ],
+        category="tier1_comparison_plus_context",
+    ),
+    SQLEvaluationTestCase(
+        question="What is Nikola Jokić's scoring average and why is he considered an elite offensive player?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Jokić%'",
+        ground_truth_answer="Jokić averages 29.6 PPG (2072 PTS in 70 GP). He's elite because of his versatile scoring, exceptional passing, and high basketball IQ.",
+        ground_truth_data={"name": "Nikola Jokić", "pts": 2072, "gp": 70},
+        category="tier1_stat_plus_explanation",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the top 3 rebounders and what impact do they have on their teams?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 3",
+        ground_truth_answer="Top 3: Ivica Zubac (1008), Domantas Sabonis (973), Karl-Anthony Towns (922). They create second-chance opportunities and control the boards.",
+        ground_truth_data=[
+            {"name": "Ivica Zubac", "reb": 1008},
+            {"name": "Domantas Sabonis", "reb": 973},
+            {"name": "Karl-Anthony Towns", "reb": 922}
+        ],
+        category="tier1_leaders_plus_impact",
+    ),
+
+    # Tier 2: Moderate complexity with multi-stat analysis
+    SQLEvaluationTestCase(
+        question="Compare Jokić and Embiid's stats and explain which one is more valuable based on their playing style.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid')",
+        ground_truth_answer="Jokić: 2072 PTS, 889 REB, 714 AST (PIE: 20.6). Embiid: 452 PTS, 156 REB, 86 AST (PIE: 16.9). Jokić excels in playmaking while Embiid dominates with scoring and defense.",
+        ground_truth_data=[
+            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714, "pie": 20.6},
+            {"name": "Joel Embiid", "pts": 452, "reb": 156, "ast": 86, "pie": 16.9},
+        ],
+        category="tier2_comparison_advanced",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the most efficient scorers by true shooting percentage and what makes them efficient?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.ts_pct, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 50 ORDER BY ps.ts_pct DESC LIMIT 5",
+        ground_truth_answer="Top efficient scorers have high TS% because of good shot selection, high free throw rates, and effective three-point shooting.",
+        ground_truth_data=None,
+        category="tier2_efficiency_analysis",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare Giannis and Anthony Davis's rebounds and explain how their rebounding styles differ.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.reb, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Giannis Antetokounmpo', 'Anthony Davis')",
+        ground_truth_answer="Giannis: 797 REB. Davis: 592 REB. Giannis uses length and athleticism for rebounds, while Davis combines timing and positioning.",
+        ground_truth_data=[
+            {"name": "Giannis Antetokounmpo", "reb": 797},
+            {"name": "Anthony Davis", "reb": 592},
+        ],
+        category="tier2_style_comparison",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has the best assist-to-turnover ratio among high-volume passers and why is this important?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.ast, ps.tov, ROUND(ps.ast*1.0/ps.tov, 2) as ratio FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ast >= 300 AND ps.tov > 0 ORDER BY (ps.ast*1.0/ps.tov) DESC LIMIT 5",
+        ground_truth_answer="High AST/TO ratio indicates excellent decision-making and ball security, crucial for winning basketball by maximizing possessions.",
+        ground_truth_data=None,
+        category="tier2_efficiency_metric",
+    ),
+
+    # Tier 3: Complex multi-dimensional analysis
+    SQLEvaluationTestCase(
+        question="Find players averaging triple-double stats and explain what makes this achievement so rare and valuable.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ROUND(ps.pts*1.0/ps.gp,1) as ppg, ROUND(ps.reb*1.0/ps.gp,1) as rpg, ROUND(ps.ast*1.0/ps.gp,1) as apg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 0 AND ps.pts*1.0/ps.gp >= 10 AND ps.reb*1.0/ps.gp >= 10 AND ps.ast*1.0/ps.gp >= 10",
+        ground_truth_answer="Nikola Jokić averages 29.6/12.7/10.2. Triple-doubles require elite versatility in scoring, rebounding, and playmaking - a rare combination.",
+        ground_truth_data=[{"name": "Nikola Jokić", "ppg": 29.6, "rpg": 12.7, "apg": 10.2}],
+        category="tier3_rare_achievement",
+    ),
+    SQLEvaluationTestCase(
+        question="Which players have high scoring but low efficiency, and why might teams still rely on them?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts, ps.fg_pct, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts > 1500 AND ps.fg_pct < 45 ORDER BY ps.pts DESC",
+        ground_truth_answer="High-volume low-efficiency scorers may still be valuable due to clutch performance, defensive attention they draw, or lack of other offensive options.",
+        ground_truth_data=None,
+        category="tier3_strategic_tradeoff",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare the top defensive players by blocks and steals and explain different defensive styles.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.stl, ps.blk, (ps.stl + ps.blk) as def_actions FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY (ps.stl + ps.blk) DESC LIMIT 5",
+        ground_truth_answer="Top defenders include Dyson Daniels (228 STL, 53 BLK) and Victor Wembanyama (51 STL, 175 BLK). Daniels excels at perimeter defense while Wembanyama is an elite rim protector.",
+        ground_truth_data=[
+            {"name": "Dyson Daniels", "stl": 228, "blk": 53},
+            {"name": "Victor Wembanyama", "stl": 51, "blk": 175},
+        ],
+        category="tier3_defensive_styles",
+    ),
+    SQLEvaluationTestCase(
+        question="Analyze players with 1500+ points and 400+ assists - what does this dual threat mean strategically?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pts, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1500 AND ps.ast >= 300 ORDER BY ps.pts DESC",
+        ground_truth_answer="Dual-threat scorers and playmakers force defenses to make difficult choices, creating advantages for teammates while maintaining personal scoring threat.",
+        ground_truth_data=[
+            {"name": "Shai Gilgeous-Alexander", "pts": 2485, "ast": 486},
+            {"name": "Nikola Jokić", "pts": 2072, "ast": 714},
+        ],
+        category="tier3_dual_threat_strategy",
+    ),
+
+    # Tier 4: Advanced synthesis with league-wide trends
+    SQLEvaluationTestCase(
+        question="What's the relationship between three-point shooting volume and efficiency, and how has this changed the modern NBA?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT AVG(three_pct) as avg_3p, COUNT(*) as player_count FROM player_stats WHERE three_pct IS NOT NULL",
+        ground_truth_answer="Modern NBA emphasizes three-point shooting due to analytics showing its efficiency. The 'three-point revolution' has changed offensive strategies and floor spacing.",
+        ground_truth_data={"avg_3p": 29.9},
+        category="tier4_league_trend_analysis",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare advanced efficiency metrics (PIE, TS%) for MVP candidates and explain what these metrics reveal about player impact.",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.pie, ps.ts_pct, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts > 1800 ORDER BY ps.pie DESC LIMIT 5",
+        ground_truth_answer="PIE measures overall player impact while TS% captures scoring efficiency. Together they reveal both productivity and effectiveness in generating value.",
+        ground_truth_data=None,
+        category="tier4_advanced_metrics_interpretation",
+    ),
+    SQLEvaluationTestCase(
+        question="How do young players (high stats) compare to established stars, and what does this suggest about the league's future?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, p.age, ps.pts, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.age IS NOT NULL ORDER BY ps.pts DESC LIMIT 10",
+        ground_truth_answer="Young stars with elite stats suggest a generational talent shift, with younger players developing skills faster through modern training and analytics.",
+        ground_truth_data=None,
+        category="tier4_generational_shift",
+    ),
+    SQLEvaluationTestCase(
+        question="Analyze the correlation between assists and team success - which high-assist players drive winning?",
+        query_type=QueryType.HYBRID,
+        expected_sql="SELECT p.name, ps.ast, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ast > 500 ORDER BY ps.ast DESC",
+        ground_truth_answer="High-assist players like Trae Young (882 AST) facilitate team offense. Playmaking correlates with winning by creating efficient shot opportunities for teammates.",
+        ground_truth_data=[{"name": "Trae Young", "ast": 882}],
+        category="tier4_correlation_analysis",
+    ),
+]
+
 # Verify counts
 print(f"SQL Test Cases Loaded: {len(SQL_TEST_CASES)} cases")
+print(f"Hybrid Test Cases Loaded: {len(HYBRID_TEST_CASES)} cases")
 assert len(SIMPLE_SQL_CASES) == 17, f"Expected 17 simple cases, got {len(SIMPLE_SQL_CASES)}"
 assert len(COMPARISON_SQL_CASES) == 14, f"Expected 14 comparison cases, got {len(COMPARISON_SQL_CASES)}"
 assert len(AGGREGATION_SQL_CASES) == 17, f"Expected 17 aggregation cases, got {len(AGGREGATION_SQL_CASES)}"
 assert len(COMPLEX_SQL_CASES) == 12, f"Expected 12 complex cases, got {len(COMPLEX_SQL_CASES)}"
 assert len(CONVERSATIONAL_SQL_CASES) == 8, f"Expected 8 conversational cases, got {len(CONVERSATIONAL_SQL_CASES)}"
 assert len(SQL_TEST_CASES) == 68, f"Expected 68 SQL cases, got {len(SQL_TEST_CASES)}"
+assert len(HYBRID_TEST_CASES) == 16, f"Expected 16 hybrid cases, got {len(HYBRID_TEST_CASES)}"
