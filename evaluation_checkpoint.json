@@ -178,5 +178,248 @@
     ],
     "reference": "Salary-to-performance analysis requires cross-referencing salary data with efficiency metrics. Not all high-salary players provide proportional on-court value as measured by advanced stats.",
     "category": "complex"
+  },
+  {
+    "user_input": "Based on home vs away records, travel schedules, and Reddit fan discussions, which teams struggle the most on the road and why?",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur les équipes qui ont du mal à l'extérieur, ni sur les raisons pour lesquelles elles ont du mal.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Road performance analysis combines win-loss records for away games, travel distances, and fan observations from Reddit. Teams from the West Coast often face more travel-related challenges.",
+    "category": "complex"
+  },
+  {
+    "user_input": "Evaluate the trade deadline moves this season. Which trades have had the biggest positive and negative impacts on team performance according to pre and post-trade statistics?",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur les mouvements à la date limite des transferts de cette saison, ni sur leur impact sur les performances des équipes.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Trade impact can be measured by comparing team statistics before and after trade deadline acquisitions. Reddit discussions provide qualitative context for the quantitative performance changes.",
+    "category": "complex"
+  },
+  {
+    "user_input": "Cross-reference injury reports with team performance dips to determine which teams are most affected by their star player's absence.",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations qui me permettraient de déterminer quelles équipes sont les plus affectées par l'absence de leurs joueurs vedettes.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Injury impact analysis requires comparing team records with and without key players. The largest win-rate differentials indicate the most critical players to their team's success.",
+    "category": "complex"
+  },
+  {
+    "user_input": "How has the rise of analytics-driven coaching changed timeout usage and rotation patterns compared to what Reddit fans discuss?",
+    "response": "Le contexte fourni ne contient pas d'informations sur la façon dont l'essor du coaching axé sur l'analyse a changé l'utilisation des temps morts et les schémas de rotation par rapport à ce que les fans de Reddit discutent.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Analytics-driven coaching has influenced timeout strategy and player rotation lengths. Reddit discussions often debate whether data-driven decisions conflict with traditional coaching wisdom.",
+    "category": "complex"
+  },
+  {
+    "user_input": "who iz the best player ever??? lebron or jordan",
+    "response": "Le contexte fourni ne contient pas d'informations pour répondre à cette question.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This is a subjective debate. The documents may contain Reddit discussions about GOAT debates but there is no definitive statistical answer to who is the best player ever.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "stats for that tall guy from milwaukee",
+    "response": "Je suis désolé, je n'ai pas les informations sur les statistiques du grand joueur de Milwaukee dans le contexte fourni.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This likely refers to Giannis Antetokounmpo of the Milwaukee Bucks. His stats would be in the regular NBA statistics data.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "What is the best strategy for winning in NBA 2K video game?",
+    "response": "Je suis désolé, mais je ne peux pas répondre à votre question. Le contexte fourni ne contient aucune information sur les stratégies de jeu dans le jeu vidéo NBA 2K.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This question is about a video game, not real NBA data. The knowledge base contains real NBA statistics and discussions, not video game strategies.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "lmao bro did u see that dunk last nite it was insane fr fr",
+    "response": "Je suis désolé, mais le contexte fourni ne contient aucune information sur les dunks. Je ne peux donc pas répondre à votre question.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This is informal slang asking about a recent dunk. The system should attempt to find recent highlight discussions or game recaps despite the casual language.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "waht are teh top 10 plyers in teh leage rite now??",
+    "response": "Désolé, le contexte fourni ne contient pas d'informations sur les 10 meilleurs joueurs de la ligue en ce moment.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Despite heavy typos, this asks about the top 10 NBA players. The system should recognize the intent and provide current player rankings based on statistics.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "Tell me about the weather forecast for tomorrow in New York",
+    "response": "Je suis désolé, mais le contexte fourni ne contient aucune information sur les prévisions météorologiques pour demain à New York.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This is completely out of scope. The knowledge base only contains NBA statistics and basketball discussions, not weather data.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "?",
+    "response": "Je suis désolé, mais la question n'a pas été fournie. Je ne peux pas y répondre sans une question.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "A single punctuation mark is not a meaningful query. The system should handle minimal-content queries gracefully.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "Curry Curry Curry Curry points points points average",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur les points, la moyenne et Curry.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This repetitive query likely asks about Stephen Curry's scoring average. The system should handle keyword-stuffed queries.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "<script>alert('xss')</script> SELECT * FROM players",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur la requête SQL fournie. Je ne suis pas en mesure de répondre à la question concernant la requête `SELECT * FROM players`.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This is an injection attempt. The system should sanitize input and not execute any embedded code or SQL.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "Give me a 5000 word essay on the history of basketball",
+    "response": "Je suis désolé, mais le contexte fourni est insuffisant pour répondre à une question aussi vaste que l'histoire du basketball sous la forme d'un essai de 5000 mots. Le contexte ne contient que du texte contextuel sur la NBA, ce qui ne permet pas de couvrir l'histoire complète du basketball.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This requests excessively long output. The system should provide a concise answer based on available knowledge base content rather than generating an essay.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "nba",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas assez d'informations pour répondre à votre question \"nba\". Le contexte ne contient qu'un texte bref et ne donne pas assez d'informations sur la NBA.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This single-word query is too vague. The system should either ask for clarification or provide a general NBA overview.",
+    "category": "noisy"
+  },
+  {
+    "user_input": "Who is the leading scorer in the NBA this season?",
+    "response": "Désolé, je ne peux pas répondre à cette question. Le contexte fourni ne contient pas l'information sur le meilleur marqueur de la saison NBA en cours.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "The leading scorer can be found in the player statistics table sorted by points per game descending.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "What about his assist numbers?",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur le nombre de passes décisives.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This follow-up references the previously mentioned leading scorer. The system needs context from the prior question to resolve 'his'. The assists data is in the same player statistics table.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "How does that compare to last season?",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations qui permettraient de répondre à votre question sur la comparaison avec la saison dernière.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This second follow-up asks for a season-over-season comparison of the leading scorer's assists. Requires maintaining context across multiple turns.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Which team does Giannis play for?",
+    "response": "Désolé, mais le contexte fourni ne contient pas d'informations sur l'équipe pour laquelle Giannis joue.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "Giannis Antetokounmpo plays for the Milwaukee Bucks. This starts a new conversational thread.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "How are they doing in the standings?",
+    "response": "D'après le contexte fourni, je ne peux pas dire comment ils se classent. Le contexte ne contient pas cette information.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This follow-up asks about the Milwaukee Bucks' standing. The pronoun 'they' references Giannis's team from the prior question.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "And what about their biggest rival in the division?",
+    "response": "Le contexte ne contient pas l'information sur le plus grand rival de l'équipe dans la division.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This asks about the Milwaukee Bucks' divisional rival. Requires knowing 'their' refers to the Bucks and understanding NBA divisional structure.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Tell me about the Lakers' recent performance.",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur la performance récente des Lakers.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "The Lakers' recent performance can be found in their game logs and team statistics for the current season.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Who is their best player statistically?",
+    "response": "Le contexte fourni ne contient pas d'informations sur le meilleur joueur statistiquement.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This follow-up asks about the Lakers' best player. 'Their' references the Lakers from the previous question. The answer depends on which statistical metric is used.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Is he in the MVP race?",
+    "response": "Je ne peux pas répondre à cette question car le contexte fourni ne contient pas d'information sur la course au titre de MVP.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This asks whether the Lakers' top player is an MVP candidate. 'He' refers to the player identified in the previous answer. MVP candidacy involves advanced stats and team record.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Compare his numbers to the other top candidates.",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur les \"chiffres\" ni sur les \"autres meilleurs candidats\". Par conséquent, je ne peux pas répondre à cette question.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This asks for a statistical comparison between the previously discussed player and other MVP candidates. Requires maintaining full conversation context and cross-referencing multiple players.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Going back to the Bucks, what are their weaknesses?",
+    "response": "Désolé, je ne peux pas répondre à votre question car le contexte fourni ne contient aucune information sur les faiblesses des Bucks.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This redirects the conversation back to the Milwaukee Bucks discussed earlier. 'Going back to' signals a topic switch. Team weaknesses can be inferred from stats and discussions.",
+    "category": "conversational"
+  },
+  {
+    "user_input": "Could they address those in a trade?",
+    "response": "Je suis désolé, mais le contexte fourni ne contient pas d'informations sur la possibilité d'échanger des joueurs. Par conséquent, je ne peux pas répondre à la question.\n",
+    "retrieved_contexts": [
+      "Some NBA context text"
+    ],
+    "reference": "This follow-up asks whether the Bucks could fix their weaknesses via trades. 'They' refers to the Bucks, 'those' refers to the weaknesses identified in the previous answer.",
+    "category": "conversational"
   }
 ]

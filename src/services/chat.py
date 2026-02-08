@@ -28,25 +28,36 @@ logger = logging.getLogger(__name__)
 
 # System prompt template
 # Phase 4 improvements: Explicit relevancy and faithfulness constraints
-SYSTEM_PROMPT_TEMPLATE = """Tu es '{app_name} Analyst AI', un assistant expert en analyse sportive NBA.
+# Phase 10 improvements: SQL data priority + English-only context
+# IMPORTANT: English language to ensure consistent English responses
+SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
 
-CONTEXTE:
+CONTEXT:
 ---
 {context}
 ---
 
-QUESTION DE L'UTILISATEUR:
+USER QUESTION:
 {question}
 
-INSTRUCTIONS CRITIQUES:
-1. Réponds DIRECTEMENT à la question posée - ne dévie pas du sujet
-2. Base ta réponse UNIQUEMENT sur les informations du contexte ci-dessus
-3. N'ajoute JAMAIS d'informations qui ne sont pas dans le contexte
-4. Si le contexte ne contient pas l'information nécessaire, dis clairement "Je ne trouve pas cette information dans le contexte fourni"
-5. Sois précis et concis - va droit au but
-6. Cite les sources (noms de joueurs, équipes, statistiques) exactement comme indiqué dans le contexte
+CRITICAL INSTRUCTIONS:
+1. Answer DIRECTLY to the question asked - do not deviate from the topic
+2. Base your answer ONLY on information from the context above
+3. NEVER add information that is not in the context
+4. **STATISTICAL DATA (FROM SQL DATABASE)** contains EXACT FACTS from the official database:
+   - This is the PRIMARY source for all statistical queries
+   - Use these exact numbers - they are authoritative and verified
+   - Each numbered entry or bullet point is a complete database record
+5. **DOCUMENTS AND ANALYSIS** contains contextual information:
+   - Use this for player stories, analysis, opinions, and qualitative insights
+   - This supplements but does NOT replace statistical data
+6. When SQL data is present, you MUST use it to answer statistical questions
+7. If neither section contains the answer, state: "I cannot find this information in the provided context"
+8. Be precise and concise - provide exact numbers and names from the data
+9. For lists/rankings, present them clearly (numbered or bulleted)
+10. ALWAYS respond in English
 
-RÉPONSE:"""
+RESPONSE:"""
 
 
 class ChatService:
@@ -78,7 +89,7 @@ class ChatService:
             enable_sql: Enable SQL tool for statistical queries (default: True)
         """
         self._api_key = api_key or settings.google_api_key
-        self._model = model or "gemini-2.0-flash-lite"
+        self._model = model or "gemini-2.0-flash"  # Upgraded from flash-lite for better comprehension
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
 
@@ -273,7 +284,7 @@ class ChatService:
                 return response.text
 
             logger.warning("Gemini returned no text")
-            return "Je n'ai pas pu générer de réponse."
+            return "I could not generate a response."
 
         except ClientError as e:
             logger.error("Gemini API error: %s", e)
@@ -311,6 +322,7 @@ class ChatService:
         context_parts = []
         search_results = []
         sql_failed = False  # Track SQL failure for fallback
+        sql_success = False  # Track SQL success
 
         # Statistical query → SQL tool
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
@@ -326,10 +338,36 @@ class ChatService:
                         logger.warning("SQL query returned no results - falling back to vector search")
                         sql_failed = True
                     else:
-                        # Format SQL results as context
-                        sql_context = self.sql_tool.format_results(sql_result["results"])
-                        context_parts.append(f"DONNÉES STATISTIQUES (SQL):\n{sql_context}")
-                        logger.info(f"SQL query returned {len(sql_result['results'])} rows")
+                        # Format SQL results with enhanced structure for better LLM comprehension
+                        num_rows = len(sql_result["results"])
+
+                        # Create clear, numbered formatting
+                        if num_rows == 1:
+                            # Single result - use key-value format
+                            row = sql_result["results"][0]
+                            formatted_data = []
+                            for key, value in row.items():
+                                formatted_data.append(f"  • {key}: {value}")
+                            sql_context = "\n".join(formatted_data)
+                            header = "STATISTICAL DATA (FROM SQL DATABASE):\nFound 1 matching record:\n\n"
+                        else:
+                            # Multiple results - use numbered list format
+                            formatted_rows = []
+                            for i, row in enumerate(sql_result["results"][:20], 1):  # Limit to top 20
+                                row_parts = [f"{k}: {v}" for k, v in row.items()]
+                                formatted_rows.append(f"{i}. {', '.join(row_parts)}")
+
+                            sql_context = "\n".join(formatted_rows)
+
+                            if num_rows > 20:
+                                sql_context += f"\n\n(Showing top 20 of {num_rows} total results)"
+                                header = f"STATISTICAL DATA (FROM SQL DATABASE):\nFound {num_rows} matching records (showing top 20):\n\n"
+                            else:
+                                header = f"STATISTICAL DATA (FROM SQL DATABASE):\nFound {num_rows} matching records:\n\n"
+
+                        context_parts.append(header + sql_context)
+                        logger.info(f"SQL query returned {num_rows} rows")
+                        sql_success = True
 
                 except Exception as e:
                     logger.error(f"SQL tool error: {e} - falling back to vector search")
@@ -337,7 +375,14 @@ class ChatService:
 
         # Contextual/Hybrid query → Vector search
         # Also fallback to vector if SQL failed for STATISTICAL queries
-        if query_type in (QueryType.CONTEXTUAL, QueryType.HYBRID) or (query_type == QueryType.STATISTICAL and sql_failed):
+        # OR always add vector search for HYBRID queries
+        should_use_vector = (
+            query_type == QueryType.CONTEXTUAL or
+            query_type == QueryType.HYBRID or
+            (query_type == QueryType.STATISTICAL and sql_failed)
+        )
+
+        if should_use_vector:
             if sql_failed and query_type == QueryType.STATISTICAL:
                 logger.info("SQL fallback activated - using vector search for statistical query")
             else:
@@ -354,16 +399,38 @@ class ChatService:
                 vector_context = "\n\n---\n\n".join(
                     [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
                 )
-                context_parts.append(f"DOCUMENTS ET DISCUSSIONS:\n{vector_context}")
+                context_parts.append(f"DOCUMENTS AND ANALYSIS:\n{vector_context}")
 
         # Combine contexts
         if context_parts:
             context = "\n\n=== === ===\n\n".join(context_parts)
         else:
-            context = "Aucune information pertinente trouvée."
+            context = "No relevant information found."
 
         # Generate response
         answer = self.generate_response(query=query, context=context)
+
+        # SMART FALLBACK: If SQL succeeded but LLM still says "cannot find", retry with vector search
+        if sql_success and not sql_failed and "cannot find" in answer.lower():
+            logger.warning("SQL succeeded but LLM couldn't use results - retrying with vector search")
+
+            # Get vector search results
+            search_results = self.search(
+                query=query,
+                k=request.k,
+                min_score=request.min_score,
+            )
+
+            if search_results:
+                # Retry with vector context
+                vector_context = "\n\n---\n\n".join(
+                    [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
+                )
+                fallback_context = f"DOCUMENTS AND ANALYSIS:\n{vector_context}"
+
+                # Regenerate response with vector context
+                answer = self.generate_response(query=query, context=fallback_context)
+                logger.info("Vector search fallback succeeded")
 
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000

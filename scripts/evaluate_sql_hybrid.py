@@ -20,12 +20,8 @@ from src.evaluation.sql_evaluation import (
     SQLExecutionResult,
     VectorRetrievalResult,
 )
-from src.evaluation.sql_test_cases import (
-    ALL_SQL_TEST_CASES,
-    CONTEXTUAL_TEST_CASES,
-    HYBRID_TEST_CASES,
-    SQL_TEST_CASES,
-)
+from src.evaluation.hybrid_test_cases import HYBRID_TEST_CASES as HYBRID_CASES_NEW
+from src.evaluation.sql_test_cases import SQL_TEST_CASES
 from src.services.chat import ChatService
 
 logger = logging.getLogger(__name__)
@@ -155,15 +151,19 @@ def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
         use_sql: Whether to enable SQL tool (default: True)
 
     Returns:
-        List of evaluation samples
+        List of tuples (sample, test_case) - maintains alignment even when queries fail
     """
     logger.info(f"Running SQL + Hybrid evaluation on {len(test_cases)} test cases")
 
-    # Initialize chat service with SQL enabled
+    # Initialize chat service and SQL tool separately for evaluation
     chat_service = ChatService(enable_sql=use_sql)
     chat_service.ensure_ready()
 
-    samples = []
+    # Initialize SQL tool directly for accurate evaluation
+    from src.tools.sql_tool import NBAGSQLTool
+    sql_tool = NBAGSQLTool()
+
+    results = []  # List of (sample, test_case) tuples
 
     for i, test_case in enumerate(test_cases):
         logger.info(f"[{i+1}/{len(test_cases)}] {test_case.category}: {test_case.question[:60]}...")
@@ -175,20 +175,43 @@ def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
             request = ChatRequest(query=test_case.question, k=5, include_sources=True)
             response = chat_service.chat(request)
 
-            # Extract SQL result if SQL was used
+            # For SQL queries, also execute directly to get raw results for evaluation
             sql_result = None
-            if test_case.query_type in (QueryType.SQL_ONLY, QueryType.HYBRID):
-                # Check if SQL tool was invoked (detect "SQL" in sources or processing)
-                # This is a simplification - in practice, you'd instrument ChatService to return metadata
-                sql_used = any("sql" in s.source.lower() for s in response.sources) if response.sources else False
-                if sql_used or not response.sources:  # Assume SQL if no vector sources
+            if test_case.query_type == QueryType.SQL_ONLY:
+                try:
+                    # Execute SQL directly to get raw results
+                    sql_output = sql_tool.query(test_case.question)
+
                     sql_result = SQLExecutionResult(
-                        query_generated="SELECT ... (not accessible from response)",
-                        query_executed=True,  # Assume success if we got a response
-                        execution_error=None,
-                        results=[],  # Not accessible from ChatResponse
+                        query_generated=sql_output.get("sql", ""),
+                        query_executed=sql_output.get("error") is None,
+                        execution_error=sql_output.get("error"),
+                        results=sql_output.get("results", []),
+                        formatted_results=sql_output.get("formatted_results"),
+                    )
+                except Exception as e:
+                    logger.warning(f"SQL evaluation failed: {e}")
+                    sql_result = SQLExecutionResult(
+                        query_generated="",
+                        query_executed=False,
+                        execution_error=str(e),
+                        results=[],
                         formatted_results=None,
                     )
+
+            elif test_case.query_type == QueryType.HYBRID:
+                # For hybrid queries, try to execute SQL component
+                try:
+                    sql_output = sql_tool.query(test_case.question)
+                    sql_result = SQLExecutionResult(
+                        query_generated=sql_output.get("sql", ""),
+                        query_executed=sql_output.get("error") is None,
+                        execution_error=sql_output.get("error"),
+                        results=sql_output.get("results", []),
+                        formatted_results=sql_output.get("formatted_results"),
+                    )
+                except Exception as e:
+                    logger.warning(f"Hybrid SQL evaluation failed: {e}")
 
             # Extract vector result if vector search was used
             vector_result = None
@@ -210,15 +233,19 @@ def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
                 reference=test_case.ground_truth_answer,
                 category=test_case.category,
             )
-            samples.append(sample)
+
+            # Store (sample, test_case) tuple to maintain alignment
+            results.append((sample, test_case))
 
             logger.info(f"  Response: {response.answer[:100]}...")
 
         except Exception as e:
             logger.error(f"  Error processing query: {e}")
-            continue
+            # IMPORTANT: Still append None to maintain index alignment
+            # This ensures results[i] always corresponds to test_cases[i]
+            results.append((None, test_case))
 
-    return samples
+    return results
 
 
 def compute_metrics(sample: HybridEvaluationSample, test_case) -> HybridEvaluationMetrics:
@@ -332,37 +359,51 @@ def main():
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
+    # Set stdout encoding to UTF-8 on Windows
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
     print("\n" + "=" * 80)
     print("  SQL + HYBRID QUERY EVALUATION FRAMEWORK")
     print("  Test SQL accuracy, vector retrieval, and hybrid integration")
     print("=" * 80 + "\n")
 
-    # Choose test set
-    print("Available test sets:")
-    print("  1. SQL-only queries (7 cases)")
-    print("  2. Hybrid queries (4 cases)")
-    print("  3. Contextual-only queries (3 cases)")
-    print("  4. All queries (14 cases)")
+    # Choose test set (support command-line argument or interactive)
+    if len(sys.argv) > 1:
+        choice = sys.argv[1]
+    else:
+        print("Available test sets:")
+        print("  1. SQL-only queries (68 cases - includes simple, comparison, aggregation, complex, conversational)")
+        print("  2. Hybrid queries (39 cases - SQL + Vector combined)")
+        print("  3. All queries (107 cases - SQL + Hybrid)")
+        choice = input("\nSelect test set (1-3, default=3): ").strip() or "3"
 
-    choice = input("\nSelect test set (1-4, default=4): ").strip() or "4"
+    # Build ALL test cases by combining SQL and Hybrid sets
+    ALL_TEST_CASES = SQL_TEST_CASES + HYBRID_CASES_NEW
 
     test_cases = {
-        "1": SQL_TEST_CASES,
-        "2": HYBRID_TEST_CASES,
-        "3": CONTEXTUAL_TEST_CASES,
-        "4": ALL_SQL_TEST_CASES,
-    }.get(choice, ALL_SQL_TEST_CASES)
+        "1": SQL_TEST_CASES,       # 68 cases
+        "2": HYBRID_CASES_NEW,     # 39 cases
+        "3": ALL_TEST_CASES,       # 107 cases total
+    }.get(choice, ALL_TEST_CASES)
 
     print(f"\nRunning evaluation on {len(test_cases)} test cases...\n")
 
     # Run evaluation
-    samples = run_sql_hybrid_evaluation(test_cases, use_sql=True)
+    results = run_sql_hybrid_evaluation(test_cases, use_sql=True)
 
-    # Compute metrics
+    # Compute metrics (filter out failed queries where sample is None)
+    samples = []
     metrics_list = []
-    for sample, test_case in zip(samples, test_cases):
-        metrics = compute_metrics(sample, test_case)
-        metrics_list.append(metrics)
+    successful_test_cases = []
+
+    for sample, test_case in results:
+        if sample is not None:
+            metrics = compute_metrics(sample, test_case)
+            samples.append(sample)
+            metrics_list.append(metrics)
+            successful_test_cases.append(test_case)
 
     # Print results
     print_results(samples, metrics_list)

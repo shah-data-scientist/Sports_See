@@ -173,3 +173,178 @@ class TestVectorStoreRepository:
 
         assert chunks1 is not chunks2
         assert chunks1 == chunks2
+
+    def test_save_without_index_raises(self, repository):
+        """Test that saving without building index raises error."""
+        with pytest.raises(ValueError, match="No index to save"):
+            repository.save()
+
+    def test_load_error_handling(self, repository, temp_paths, sample_chunks, sample_embeddings):
+        """Test load handles corrupted files gracefully."""
+        index_path, chunks_path = temp_paths
+
+        # Build and save valid index
+        repository.build_index(sample_chunks, sample_embeddings)
+        repository.save()
+
+        # Corrupt chunks file
+        with open(chunks_path, "w") as f:
+            f.write("corrupted data")
+
+        # Create new repository and try to load
+        new_repo = VectorStoreRepository(
+            index_path=index_path,
+            chunks_path=chunks_path,
+        )
+        assert not new_repo.load()
+        assert not new_repo.is_loaded
+
+    def test_search_with_metadata_filters(self, repository, sample_chunks, sample_embeddings):
+        """Test search with metadata filters."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+
+        # Filter by source
+        results = repository.search(
+            query_embedding,
+            k=5,
+            metadata_filters={"source": "nba.pdf"}
+        )
+
+        # Should only return chunks from nba.pdf
+        assert len(results) <= 2
+        for chunk, _ in results:
+            assert chunk.metadata.get("source") == "nba.pdf"
+
+    def test_search_with_metadata_filters_no_matches(self, repository, sample_chunks, sample_embeddings):
+        """Test search with metadata filters that match nothing."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+
+        # Filter by non-existent source
+        results = repository.search(
+            query_embedding,
+            k=2,
+            metadata_filters={"source": "nonexistent.pdf"}
+        )
+
+        # Should fall back to unfiltered search
+        assert len(results) <= 2
+
+    def test_search_with_1d_query_embedding(self, repository, sample_chunks, sample_embeddings):
+        """Test search handles 1D query embedding correctly."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        # 1D query embedding
+        query_embedding = np.random.rand(64).astype(np.float32)
+
+        results = repository.search(query_embedding, k=2)
+
+        assert len(results) == 2
+
+    def test_search_with_2d_query_embedding(self, repository, sample_chunks, sample_embeddings):
+        """Test search handles 2D query embedding correctly."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        # 2D query embedding (1 x 64)
+        query_embedding = np.random.rand(1, 64).astype(np.float32)
+
+        results = repository.search(query_embedding, k=2)
+
+        assert len(results) == 2
+
+    def test_search_k_larger_than_index(self, repository, sample_chunks, sample_embeddings):
+        """Test search when k is larger than index size."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+
+        # Request more results than available
+        results = repository.search(query_embedding, k=100)
+
+        # Should return all available (3)
+        assert len(results) == 3
+
+    def test_search_results_sorted_by_score(self, repository, sample_chunks, sample_embeddings):
+        """Test that search results are sorted by score descending."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+        results = repository.search(query_embedding, k=3)
+
+        # Check scores are in descending order
+        scores = [score for _, score in results]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_search_with_metadata_filter_and_min_score(self, repository, sample_chunks, sample_embeddings):
+        """Test search with both metadata filter and min_score."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+
+        results = repository.search(
+            query_embedding,
+            k=5,
+            min_score=0.01,  # Low threshold to get some results
+            metadata_filters={"source": "nba.pdf"}
+        )
+
+        # Should filter by both metadata and score
+        assert len(results) <= 2
+        for chunk, score in results:
+            assert chunk.metadata.get("source") == "nba.pdf"
+            assert score >= 1.0  # min_score * 100
+
+    def test_index_size_property_no_index(self, repository):
+        """Test index_size property returns 0 when no index."""
+        assert repository.index_size == 0
+
+    def test_is_loaded_property_false_initially(self, repository):
+        """Test is_loaded property is False initially."""
+        assert repository.is_loaded is False
+
+    def test_is_loaded_after_build(self, repository, sample_chunks, sample_embeddings):
+        """Test is_loaded property after building index."""
+        repository.build_index(sample_chunks, sample_embeddings)
+        assert repository.is_loaded is True
+
+    def test_search_score_conversion_to_percentage(self, repository, sample_chunks, sample_embeddings):
+        """Test that search scores are converted to percentages (0-100)."""
+        repository.build_index(sample_chunks, sample_embeddings)
+
+        query_embedding = np.random.rand(64).astype(np.float32)
+        results = repository.search(query_embedding, k=3)
+
+        # All scores should be in percentage range
+        for _, score in results:
+            assert 0 <= score <= 100
+
+    def test_load_converts_dict_to_document_chunk(self, repository, temp_paths, sample_chunks, sample_embeddings):
+        """Test that load properly converts dict format to DocumentChunk models."""
+        index_path, chunks_path = temp_paths
+
+        # Build and save
+        repository.build_index(sample_chunks, sample_embeddings)
+        repository.save()
+
+        # Load in new repository
+        new_repo = VectorStoreRepository(
+            index_path=index_path,
+            chunks_path=chunks_path,
+        )
+        new_repo.load()
+
+        # Verify chunks are DocumentChunk instances
+        for chunk in new_repo.chunks:
+            assert isinstance(chunk, DocumentChunk)
+            assert hasattr(chunk, 'id')
+            assert hasattr(chunk, 'text')
+            assert hasattr(chunk, 'metadata')
+
+    def test_delete_files_when_files_dont_exist(self, repository):
+        """Test delete_files handles non-existent files gracefully."""
+        # Should not raise error even if files don't exist
+        repository.delete_files()
+        assert not repository.is_loaded

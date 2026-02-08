@@ -1,503 +1,744 @@
 """
 FILE: sql_test_cases.py
 STATUS: Active
-RESPONSIBILITY: Test cases for SQL and Hybrid query evaluation
+RESPONSIBILITY: Comprehensive SQL and contextual test cases for evaluation
 LAST MAJOR UPDATE: 2026-02-08
 MAINTAINER: Shahu
 """
 
 from src.evaluation.sql_evaluation import QueryType, SQLEvaluationTestCase
 
-# SQL-only test cases (statistical queries)
-SQL_TEST_CASES = [
-    # Simple SQL queries
+# ============================================================================
+# SIMPLE SQL QUERIES (17 cases)
+# Single-table queries with JOIN, straightforward retrieval
+# ============================================================================
+
+SIMPLE_SQL_CASES = [
     SQLEvaluationTestCase(
         question="Who scored the most points this season?",
         query_type=QueryType.SQL_ONLY,
-        expected_sql="SELECT name, pts FROM player_stats ORDER BY pts DESC LIMIT 1",
-        ground_truth_answer="Luka Dončić scored the most points with 2370 PTS.",
-        ground_truth_data={"name": "Luka Dončić", "pts": 2370},
-        category="simple_sql",
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
+        ground_truth_answer="Shai Gilgeous-Alexander scored the most points with 2485 PTS.",
+        ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485},
+        category="simple_sql_top_n",
     ),
     SQLEvaluationTestCase(
         question="What is LeBron James' average points per game?",
         query_type=QueryType.SQL_ONLY,
-        expected_sql="SELECT name, pts, gp, ROUND(pts / gp, 1) as ppg FROM player_stats WHERE name LIKE '%LeBron%'",
-        ground_truth_answer="LeBron James averages 25.7 points per game (2082 PTS / 81 GP).",
-        ground_truth_data={"name": "LeBron James", "ppg": 25.7},
-        category="simple_sql",
+        expected_sql="SELECT p.name, ROUND(ps.pts*1.0/ps.gp, 1) as ppg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'",
+        ground_truth_answer="LeBron James averages 24.4 points per game.",
+        ground_truth_data={"name": "LeBron James", "ppg": 24.4},
+        category="simple_sql_player_stats",
     ),
     SQLEvaluationTestCase(
         question="How many assists did Chris Paul record?",
         query_type=QueryType.SQL_ONLY,
-        expected_sql="SELECT name, ast FROM player_stats WHERE name LIKE '%Chris Paul%'",
-        ground_truth_answer="Chris Paul recorded 567 assists.",
-        ground_truth_data={"name": "Chris Paul", "ast": 567},
-        category="simple_sql",
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Chris Paul%'",
+        ground_truth_answer="Chris Paul recorded 607 assists.",
+        ground_truth_data={"name": "Chris Paul", "ast": 607},
+        category="simple_sql_player_stats",
     ),
-    # Comparison SQL queries
+    SQLEvaluationTestCase(
+        question="What is Stephen Curry's 3-point percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.three_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Curry%'",
+        ground_truth_answer="Stephen Curry's 3-point percentage is 39.7%.",
+        ground_truth_data={"name": "Stephen Curry", "three_pct": 39.7},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the top 3 rebounders in the league?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 3",
+        ground_truth_answer="Top 3 rebounders: Ivica Zubac (1008), Domantas Sabonis (973), Karl-Anthony Towns (922).",
+        ground_truth_data=[
+            {"name": "Ivica Zubac", "reb": 1008},
+            {"name": "Domantas Sabonis", "reb": 973},
+            {"name": "Karl-Anthony Towns", "reb": 922}
+        ],
+        category="simple_sql_top_n",
+    ),
+    SQLEvaluationTestCase(
+        question="How many games did Damian Lillard play?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Lillard%'",
+        ground_truth_answer="Damian Lillard played 58 games.",
+        ground_truth_data={"name": "Damian Lillard", "gp": 58},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="What is Kevin Durant's field goal percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Durant%'",
+        ground_truth_answer="Kevin Durant's field goal percentage is 52.7%.",
+        ground_truth_data={"name": "Kevin Durant", "fg_pct": 52.7},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has the most assists this season?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.ast DESC LIMIT 1",
+        ground_truth_answer="Trae Young has the most assists with 882 AST.",
+        ground_truth_data={"name": "Trae Young", "ast": 882},
+        category="simple_sql_top_n",
+    ),
+    SQLEvaluationTestCase(
+        question="How many points did Giannis Antetokounmpo score?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Giannis%'",
+        ground_truth_answer="Giannis Antetokounmpo scored 2037 points.",
+        ground_truth_data={"name": "Giannis Antetokounmpo", "pts": 2037},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="What is Nikola Jokić's total rebounds?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Jokić%'",
+        ground_truth_answer="Nikola Jokić has 889 rebounds.",
+        ground_truth_data={"name": "Nikola Jokić", "reb": 889},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has the best free throw percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ft_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ft_pct IS NOT NULL ORDER BY ps.ft_pct DESC LIMIT 1",
+        ground_truth_answer="Sam Hauser has the best free throw percentage at 100%.",
+        ground_truth_data={"name": "Sam Hauser", "ft_pct": 100.0},
+        category="simple_sql_top_n",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the top 5 players in steals?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.stl FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.stl DESC LIMIT 5",
+        ground_truth_answer="Top 5 steals: Dyson Daniels (228), Shai Gilgeous-Alexander (129), Nikola Jokić (126), Kris Dunn (126), Cason Wallace (122).",
+        ground_truth_data=[
+            {"name": "Dyson Daniels", "stl": 228},
+            {"name": "Shai Gilgeous-Alexander", "stl": 129},
+            {"name": "Nikola Jokić", "stl": 126},
+            {"name": "Kris Dunn", "stl": 126},
+            {"name": "Cason Wallace", "stl": 122},
+        ],
+        category="simple_sql_top_n",
+    ),
+    SQLEvaluationTestCase(
+        question="How many games did Anthony Edwards play?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Anthony Edwards%'",
+        ground_truth_answer="Anthony Edwards played 79 games.",
+        ground_truth_data={"name": "Anthony Edwards", "gp": 79},
+        category="simple_sql_player_stats",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has the highest true shooting percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ts_pct IS NOT NULL AND ps.gp > 20 ORDER BY ps.ts_pct DESC LIMIT 1",
+        ground_truth_answer="Kai Jones has the highest true shooting percentage at 80.4%.",
+        ground_truth_data={"name": "Kai Jones", "ts_pct": 80.4},
+        category="simple_sql_top_n",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players on the Lakers roster?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as player_count FROM players WHERE team_abbr = 'LAL'",
+        ground_truth_answer="This query counts the number of Lakers players in the roster.",
+        ground_truth_data={"player_count": None},
+        category="simple_sql_team_roster",
+    ),
+    SQLEvaluationTestCase(
+        question="List all players on the Golden State Warriors.",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT name FROM players WHERE team_abbr = 'GSW' ORDER BY name",
+        ground_truth_answer="This query lists all Warriors players by name.",
+        ground_truth_data=[],
+        category="simple_sql_team_roster",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average player age in the NBA?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(age) as avg_age FROM players WHERE age IS NOT NULL",
+        ground_truth_answer="This calculates the average age across all NBA players.",
+        ground_truth_data={"avg_age": None},
+        category="aggregation_sql_league",
+    ),
+]
+
+# ============================================================================
+# COMPARISON SQL QUERIES (14 cases)
+# Multi-player comparisons with JOIN, WHERE IN clauses
+# ============================================================================
+
+COMPARISON_SQL_CASES = [
     SQLEvaluationTestCase(
         question="Compare Jokić and Embiid's stats",
         query_type=QueryType.SQL_ONLY,
-        expected_sql="SELECT name, pts, reb, ast FROM player_stats WHERE name IN ('Nikola Jokić', 'Joel Embiid')",
+        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid')",
         ground_truth_answer=(
-            "Nikola Jokić: 2018 PTS, 891 REB, 688 AST. "
-            "Joel Embiid: 2159 PTS, 813 REB, 296 AST."
+            "Nikola Jokić: 2072 PTS, 889 REB, 714 AST. "
+            "Joel Embiid: 452 PTS, 156 REB, 86 AST."
         ),
         ground_truth_data=[
-            {"name": "Nikola Jokić", "pts": 2018, "reb": 891, "ast": 688},
-            {"name": "Joel Embiid", "pts": 2159, "reb": 813, "ast": 296},
+            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714},
+            {"name": "Joel Embiid", "pts": 452, "reb": 156, "ast": 86},
         ],
-        category="comparison_sql",
+        category="comparison_sql_players",
     ),
     SQLEvaluationTestCase(
         question="Who has more rebounds, Giannis or Anthony Davis?",
         query_type=QueryType.SQL_ONLY,
         expected_sql=(
-            "SELECT name, reb FROM player_stats "
-            "WHERE name IN ('Giannis Antetokounmpo', 'Anthony Davis') "
-            "ORDER BY reb DESC"
+            "SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE p.name IN ('Giannis Antetokounmpo', 'Anthony Davis') "
+            "ORDER BY ps.reb DESC"
         ),
-        ground_truth_answer="Giannis Antetokounmpo has more rebounds (912) than Anthony Davis (723).",
+        ground_truth_answer="Giannis Antetokounmpo has more rebounds (797) than Anthony Davis (592).",
         ground_truth_data=[
-            {"name": "Giannis Antetokounmpo", "reb": 912},
-            {"name": "Anthony Davis", "reb": 723},
+            {"name": "Giannis Antetokounmpo", "reb": 797},
+            {"name": "Anthony Davis", "reb": 592},
         ],
-        category="comparison_sql",
+        category="comparison_sql_players",
     ),
-    # Aggregation SQL queries
+    SQLEvaluationTestCase(
+        question="Compare LeBron James and Kevin Durant's scoring",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('LeBron James', 'Kevin Durant')",
+        ground_truth_answer="LeBron James: 1708 PTS. Kevin Durant: 1649 PTS.",
+        ground_truth_data=[
+            {"name": "LeBron James", "pts": 1708},
+            {"name": "Kevin Durant", "pts": 1649},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Who shoots better from 3, Curry or Lillard?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.three_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Stephen Curry', 'Damian Lillard') ORDER BY ps.three_pct DESC",
+        ground_truth_answer="Stephen Curry shoots better (39.7%) than Damian Lillard (37.6%).",
+        ground_truth_data=[
+            {"name": "Stephen Curry", "three_pct": 39.7},
+            {"name": "Damian Lillard", "three_pct": 37.6},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare Trae Young and Luka Dončić's assists",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Trae Young', 'Luka Dončić') ORDER BY ps.ast DESC",
+        ground_truth_answer="Trae Young: 882 AST. Luka Dončić: 385 AST.",
+        ground_truth_data=[
+            {"name": "Trae Young", "ast": 882},
+            {"name": "Luka Dončić", "ast": 385},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Who is more efficient, Jokić or Embiid?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid') ORDER BY ps.pie DESC",
+        ground_truth_answer="Nikola Jokić has higher PIE (20.6) than Joel Embiid (16.9).",
+        ground_truth_data=[
+            {"name": "Nikola Jokić", "pie": 20.6},
+            {"name": "Joel Embiid", "pie": 16.9},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare blocks: Giannis vs Brook Lopez",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.blk FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Giannis Antetokounmpo', 'Brook Lopez') ORDER BY ps.blk DESC",
+        ground_truth_answer="Brook Lopez has more blocks than Giannis Antetokounmpo.",
+        ground_truth_data=[
+            {"name": "Giannis Antetokounmpo", "blk": 80},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare Shai Gilgeous-Alexander and Anthony Edwards scoring",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Shai Gilgeous-Alexander', 'Anthony Edwards') ORDER BY ps.pts DESC",
+        ground_truth_answer="Shai Gilgeous-Alexander: 2485 PTS. Anthony Edwards: 2180 PTS.",
+        ground_truth_data=[
+            {"name": "Shai Gilgeous-Alexander", "pts": 2485},
+            {"name": "Anthony Edwards", "pts": 2180},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has more rebounds, Jokić or Sabonis?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Domantas Sabonis') ORDER BY ps.reb DESC",
+        ground_truth_answer="Domantas Sabonis has more rebounds (973) than Nikola Jokić (889).",
+        ground_truth_data=[
+            {"name": "Domantas Sabonis", "reb": 973},
+            {"name": "Nikola Jokić", "reb": 889},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare Jayson Tatum and Kevin Durant scoring efficiency",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Jayson Tatum', 'Kevin Durant') ORDER BY ps.pts DESC",
+        ground_truth_answer="Jayson Tatum: 1930 PTS, 45.2% FG. Kevin Durant: 1649 PTS, 52.7% FG.",
+        ground_truth_data=[
+            {"name": "Jayson Tatum", "pts": 1930, "fg_pct": 45.2},
+            {"name": "Kevin Durant", "pts": 1649, "fg_pct": 52.7},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Who has more assists, James Harden or Chris Paul?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Harden%' OR p.name LIKE '%Chris Paul%' ORDER BY ps.ast DESC LIMIT 2",
+        ground_truth_answer="James Harden has more assists (687) than Chris Paul (607).",
+        ground_truth_data=[
+            {"name": "James Harden", "ast": 687},
+            {"name": "Chris Paul", "ast": 607},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare the top 2 steals leaders",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.stl FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.stl DESC LIMIT 2",
+        ground_truth_answer="Top 2 steals: Dyson Daniels (228), Shai Gilgeous-Alexander (129).",
+        ground_truth_data=[
+            {"name": "Dyson Daniels", "stl": 228},
+            {"name": "Shai Gilgeous-Alexander", "stl": 129},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the top 2 players by true shooting percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 20 ORDER BY ps.ts_pct DESC LIMIT 2",
+        ground_truth_answer="Top 2 TS%: Kai Jones (80.4%), Jarrett Allen (72.4%).",
+        ground_truth_data=[
+            {"name": "Kai Jones", "ts_pct": 80.4},
+            {"name": "Jarrett Allen", "ts_pct": 72.4},
+        ],
+        category="comparison_sql_players",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare blocks between the top 2 leaders",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.blk FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.blk DESC LIMIT 2",
+        ground_truth_answer="Victor Wembanyama (175 BLK) leads, followed by Brook Lopez (152 BLK).",
+        ground_truth_data=[
+            {"name": "Victor Wembanyama", "blk": 175},
+            {"name": "Brook Lopez", "blk": 152},
+        ],
+        category="comparison_sql_players",
+    ),
+]
+
+# ============================================================================
+# AGGREGATION SQL QUERIES (17 cases)
+# League-wide stats, AVG/COUNT/MAX, calculations
+# ============================================================================
+
+AGGREGATION_SQL_CASES = [
     SQLEvaluationTestCase(
         question="What is the average 3-point percentage for all players?",
         query_type=QueryType.SQL_ONLY,
-        expected_sql="SELECT AVG(fg3_pct) as avg_3p_pct FROM player_stats WHERE fg3_pct IS NOT NULL",
-        ground_truth_answer="The average 3-point percentage across all players is 35.8%.",
-        ground_truth_data={"avg_3p_pct": 0.358},
-        category="aggregation_sql",
+        expected_sql="SELECT AVG(three_pct) as avg_3p_pct FROM player_stats WHERE three_pct IS NOT NULL",
+        ground_truth_answer="The average 3-point percentage across all players is 29.9%.",
+        ground_truth_data={"avg_3p_pct": 29.9},
+        category="aggregation_sql_league",
     ),
     SQLEvaluationTestCase(
         question="How many players scored over 1000 points?",
         query_type=QueryType.SQL_ONLY,
         expected_sql="SELECT COUNT(*) as player_count FROM player_stats WHERE pts > 1000",
-        ground_truth_answer="127 players scored over 1000 points this season.",
-        ground_truth_data={"player_count": 127},
-        category="aggregation_sql",
+        ground_truth_answer="84 players scored over 1000 points this season.",
+        ground_truth_data={"player_count": 84},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average field goal percentage in the league?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(fg_pct) as avg_fg_pct FROM player_stats WHERE fg_pct IS NOT NULL",
+        ground_truth_answer="The average field goal percentage is 44.6%.",
+        ground_truth_data={"avg_fg_pct": 44.6},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players average over 20 points per game?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as player_count FROM player_stats WHERE pts*1.0/gp > 20",
+        ground_truth_answer="50 players average over 20 points per game.",
+        ground_truth_data={"player_count": 50},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the highest PIE in the league?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT MAX(pie) as max_pie FROM player_stats",
+        ground_truth_answer="The highest PIE is 40.0.",
+        ground_truth_data={"max_pie": 40.0},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players have a true shooting percentage over 60%?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as player_count FROM player_stats WHERE ts_pct > 60",
+        ground_truth_answer="142 players have a true shooting percentage over 60%.",
+        ground_truth_data={"player_count": 142},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average number of assists per game league-wide?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(ast*1.0/gp) as avg_apg FROM player_stats WHERE gp > 0",
+        ground_truth_answer="The average number of assists per game league-wide is 2.09 APG.",
+        ground_truth_data={"avg_apg": 2.09},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average rebounds per game league-wide?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(CAST(reb AS REAL) / gp) as avg_rpg FROM player_stats WHERE gp > 0",
+        ground_truth_answer="The average rebounds per game is 3.60 RPG.",
+        ground_truth_data={"avg_rpg": 3.60},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players have more than 500 assists?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as count FROM player_stats WHERE ast > 500",
+        ground_truth_answer="10 players have more than 500 assists.",
+        ground_truth_data={"count": 10},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average free throw percentage?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(ft_pct) as avg FROM player_stats WHERE ft_pct IS NOT NULL",
+        ground_truth_answer="The average free throw percentage is 72.0%.",
+        ground_truth_data={"avg": 72.0},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players played more than 50 games?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as count FROM player_stats WHERE gp > 50",
+        ground_truth_answer="282 players played more than 50 games.",
+        ground_truth_data={"count": 282},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the minimum points scored (excluding zeros)?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT MIN(pts) as min_pts FROM player_stats WHERE pts > 0",
+        ground_truth_answer="The minimum points scored is 1.",
+        ground_truth_data={"min_pts": 1},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players have more than 100 blocks?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as count FROM player_stats WHERE blk > 100",
+        ground_truth_answer="12 players have more than 100 blocks.",
+        ground_truth_data={"count": 12},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the average PIE in the league?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT AVG(pie) as avg_pie FROM player_stats WHERE pie IS NOT NULL",
+        ground_truth_answer="The average PIE is 8.9.",
+        ground_truth_data={"avg_pie": 8.9},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the total number of three-pointers made by all players combined?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT SUM(three_pm) as total_3pm FROM player_stats",
+        ground_truth_answer="This sums all three-pointers made across the entire league.",
+        ground_truth_data={"total_3pm": None},
+        category="aggregation_sql_league",
+    ),
+    SQLEvaluationTestCase(
+        question="How many players have a Player Impact Estimate (PIE) above 0.15?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT COUNT(*) as player_count FROM player_stats WHERE pie > 0.15",
+        ground_truth_answer="This counts players with PIE greater than 0.15 (15%).",
+        ground_truth_data={"player_count": None},
+        category="aggregation_sql_count",
+    ),
+    SQLEvaluationTestCase(
+        question="What is the maximum number of blocks recorded by any player?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT MAX(blk) as max_blocks FROM player_stats",
+        ground_truth_answer="This finds the highest block total by any single player.",
+        ground_truth_data={"max_blocks": None},
+        category="aggregation_sql_league",
     ),
 ]
 
-# Phase 10: Hybrid test cases (require both SQL + vector search)
-# 20+ test cases across 4 complexity tiers
-HYBRID_TEST_CASES = [
-    # ========== TIER 1: Simple Hybrid (5-7 cases) ==========
-    # Single player analysis with stats + playstyle context
-    SQLEvaluationTestCase(
-        question="What are LeBron James' stats and how does his playstyle work?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'",
-        ground_truth_answer=(
-            "LeBron James: 1708 PTS, 546 REB, 574 AST in 70 GP (24.4 PPG, 7.8 RPG, 8.2 APG). "
-            "His playstyle combines elite court vision with physical dominance. He acts as a "
-            "point-forward, orchestrating the offense while also scoring efficiently in transition "
-            "and in the paint. His high basketball IQ allows him to make the right play whether "
-            "scoring, passing, or facilitating for teammates."
-        ),
-        ground_truth_data={"name": "LeBron James", "pts": 1708, "reb": 546, "ast": 574, "gp": 70},
-        category="tier1_simple",
-    ),
-    SQLEvaluationTestCase(
-        question="Show me Giannis' stats and explain why he's a good defender",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.blk, ps.stl FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Giannis%'",
-        ground_truth_answer=(
-            "Giannis Antetokounmpo: 2037 PTS, 797 REB, 80 BLK, 60 STL. "
-            "His defensive prowess stems from his exceptional length (7'3\" wingspan), "
-            "quick lateral movement for his size, and versatility to guard 1-5. He can "
-            "protect the rim with blocks, disrupt passing lanes with steals, and switch "
-            "onto guards and bigs effectively. His high motor and instincts make him a "
-            "two-time Defensive Player of the Year."
-        ),
-        ground_truth_data={"name": "Giannis Antetokounmpo", "pts": 2037, "reb": 797, "blk": 80, "stl": 60},
-        category="tier1_simple",
-    ),
-    SQLEvaluationTestCase(
-        question="What makes Shai Gilgeous-Alexander effective? Show his stats",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.stl, ps.blk, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Shai%'",
-        ground_truth_answer=(
-            "Shai Gilgeous-Alexander: 2485 PTS, 380 REB, 486 AST, 129 STL, 76 BLK in 76 GP (32.7 PPG). "
-            "He's effective due to his elite scoring ability, combining crafty ball-handling with "
-            "exceptional finishing at the rim. His length allows him to be disruptive defensively "
-            "(129 STL, 76 BLK), making him a two-way threat. His ability to get to the free throw "
-            "line and score efficiently in isolation sets him apart."
-        ),
-        ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485, "reb": 380, "ast": 486, "stl": 129, "blk": 76, "gp": 76},
-        category="tier1_simple",
-    ),
-    SQLEvaluationTestCase(
-        question="Who has the best 3-point percentage and why are they so effective?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.three_pct, ps.three_pm, ps.three_pa FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.three_pa >= 100 ORDER BY ps.three_pct DESC LIMIT 1",
-        ground_truth_answer=(
-            "Seth Curry has the best 3-point percentage at 45.6% (0/184 3PM/3PA). "
-            "His effectiveness comes from excellent shot selection, consistent mechanics, "
-            "and taking high-percentage looks from catch-and-shoot situations rather than "
-            "contested pull-ups. He's a pure shooter who understands spacing and moves "
-            "without the ball to get open looks."
-        ),
-        ground_truth_data={"name": "Seth Curry", "three_pct": 45.6, "three_pm": 0, "three_pa": 184},
-        category="tier1_simple",
-    ),
-    SQLEvaluationTestCase(
-        question="What are Victor Wembanyama's defensive stats and why is he impactful?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.blk, ps.stl, ps.reb, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Wembanyama%'",
-        ground_truth_answer=(
-            "Victor Wembanyama: 175 BLK, 51 STL with exceptional rim protection. "
-            "His impact comes from his rare combination of 7'4\" height with 8'0\" wingspan, "
-            "allowing him to alter and block shots at an elite level (175 BLK). His mobility "
-            "and defensive IQ enable him to guard multiple positions and protect the paint "
-            "while also contributing to perimeter defense (51 STL)."
-        ),
-        ground_truth_data={"name": "Victor Wembanyama", "blk": 175, "stl": 51},
-        category="tier1_simple",
-    ),
-    SQLEvaluationTestCase(
-        question="Show me Trae Young's playmaking stats and explain his style",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.ast, ps.pts, ps.gp, ROUND(ps.ast * 1.0 / ps.gp, 1) as apg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Trae%'",
-        ground_truth_answer=(
-            "Trae Young: 882 AST, 1839 PTS in 76 GP (11.6 APG, 24.2 PPG). "
-            "His playmaking style is defined by elite court vision and passing ability, "
-            "leading the league in assists (882 AST, 11.6 APG). He combines scoring threat "
-            "with exceptional passing, using pick-and-roll to break down defenses and create "
-            "for teammates. His deep range forces defenses to extend, opening passing lanes."
-        ),
-        ground_truth_data={"name": "Trae Young", "ast": 882, "pts": 1839, "gp": 76},
-        category="tier1_simple",
-    ),
+# ============================================================================
+# COMPLEX SQL QUERIES (12 cases)
+# Subqueries, multiple joins, calculated fields, advanced filtering
+# ============================================================================
 
-    # ========== TIER 2: Moderate Hybrid (5-7 cases) ==========
-    # Player comparisons with stats + contextual analysis
+COMPLEX_SQL_CASES = [
     SQLEvaluationTestCase(
-        question="Compare Jokić and Embiid's stats and explain who's better",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid')",
-        ground_truth_answer=(
-            "Nikola Jokić: 2072 PTS, 889 REB, 714 AST, 57.6% FG. "
-            "Joel Embiid: 452 PTS, 156 REB, 86 AST, 44.4% FG. "
-            "Jokić is clearly superior this season with much higher volume and efficiency. "
-            "His exceptional playmaking (714 vs 86 assists) and passing ability make him "
-            "the more complete player. Jokić's efficiency (57.6% FG) and triple-double threat, "
-            "combined with elite rebounding (889 REB) and scoring (2072 PTS), give him the edge for MVP."
+        question="Which players score more points per game than the league average?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ROUND(ps.pts*1.0/ps.gp, 1) as ppg "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.gp > 0 AND ps.pts*1.0/ps.gp > (SELECT AVG(pts*1.0/gp) FROM player_stats WHERE gp > 0)"
         ),
-        ground_truth_data=[
-            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714, "fg_pct": 57.6},
-            {"name": "Joel Embiid", "pts": 452, "reb": 156, "ast": 86, "fg_pct": 44.4},
-        ],
-        category="tier2_moderate",
-    ),
-    SQLEvaluationTestCase(
-        question="Compare Shai Gilgeous-Alexander and Anthony Edwards as scorers",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.gp, ROUND(ps.pts * 1.0 / ps.gp, 1) as ppg, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Shai Gilgeous-Alexander', 'Anthony Edwards')",
-        ground_truth_answer=(
-            "Shai Gilgeous-Alexander: 2485 PTS in 76 GP (32.7 PPG). "
-            "Anthony Edwards: 2180 PTS in 79 GP (27.6 PPG). "
-            "Shai is the superior scorer with a 5.1 PPG advantage. His scoring comes from "
-            "elite mid-range game and ability to get to the rim, while Edwards relies more "
-            "on athleticism and three-point shooting. Shai's efficiency and consistency in "
-            "getting his own shot make him more reliable as a primary scoring option."
-        ),
-        ground_truth_data=[
-            {"name": "Shai Gilgeous-Alexander", "pts": 2485, "gp": 76},
-            {"name": "Anthony Edwards", "pts": 2180, "gp": 79},
-        ],
-        category="tier2_moderate",
-    ),
-    SQLEvaluationTestCase(
-        question="Who is the better rebounder: Jokić or Sabonis? Include their stats",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.reb, ps.gp, ROUND(ps.reb * 1.0 / ps.gp, 1) as rpg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Domantas Sabonis')",
-        ground_truth_answer=(
-            "Nikola Jokić: 889 REB in 70 GP (12.7 RPG). "
-            "Domantas Sabonis: 973 REB in 70 GP (13.9 RPG). "
-            "Sabonis is the superior rebounder with a +1.2 RPG advantage. His relentless motor "
-            "and positioning make him one of the league's best rebounders. However, Jokić's "
-            "rebounding is still elite for a center, and he adds superior playmaking and scoring "
-            "to make him the more well-rounded player overall."
-        ),
-        ground_truth_data=[
-            {"name": "Nikola Jokić", "reb": 889, "gp": 70},
-            {"name": "Domantas Sabonis", "reb": 973, "gp": 70},
-        ],
-        category="tier2_moderate",
-    ),
-    SQLEvaluationTestCase(
-        question="Compare Dyson Daniels and Victor Wembanyama as defenders with their stats",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.blk, ps.stl, (ps.blk + ps.stl) as defensive_actions FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Dyson Daniels', 'Victor Wembanyama')",
-        ground_truth_answer=(
-            "Dyson Daniels: 53 BLK, 228 STL (281 total defensive actions). "
-            "Victor Wembanyama: 175 BLK, 51 STL (226 total defensive actions). "
-            "Daniels leads in total defensive actions (281 vs 226), driven by exceptional "
-            "steal numbers (228 STL) from elite perimeter defense and anticipation. "
-            "Wembanyama dominates in rim protection (175 BLK) with his elite length and timing. "
-            "They excel in different defensive roles - Daniels as perimeter disruptor, "
-            "Wembanyama as paint protector."
-        ),
-        ground_truth_data=[
-            {"name": "Dyson Daniels", "blk": 53, "stl": 228},
-            {"name": "Victor Wembanyama", "blk": 175, "stl": 51},
-        ],
-        category="tier2_moderate",
-    ),
-    SQLEvaluationTestCase(
-        question="Compare Trae Young and Tyrese Haliburton as playmakers",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.ast, ps.gp, ROUND(ps.ast * 1.0 / ps.gp, 1) as apg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Trae Young', 'Tyrese Haliburton')",
-        ground_truth_answer=(
-            "Trae Young: 882 AST in 76 GP (11.6 APG). "
-            "Tyrese Haliburton: 672 AST in 73 GP (9.2 APG). "
-            "Trae Young is the superior playmaker with a +2.4 APG advantage. His elite court "
-            "vision, pick-and-roll mastery, and ability to create off the dribble make him "
-            "one of the league's best passers. Haliburton is still excellent with great "
-            "decision-making, but Trae's scoring threat and creativity give him the edge."
-        ),
-        ground_truth_data=[
-            {"name": "Trae Young", "ast": 882, "gp": 76},
-            {"name": "Tyrese Haliburton", "ast": 672, "gp": 73},
-        ],
-        category="tier2_moderate",
-    ),
-    SQLEvaluationTestCase(
-        question="Who are the most efficient scorers among high-volume players?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1500 ORDER BY ps.fg_pct DESC LIMIT 3",
-        ground_truth_answer=(
-            "Among high-volume scorers (1500+ PTS), the most efficient are players who combine "
-            "scoring volume with shooting efficiency. Look for centers and forwards who score "
-            "near the rim with high field goal percentages. Efficiency at high volume is rare "
-            "and requires excellent shot selection, finishing ability, and offensive system fit."
-        ),
+        ground_truth_answer="Players with above-average PPG (subquery comparison).",
         ground_truth_data=None,
-        category="tier2_moderate",
+        category="complex_sql_subquery",
     ),
-
-    # ========== TIER 3: Complex Hybrid (5-7 cases) ==========
-    # Multi-player cross-analysis with advanced stats + historical context
     SQLEvaluationTestCase(
-        question="Which high-scoring players are also elite defenders?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, (ps.blk + ps.stl) as defensive_actions FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1800 ORDER BY (ps.blk + ps.stl) DESC LIMIT 5",
-        ground_truth_answer=(
-            "Among elite scorers (1800+ PTS), two-way excellence is rare. "
-            "Shai Gilgeous-Alexander (2485 PTS, 205 defensive actions) and "
-            "Giannis Antetokounmpo (2037 PTS, 140 defensive actions) stand out as "
-            "legitimate two-way stars who can carry offensive load while providing "
-            "elite defense. Their combination of scoring volume and defensive impact "
-            "makes them among the league's most valuable players."
+        question="Find players with both high scoring (1500+ points) and high assists (300+ assists)",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.pts, ps.ast FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.pts >= 1500 AND ps.ast >= 300 "
+            "ORDER BY ps.pts DESC"
         ),
+        ground_truth_answer="Dual-threat players excelling in both scoring and playmaking.",
+        ground_truth_data=[
+            {"name": "Shai Gilgeous-Alexander", "pts": 2485, "ast": 486},
+            {"name": "Nikola Jokić", "pts": 2072, "ast": 714},
+            {"name": "Anthony Edwards", "pts": 2180, "ast": 333},
+            {"name": "Giannis Antetokounmpo", "pts": 2037, "ast": 436},
+        ],
+        category="complex_sql_multiple_conditions",
+    ),
+    SQLEvaluationTestCase(
+        question="Who are the most efficient scorers among players with 50+ games played?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.fg_pct, ps.pts, ps.gp FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.gp >= 50 AND ps.fg_pct IS NOT NULL "
+            "ORDER BY ps.fg_pct DESC LIMIT 10"
+        ),
+        ground_truth_answer="Top 10 most efficient scorers (highest FG%) with 50+ games.",
         ground_truth_data=None,
-        category="tier3_complex",
+        category="complex_sql_filtering",
     ),
     SQLEvaluationTestCase(
-        question="Compare the top 3 scorers and explain their different scoring approaches",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.gp, ROUND(ps.pts * 1.0 / ps.gp, 1) as ppg, ps.fg_pct, ps.three_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 3",
-        ground_truth_answer=(
-            "Top 3 scorers: "
-            "1. Shai Gilgeous-Alexander (2485 PTS, 32.7 PPG) - Elite mid-range and rim finisher "
-            "2. Anthony Edwards (2180 PTS, 27.6 PPG) - Athletic scorer with three-point range "
-            "3. Nikola Jokić (2072 PTS, 29.6 PPG) - Versatile big with elite efficiency (57.6% FG). "
-            "Each represents a different archetype: Shai's crafty scoring, Edwards' explosive athleticism, "
-            "and Jokić's high-IQ versatile game show multiple paths to elite scoring."
+        question="Which players have triple-digit stats in points, rebounds, and assists?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.pts >= 100 AND ps.reb >= 100 AND ps.ast >= 100"
         ),
-        ground_truth_data=[
-            {"name": "Shai Gilgeous-Alexander", "pts": 2485, "gp": 76},
-            {"name": "Anthony Edwards", "pts": 2180, "gp": 79},
-            {"name": "Nikola Jokić", "pts": 2072, "gp": 70},
-        ],
-        category="tier3_complex",
-    ),
-    SQLEvaluationTestCase(
-        question="Who are the triple-double threats and why are they valuable?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1500 AND ps.reb >= 500 AND ps.ast >= 500",
-        ground_truth_answer=(
-            "Triple-double threats who excel in all three categories (1500+ PTS, 500+ REB, 500+ AST): "
-            "Nikola Jokić (2072 PTS, 889 REB, 714 AST) and LeBron James (1708 PTS, 546 REB, 574 AST). "
-            "Their value comes from complete offensive impact - they can score, create for others, "
-            "and control possessions. This versatility makes them impossible to game-plan against "
-            "and allows their teams to build flexible offensive systems around them."
-        ),
-        ground_truth_data=[
-            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714, "gp": 70},
-            {"name": "LeBron James", "pts": 1708, "reb": 546, "ast": 574, "gp": 70},
-        ],
-        category="tier3_complex",
-    ),
-    SQLEvaluationTestCase(
-        question="Which centers dominate rebounding and why is that important?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.reb, ps.gp, ROUND(ps.reb * 1.0 / ps.gp, 1) as rpg FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 5",
-        ground_truth_answer=(
-            "Top rebounders: Ivica Zubac (1008 REB, 12.6 RPG), Domantas Sabonis (973 REB, 13.9 RPG), "
-            "Karl-Anthony Towns (922 REB, 12.8 RPG), Nikola Jokić (889 REB, 12.7 RPG), "
-            "Jalen Duren (803 REB, 10.3 RPG). Elite rebounding is crucial for controlling possessions, "
-            "limiting second-chance points, and starting fast breaks. These centers provide defensive "
-            "anchoring and additional possessions, directly correlating with team success."
-        ),
-        ground_truth_data=[
-            {"name": "Ivica Zubac", "reb": 1008, "gp": 80},
-            {"name": "Domantas Sabonis", "reb": 973, "gp": 70},
-            {"name": "Karl-Anthony Towns", "reb": 922, "gp": 72},
-        ],
-        category="tier3_complex",
-    ),
-    SQLEvaluationTestCase(
-        question="Compare assist-to-turnover ratios for top playmakers",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.ast, ps.tov, ROUND(ps.ast * 1.0 / ps.tov, 2) as ast_to_ratio FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ast >= 500 ORDER BY (ps.ast * 1.0 / ps.tov) DESC LIMIT 5",
-        ground_truth_answer=(
-            "Elite playmakers with best assist-to-turnover ratios among high-volume passers (500+ AST) "
-            "demonstrate exceptional decision-making and ball security. High AST/TOV ratio indicates "
-            "ability to create for others while limiting mistakes. This metric separates good passers "
-            "from elite playmakers who can be trusted with the ball in critical situations."
-        ),
+        ground_truth_answer="Versatile players with 100+ in PTS, REB, and AST.",
         ground_truth_data=None,
-        category="tier3_complex",
+        category="complex_sql_multiple_conditions",
     ),
     SQLEvaluationTestCase(
-        question="Which players combine elite shooting with high volume?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.three_pct, ps.three_pa, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.three_pa >= 300 ORDER BY ps.three_pct DESC LIMIT 5",
-        ground_truth_answer=(
-            "Elite three-point shooters with high volume (300+ 3PA) are game-changers who space the "
-            "floor and create gravity for teammates. High percentage on high volume indicates both "
-            "shooting skill and ability to get quality looks consistently. These players force "
-            "defenses to extend, opening driving lanes and creating 4-on-3 advantages."
+        question="Find the top 5 players by total defensive actions (steals + blocks)",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.stl, ps.blk, (ps.stl + ps.blk) as defensive_actions "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "ORDER BY (ps.stl + ps.blk) DESC LIMIT 5"
         ),
+        ground_truth_answer="Top 5 defenders by combined steals and blocks.",
+        ground_truth_data=[
+            {"name": "Dyson Daniels", "stl": 228, "blk": 53, "defensive_actions": 281},
+            {"name": "Victor Wembanyama", "stl": 51, "blk": 175, "defensive_actions": 226},
+            {"name": "Shai Gilgeous-Alexander", "stl": 129, "blk": 76, "defensive_actions": 205},
+        ],
+        category="complex_sql_calculated_field",
+    ),
+    SQLEvaluationTestCase(
+        question="Which players have better than 50% field goal percentage AND 35%+ from three?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.fg_pct, ps.three_pct FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.fg_pct >= 50 AND ps.three_pct >= 35"
+        ),
+        ground_truth_answer="Elite two-way shooters with 50%+ FG and 35%+ 3P%.",
         ground_truth_data=None,
-        category="tier3_complex",
-    ),
-
-    # ========== TIER 4: Advanced Hybrid (3-5 cases) ==========
-    # Nuanced analysis requiring deep contextual understanding + statistical verification
-    SQLEvaluationTestCase(
-        question="How has positionless basketball changed the NBA, and which players exemplify this?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1500 AND ps.reb >= 500 AND ps.ast >= 400",
-        ground_truth_answer=(
-            "Positionless basketball emphasizes versatility over traditional positions. Players like "
-            "Nikola Jokić (2072 PTS, 889 REB, 714 AST), LeBron James (1708 PTS, 546 REB, 574 AST), "
-            "and Giannis Antetokounmpo (2037 PTS, 797 REB, 436 AST) exemplify this with complete stat lines. "
-            "They can handle, pass, score, and rebound, making them matchup nightmares. This evolution "
-            "prioritizes skill and basketball IQ over size, transforming offensive and defensive schemes."
-        ),
-        ground_truth_data=[
-            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714},
-            {"name": "LeBron James", "pts": 1708, "reb": 546, "ast": 574},
-            {"name": "Giannis Antetokounmpo", "pts": 2037, "reb": 797, "ast": 436},
-        ],
-        category="tier4_advanced",
+        category="complex_sql_multiple_conditions",
     ),
     SQLEvaluationTestCase(
-        question="What makes a player MVP-caliber? Compare the top candidates statistically",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.gp, ROUND(ps.pts * 1.0 / ps.gp, 1) as ppg FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 5",
-        ground_truth_answer=(
-            "MVP candidates combine elite production with team success and narrative. "
-            "Shai Gilgeous-Alexander (32.7 PPG) leads in scoring. Nikola Jokić (29.6 PPG, 12.7 RPG, 10.2 APG) "
-            "offers unmatched all-around excellence. Giannis (30.4 PPG, 11.9 RPG) provides two-way dominance. "
-            "MVP requires not just stats but efficiency, winning, and irreplaceability. Jokić's rare "
-            "combination of scoring, playmaking, and rebounding while leading his team makes him the frontrunner."
+        question="Find players averaging double-digits in points, rebounds, and assists",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, "
+            "ROUND(ps.pts*1.0/ps.gp, 1) as ppg, "
+            "ROUND(ps.reb*1.0/ps.gp, 1) as rpg, "
+            "ROUND(ps.ast*1.0/ps.gp, 1) as apg "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.gp > 0 "
+            "AND ps.pts*1.0/ps.gp >= 10 "
+            "AND ps.reb*1.0/ps.gp >= 10 "
+            "AND ps.ast*1.0/ps.gp >= 10"
         ),
+        ground_truth_answer="Rare players averaging 10+ PPG, RPG, and APG (triple-double averages).",
         ground_truth_data=[
-            {"name": "Shai Gilgeous-Alexander", "pts": 2485, "gp": 76},
-            {"name": "Nikola Jokić", "pts": 2072, "gp": 70, "reb": 889, "ast": 714},
-            {"name": "Giannis Antetokounmpo", "pts": 2037, "gp": 67, "reb": 797},
+            {"name": "Nikola Jokić", "ppg": 29.6, "rpg": 12.7, "apg": 10.2},
         ],
-        category="tier4_advanced",
+        category="complex_sql_calculated_triple_condition",
     ),
     SQLEvaluationTestCase(
-        question="How do modern centers differ from traditional big men statistically?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.three_pa FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.reb >= 700 ORDER BY ps.ast DESC LIMIT 5",
-        ground_truth_answer=(
-            "Modern centers like Nikola Jokić (714 AST, 889 REB) blend traditional rebounding "
-            "with elite playmaking. Unlike traditional big men who focused solely on interior "
-            "scoring and rebounding, today's centers are asked to pass, handle, and sometimes shoot threes. "
-            "This evolution reflects pace-and-space offensive systems that value versatility. "
-            "Centers who can facilitate (Jokić, Sabonis) provide unique advantages by creating "
-            "from the high post and short roll."
+        question="Who are the top 3 players in points per game among those who played at least 70 games?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.pts, ps.gp, ROUND(ps.pts*1.0/ps.gp, 1) as ppg "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.gp >= 70 "
+            "ORDER BY (ps.pts*1.0/ps.gp) DESC LIMIT 3"
         ),
-        ground_truth_data=[
-            {"name": "Nikola Jokić", "pts": 2072, "reb": 889, "ast": 714},
-        ],
-        category="tier4_advanced",
+        ground_truth_answer="Top 3 PPG leaders among players with 70+ games (durability + scoring).",
+        ground_truth_data=None,
+        category="complex_sql_filtering_calculation",
     ),
     SQLEvaluationTestCase(
-        question="What role does defensive versatility play in modern NBA success?",
-        query_type=QueryType.HYBRID,
-        expected_sql="SELECT p.name, ps.blk, ps.stl, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE (ps.blk + ps.stl) >= 150 ORDER BY (ps.blk + ps.stl) DESC LIMIT 5",
-        ground_truth_answer=(
-            "Defensive versatility is crucial in modern switching defenses. Players like "
-            "Dyson Daniels (228 STL, 53 BLK), Victor Wembanyama (175 BLK, 51 STL), and "
-            "Shai Gilgeous-Alexander (129 STL, 76 BLK) excel in multiple defensive categories. "
-            "Modern defense requires guarding multiple positions, switching on screens, and "
-            "protecting the rim. Players who can both contest shots and create turnovers "
-            "provide invaluable flexibility in playoff matchups."
+        question="Find all players who score more than they assist by at least 10 points per game",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, "
+            "ROUND(ps.pts*1.0/ps.gp, 1) as ppg, "
+            "ROUND(ps.ast*1.0/ps.gp, 1) as apg "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.gp > 0 AND (ps.pts*1.0/ps.gp - ps.ast*1.0/ps.gp) >= 10"
         ),
-        ground_truth_data=[
-            {"name": "Dyson Daniels", "blk": 53, "stl": 228},
-            {"name": "Victor Wembanyama", "blk": 175, "stl": 51},
-            {"name": "Shai Gilgeous-Alexander", "blk": 76, "stl": 129},
-        ],
-        category="tier4_advanced",
+        ground_truth_answer="Score-first players with 10+ point gap between PPG and APG.",
+        ground_truth_data=None,
+        category="complex_sql_differential",
+    ),
+    SQLEvaluationTestCase(
+        question="Which players have the best assist-to-turnover ratio among those with 300+ assists?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.ast, ps.tov, ROUND(ps.ast*1.0/ps.tov, 2) as ast_to_ratio "
+            "FROM players p JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.ast >= 300 AND ps.tov > 0 "
+            "ORDER BY (ps.ast*1.0/ps.tov) DESC LIMIT 5"
+        ),
+        ground_truth_answer="Best playmakers by AST/TO ratio (300+ assists, low turnovers).",
+        ground_truth_data=None,
+        category="complex_sql_ratio_calculation",
+    ),
+    SQLEvaluationTestCase(
+        question="Find the most versatile players with at least 1000 points, 400 rebounds, and 200 assists",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "WHERE ps.pts >= 1000 AND ps.reb >= 400 AND ps.ast >= 200 "
+            "ORDER BY (ps.pts + ps.reb + ps.ast) DESC"
+        ),
+        ground_truth_answer="All-around contributors (1000+ PTS, 400+ REB, 200+ AST).",
+        ground_truth_data=None,
+        category="complex_sql_versatility",
+    ),
+    SQLEvaluationTestCase(
+        question="What percentage of players have a true shooting percentage above 60%?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql=(
+            "SELECT "
+            "ROUND(100.0 * COUNT(CASE WHEN ts_pct > 60 THEN 1 END) / COUNT(*), 1) as pct_above_60 "
+            "FROM player_stats WHERE ts_pct IS NOT NULL"
+        ),
+        ground_truth_answer="Percentage of players with TS% above 60%.",
+        ground_truth_data=None,
+        category="complex_sql_percentage_calculation",
     ),
 ]
 
-# Contextual-only test cases (pure vector search, no SQL needed)
-CONTEXTUAL_TEST_CASES = [
+# ============================================================================
+# CONVERSATIONAL SQL QUERIES (8 cases)
+# Follow-up questions, context-dependent, pronouns
+# ============================================================================
+
+CONVERSATIONAL_SQL_CASES = [
     SQLEvaluationTestCase(
-        question="Why is LeBron considered one of the greatest?",
-        query_type=QueryType.CONTEXTUAL_ONLY,
-        expected_sql=None,
-        ground_truth_answer=(
-            "LeBron James is considered one of the greatest due to his longevity, "
-            "versatility, and sustained excellence. He's a 4-time MVP, 4-time champion, "
-            "and all-time leading scorer. His ability to dominate all facets of the game "
-            "(scoring, passing, rebounding, defense) while elevating teammates makes him unique."
-        ),
-        ground_truth_data=None,
-        category="contextual",
+        question="Show me the top scorer",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
+        ground_truth_answer="Shai Gilgeous-Alexander is the top scorer with 2485 points.",
+        ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485},
+        category="conversational_initial",
     ),
     SQLEvaluationTestCase(
-        question="What makes Curry's shooting so special?",
-        query_type=QueryType.CONTEXTUAL_ONLY,
-        expected_sql=None,
-        ground_truth_answer=(
-            "Curry revolutionized basketball with his unprecedented range, quick release, "
-            "and ability to shoot off the dribble. His gravity creates space for teammates, "
-            "and his movement without the ball forces defenses to overextend. He's transformed "
-            "the game by proving that elite shooting can be a primary offensive weapon."
-        ),
-        ground_truth_data=None,
-        category="contextual",
+        question="What about his assists?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Shai%'",
+        ground_truth_answer="Shai Gilgeous-Alexander has 486 assists (follow-up).",
+        ground_truth_data={"name": "Shai Gilgeous-Alexander", "ast": 486},
+        category="conversational_followup",
     ),
     SQLEvaluationTestCase(
-        question="How has the Warriors' dynasty impacted the NBA?",
-        query_type=QueryType.CONTEXTUAL_ONLY,
-        expected_sql=None,
-        ground_truth_answer=(
-            "The Warriors dynasty (2015-2022) revolutionized the NBA by prioritizing "
-            "3-point shooting, ball movement, and positionless basketball. Their success "
-            "with Curry, Thompson, and Green led to league-wide changes in offensive strategy, "
-            "with teams emphasizing spacing and perimeter shooting over traditional big-man play."
-        ),
+        question="Who's the best rebounder?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 1",
+        ground_truth_answer="Ivica Zubac is the top rebounder with 1008 rebounds.",
+        ground_truth_data={"name": "Ivica Zubac", "reb": 1008},
+        category="conversational_casual",
+    ),
+    SQLEvaluationTestCase(
+        question="How many games did he play?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Zubac%'",
+        ground_truth_answer="Ivica Zubac played 80 games (contextual follow-up).",
+        ground_truth_data={"name": "Ivica Zubac", "gp": 80},
+        category="conversational_followup",
+    ),
+    SQLEvaluationTestCase(
+        question="Tell me about LeBron's stats",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'",
+        ground_truth_answer="LeBron James: 1708 PTS, 546 REB, 574 AST.",
+        ground_truth_data={"name": "LeBron James", "pts": 1708, "reb": 546, "ast": 574},
+        category="conversational_casual",
+    ),
+    SQLEvaluationTestCase(
+        question="Compare him to Curry",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('LeBron James', 'Stephen Curry')",
+        ground_truth_answer="LeBron vs Curry comparison (contextual).",
         ground_truth_data=None,
-        category="contextual",
+        category="conversational_comparison",
+    ),
+    SQLEvaluationTestCase(
+        question="Show the assist leaders",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.ast DESC LIMIT 5",
+        ground_truth_answer="Top 5 assist leaders.",
+        ground_truth_data=None,
+        category="conversational_casual",
+    ),
+    SQLEvaluationTestCase(
+        question="Which of them plays for the Hawks?",
+        query_type=QueryType.SQL_ONLY,
+        expected_sql="SELECT p.name, p.team_abbr, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.team_abbr = 'ATL' ORDER BY ps.ast DESC LIMIT 1",
+        ground_truth_answer="Trae Young plays for the Hawks and leads them in assists.",
+        ground_truth_data=None,
+        category="conversational_filter_followup",
     ),
 ]
 
-# Combined test suite
-ALL_SQL_TEST_CASES = SQL_TEST_CASES + HYBRID_TEST_CASES + CONTEXTUAL_TEST_CASES
+# ============================================================================
+# COMBINED TEST SUITE
+# ============================================================================
+
+SQL_TEST_CASES = (
+    SIMPLE_SQL_CASES +
+    COMPARISON_SQL_CASES +
+    AGGREGATION_SQL_CASES +
+    COMPLEX_SQL_CASES +
+    CONVERSATIONAL_SQL_CASES
+)
+
+# Verify counts
+print(f"SQL Test Cases Loaded: {len(SQL_TEST_CASES)} cases")
+assert len(SIMPLE_SQL_CASES) == 17, f"Expected 17 simple cases, got {len(SIMPLE_SQL_CASES)}"
+assert len(COMPARISON_SQL_CASES) == 14, f"Expected 14 comparison cases, got {len(COMPARISON_SQL_CASES)}"
+assert len(AGGREGATION_SQL_CASES) == 17, f"Expected 17 aggregation cases, got {len(AGGREGATION_SQL_CASES)}"
+assert len(COMPLEX_SQL_CASES) == 12, f"Expected 12 complex cases, got {len(COMPLEX_SQL_CASES)}"
+assert len(CONVERSATIONAL_SQL_CASES) == 8, f"Expected 8 conversational cases, got {len(CONVERSATIONAL_SQL_CASES)}"
+assert len(SQL_TEST_CASES) == 68, f"Expected 68 SQL cases, got {len(SQL_TEST_CASES)}"

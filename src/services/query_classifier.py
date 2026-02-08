@@ -25,11 +25,25 @@ class QueryClassifier:
     """Classify user queries to route to appropriate data source."""
 
     # Statistical query patterns (SQL database)
-    # Phase 4: More conservative - require stronger statistical signals
+    # Phase 10: More aggressive - try SQL first, fallback to vector if it fails
     STATISTICAL_PATTERNS = [
-        # Superlatives with statistical terms (NOT just "best" which is subjective)
+        # Superlatives with statistical terms
         r"\b(top|most|highest|lowest|leading|leader)\s+\d+",  # "top 5", "most 10"
         r"\b(who has|which player|which team)\b.*\b(most|highest|top)\b.*\b(points|rebounds|assists|stats)\b",
+        # WHO/WHICH queries with superlatives and stat terms
+        r"\b(who|which player|which team)\b.*\b(scored|has|recorded|made)\b.*\b(most|highest|top|fewest|lowest|least)\b.*\b(points|rebounds|assists|blocks|steals|three.pointers?)\b",
+        r"\b(who|which player)\b.*\b(most|highest|top|fewest|lowest|least)\b.*\b(points|rebounds|assists|blocks|steals|stats)\b",
+        # NEW: "best/better" queries with stat terms (aggressive)
+        r"\b(who\s+is|who.?s|which player|which team)\b.*\b(best|better)\b.*\b(scorer|rebounder|passer|defender|shooter|player)\b",
+        r"\b(best|better)\b.*\b(at|in|for)\b.*\b(scoring|rebounding|assists|defense|shooting)\b",
+        r"\b(who has|which player has)\b.*\b(best|highest|top|better)\b.*\b(percentage|pct|efficiency|rating)\b",  # "Who has the best... percentage/efficiency"
+        # NEW: "Show/List/Find" queries with stats (aggressive)
+        r"\b(show|list|find|get)\b.*\b(assist|rebound|point|steal|block|score|stat).*(leader|top|best)\b",
+        r"\b(show|list|find|get)\b.*(the)?\s*(top|best|leading|leader)",
+        # NEW: Casual statistical queries
+        r"\b(who\s+is|who.?s)\b.*\b(leading|top|number one|#1|the\s+best)\b",
+        # Comparative queries with stat terms
+        r"\b(who has more|which player has more|who recorded more)\b.*\b(points|rebounds|assists|blocks|steals)\b",
         # Explicit aggregations (strong statistical signal)
         r"\b(average|mean|total|sum|count|how many)\b",
         r"\bavg\b.*\b(points|rebounds|assists|per game)\b",
@@ -42,9 +56,12 @@ class QueryClassifier:
         r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b.*\b(points|rebounds|assists)\b",
         # Explicit filters with numbers
         r"\b(more than|less than|over|under|above|below)\b\s*\d+\s*(points|rebounds|assists)",
+        r"\b(with|having)\b.*\d+\+?\s*(points|rebounds|assists|games)",
         # Question words + explicit stats
         r"\bhow many\b.*\b(points|rebounds|assists|games|wins)\b",
         r"\bwhat is\b.*\b(percentage|average|total|rating)\b.*\b(of|for)\b",
+        # NEW: Find/filter queries (aggressive)
+        r"\b(find|which|who are)\b.*\b(players?|teams?)\b.*\b(with|having|that)\b",
         # Specific statistical queries
         r"\b(who are|list|show me)\b.*\b(top|players with|scorers|leaders)\b",
     ]

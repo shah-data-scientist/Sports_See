@@ -2,7 +2,7 @@
 FILE: hybrid_test_cases.py
 STATUS: Active
 RESPONSIBILITY: Extended test cases for Phase 3 - Hybrid SQL+Vector scenarios
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-08
 MAINTAINER: Shahu
 """
 
@@ -10,50 +10,6 @@ from src.evaluation.models import EvaluationTestCase, TestCategory
 
 # Extended test cases focusing on hybrid scenarios (SQL + Vector)
 HYBRID_TEST_CASES: list[EvaluationTestCase] = [
-    # ========================================================================
-    # SIMPLE: Statistical queries requiring SQL database
-    # ========================================================================
-    EvaluationTestCase(
-        question="Who are the top 5 scorers this season?",
-        ground_truth=(
-            "The top 5 scorers can be found by querying the player statistics "
-            "database, sorting by points (PTS) in descending order and taking "
-            "the first 5 results."
-        ),
-        category=TestCategory.SIMPLE,
-    ),
-    EvaluationTestCase(
-        question="What is Nikola Jokic's average points per game?",
-        ground_truth=(
-            "Nikola Jokic's PPG average is stored in the player_stats table "
-            "under the 'pts' column divided by games played."
-        ),
-        category=TestCategory.SIMPLE,
-    ),
-    EvaluationTestCase(
-        question="Which player has the highest true shooting percentage?",
-        ground_truth=(
-            "True shooting percentage (TS%) is an advanced metric in the "
-            "player statistics. Sorting by ts_pct descending gives the leader."
-        ),
-        category=TestCategory.SIMPLE,
-    ),
-    EvaluationTestCase(
-        question="How many players average more than 20 points per game?",
-        ground_truth=(
-            "This requires counting players in the database where pts > 20. "
-            "The query filters player_stats by the points column."
-        ),
-        category=TestCategory.SIMPLE,
-    ),
-    EvaluationTestCase(
-        question="What is the average three-point percentage across all players?",
-        ground_truth=(
-            "The average 3PT% is calculated by taking the mean of the three_pct "
-            "column across all player records in the stats table."
-        ),
-        category=TestCategory.SIMPLE,
-    ),
     # ========================================================================
     # COMPLEX: Hybrid queries requiring both SQL and contextual knowledge
     # ========================================================================
@@ -298,6 +254,164 @@ HYBRID_TEST_CASES: list[EvaluationTestCase] = [
         ground_truth=(
             "Follow-up asking for contextual analysis of top rebounders' value "
             "beyond numbers (positioning, boxing out, etc.)."
+        ),
+        category=TestCategory.CONVERSATIONAL,
+    ),
+    # ========================================================================
+    # COMPLEX: More hybrid SQL + Vector scenarios
+    # ========================================================================
+    EvaluationTestCase(
+        question=(
+            "Which players have the best assist-to-turnover ratio and what "
+            "does this tell us about their court vision and decision-making?"
+        ),
+        ground_truth=(
+            "Calculate AST/TO ratio from player_stats, then provide analytical "
+            "context from basketball discussions about what this reveals."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question=(
+            "Identify clutch performers with high scoring in close games. "
+            "What psychological traits make them successful?"
+        ),
+        ground_truth=(
+            "Stats for late-game performance (if available) combined with "
+            "psychological analysis from sports psychology documents."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question=(
+            "Compare Giannis Antetokounmpo and Kevin Durant's scoring efficiency. "
+            "How do their playing styles differ strategically?"
+        ),
+        ground_truth=(
+            "SQL for PTS, TS%, FG% for both players, combined with strategic "
+            "analysis of their offensive approaches (paint vs perimeter)."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question=(
+            "What are the common characteristics of teams with top defensive ratings "
+            "according to defensive schemes discussed in NBA analysis?"
+        ),
+        ground_truth=(
+            "Team DRtg from stats plus document retrieval about defensive "
+            "systems (switching, drop coverage, help defense, etc.)."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question=(
+            "Analyze the relationship between three-point attempt volume and "
+            "offensive efficiency for modern NBA teams."
+        ),
+        ground_truth=(
+            "Stats on 3PA and ORtg, combined with analytical discussion of "
+            "Moreyball and spacing in contemporary basketball."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    # ========================================================================
+    # VECTOR-HEAVY: Primarily document-based with light stats
+    # ========================================================================
+    EvaluationTestCase(
+        question="Explain the evolution of the point guard position in the modern NBA.",
+        ground_truth=(
+            "Primarily vector search for historical analysis and position evolution "
+            "discussions, minimal stats required."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question="What strategies do successful playoff teams employ according to coaches?",
+        ground_truth=(
+            "Document retrieval for coaching insights and playoff strategies, "
+            "may reference team records for context."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    EvaluationTestCase(
+        question=(
+            "Describe the impact of load management on player performance "
+            "and team success over a full season."
+        ),
+        ground_truth=(
+            "Analytical discussion from documents about rest strategies, with "
+            "optional stats on games played vs. performance."
+        ),
+        category=TestCategory.COMPLEX,
+    ),
+    # ========================================================================
+    # NOISY: Additional robustness tests
+    # ========================================================================
+    EvaluationTestCase(
+        question="whos got most asists???",
+        ground_truth=(
+            "Despite typos ('asists' → assists), should query for AST leader "
+            "from player_stats."
+        ),
+        category=TestCategory.NOISY,
+    ),
+    EvaluationTestCase(
+        question="steph curry stats plz",
+        ground_truth=(
+            "Informal request with abbreviation should retrieve Stephen Curry's "
+            "full statistical profile."
+        ),
+        category=TestCategory.NOISY,
+    ),
+    EvaluationTestCase(
+        question="best defenders who r they",
+        ground_truth=(
+            "Abbreviated language ('r' → are) should still identify defensive "
+            "leaders by DRtg, STL, BLK metrics."
+        ),
+        category=TestCategory.NOISY,
+    ),
+    EvaluationTestCase(
+        question="how many ppg does the greek freak average",
+        ground_truth=(
+            "Nickname ('greek freak' → Giannis Antetokounmpo) should be resolved "
+            "to query his PPG from stats."
+        ),
+        category=TestCategory.NOISY,
+    ),
+    # ========================================================================
+    # CONVERSATIONAL: Additional multi-turn scenarios
+    # ========================================================================
+    EvaluationTestCase(
+        question="Which team has the best record?",
+        ground_truth=(
+            "Query team standings/records (if available in stats) or reference "
+            "season discussions."
+        ),
+        category=TestCategory.CONVERSATIONAL,
+    ),
+    EvaluationTestCase(
+        question="What is their offensive strategy?",
+        ground_truth=(
+            "Follow-up requiring context about the top team, retrieve documents "
+            "discussing their offensive scheme."
+        ),
+        category=TestCategory.CONVERSATIONAL,
+    ),
+    EvaluationTestCase(
+        question="Who is their star player?",
+        ground_truth=(
+            "Continuation of conversation: identify top team's leading scorer "
+            "or highest PIE player."
+        ),
+        category=TestCategory.CONVERSATIONAL,
+    ),
+    EvaluationTestCase(
+        question="Compare his stats to last year's MVP.",
+        ground_truth=(
+            "Multi-turn requiring context (star player from previous question) "
+            "compared to previous MVP's statistics."
         ),
         category=TestCategory.CONVERSATIONAL,
     ),
