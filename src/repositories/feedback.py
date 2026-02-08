@@ -101,6 +101,8 @@ class FeedbackRepository:
             sources=json.loads(sources) if sources else [],
             processing_time_ms=db_interaction.processing_time_ms,
             created_at=db_interaction.created_at,
+            conversation_id=db_interaction.conversation_id,
+            turn_number=db_interaction.turn_number,
             feedback=feedback,
         )
 
@@ -119,6 +121,8 @@ class FeedbackRepository:
                 response=interaction.response,
                 sources=json.dumps(interaction.sources),
                 processing_time_ms=interaction.processing_time_ms,
+                conversation_id=interaction.conversation_id,
+                turn_number=interaction.turn_number,
             )
             session.add(db_interaction)
             session.flush()
@@ -294,5 +298,31 @@ class FeedbackRepository:
             for fb in db_feedbacks:
                 feedback = self._to_feedback_response(fb)
                 results.append(self._to_interaction_response(fb.interaction, feedback))
+
+            return results
+
+    def get_messages_by_conversation(self, conversation_id: str) -> list[ChatInteractionResponse]:
+        """Get all messages in a conversation.
+
+        Args:
+            conversation_id: Conversation ID
+
+        Returns:
+            List of messages ordered by turn_number
+        """
+        with self.get_session() as session:
+            db_interactions = (
+                session.query(ChatInteractionDB)
+                .filter(ChatInteractionDB.conversation_id == conversation_id)
+                .order_by(ChatInteractionDB.turn_number)
+                .all()
+            )
+
+            results = []
+            for db_int in db_interactions:
+                feedback = None
+                if db_int.feedback:
+                    feedback = self._to_feedback_response(db_int.feedback)
+                results.append(self._to_interaction_response(db_int, feedback))
 
             return results
