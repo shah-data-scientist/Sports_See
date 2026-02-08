@@ -27,8 +27,8 @@ class SQLEvaluationTestCase(BaseModel):
     query_type: QueryType = Field(description="Query type (SQL/CONTEXTUAL/HYBRID)")
     expected_sql: str | None = Field(default=None, description="Expected SQL query (for SQL/HYBRID)")
     ground_truth_answer: str = Field(min_length=1, description="Correct answer")
-    ground_truth_data: dict[str, Any] | None = Field(
-        default=None, description="Expected SQL results (for verification)"
+    ground_truth_data: dict[str, Any] | list[dict[str, Any]] | None = Field(
+        default=None, description="Expected SQL results (for verification, can be dict or list)"
     )
     category: str = Field(description="Category (simple/complex/comparison/aggregation)")
 

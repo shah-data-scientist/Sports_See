@@ -278,6 +278,13 @@ def save_results(results: list, output_path: Path):
 
 def main():
     """Run hybrid query evaluation (Phase SQL-2)."""
+    # Configure UTF-8 encoding for Windows console
+    import sys
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,

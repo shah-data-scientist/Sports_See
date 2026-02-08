@@ -230,12 +230,14 @@ class ChatService:
         self,
         query: str,
         context: str,
+        prompt_template: str | None = None,
     ) -> str:
         """Generate LLM response with context.
 
         Args:
             query: User query
             context: Retrieved context
+            prompt_template: Optional custom prompt template (for Phase 8 testing)
 
         Returns:
             Generated response text
@@ -243,8 +245,9 @@ class ChatService:
         Raises:
             LLMError: If LLM call fails
         """
-        # Build prompt
-        prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        # Build prompt (use custom template if provided, otherwise default)
+        template = prompt_template if prompt_template is not None else SYSTEM_PROMPT_TEMPLATE
+        prompt = template.format(
             app_name=settings.app_name,
             context=context,
             question=query,
