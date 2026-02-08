@@ -27,11 +27,14 @@ from src.tools.sql_tool import NBAGSQLTool
 logger = logging.getLogger(__name__)
 
 
-# System prompt template
-# Phase 4 improvements: Explicit relevancy and faithfulness constraints
-# Phase 10 improvements: SQL data priority + English-only context
-# Phase 11 improvements: Conversation history support for follow-up questions
-# IMPORTANT: English language to ensure consistent English responses
+# System prompt templates
+# Phase 12 improvements: Query-type-specific prompts with mandatory data usage
+# - SYSTEM_PROMPT_TEMPLATE: Default/fallback for general queries
+# - SQL_ONLY_PROMPT: Force extraction of SQL results (COUNT/AVG/SUM)
+# - HYBRID_PROMPT: Mandate blending of SQL stats + vector context
+# - CONTEXTUAL_PROMPT: For qualitative analysis with citations
+
+# Default prompt (fallback for general queries)
 SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
 
 {conversation_history}
@@ -45,24 +48,104 @@ USER QUESTION:
 {question}
 
 CRITICAL INSTRUCTIONS:
-1. Answer DIRECTLY to the question asked - do not deviate from the topic
-2. Base your answer ONLY on information from the context above
-3. NEVER add information that is not in the context
-4. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.) and understand follow-up questions
-5. **STATISTICAL DATA (FROM SQL DATABASE)** contains EXACT FACTS from the official database:
-   - This is the PRIMARY source for all statistical queries
-   - Use these exact numbers - they are authoritative and verified
-   - Each numbered entry or bullet point is a complete database record
-6. **DOCUMENTS AND ANALYSIS** contains contextual information:
-   - Use this for player stories, analysis, opinions, and qualitative insights
-   - This supplements but does NOT replace statistical data
-7. When SQL data is present, you MUST use it to answer statistical questions
-8. If neither section contains the answer, state: "I cannot find this information in the provided context"
-9. Be precise and concise - provide exact numbers and names from the data
-10. For lists/rankings, present them clearly (numbered or bulleted)
-11. ALWAYS respond in English
+1. **EXAMINE the CONTEXT above carefully** - it contains the data needed to answer
+2. **EXTRACT specific facts** from the context (numbers, names, statistics)
+3. **CITE your sources** - reference where you found each fact using [Source: ...] format
+4. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.)
+5. **If truly no relevant data exists**, say: "The available data doesn't contain information about [specific aspect]"
+6. **NEVER guess or infer** - only state what's explicitly in the context
+7. ALWAYS respond in English
 
-RESPONSE:"""
+FORMAT YOUR ANSWER:
+- Start with the direct answer
+- Include specific data points from the context with citations
+- Be concise but complete
+
+ANSWER:"""
+
+# SQL-only prompt: Force extraction of statistical data
+SQL_ONLY_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+
+{conversation_history}
+
+STATISTICAL DATA (FROM SQL DATABASE):
+---
+{context}
+---
+
+USER QUESTION:
+{question}
+
+CRITICAL INSTRUCTIONS:
+1. **READ the STATISTICAL DATA above** - it contains the exact answer from the database
+2. **EXTRACT the relevant data** from the results:
+   - If you see "COUNT Result: X" → answer with the number X
+   - If you see "AVERAGE Result: X" → answer with the average X
+   - If you see "Found N matching records" → use those records
+3. **FORMAT clearly** - present numbers in a readable way
+4. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.)
+5. ALWAYS respond in English
+
+CRITICAL: The STATISTICAL DATA section ALWAYS contains the answer if it exists.
+NEVER say "data not available" or "I cannot find this information" if the STATISTICAL DATA section shows data.
+If the section says "No results found", then and only then state that the data is unavailable.
+
+ANSWER:"""
+
+# Hybrid prompt: Mandate blending of SQL + vector
+HYBRID_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with two data sources:
+
+{conversation_history}
+
+STATISTICAL DATA (FROM SQL DATABASE):
+---
+{sql_context}
+---
+
+CONTEXTUAL KNOWLEDGE (Analysis & Insights):
+---
+{vector_context}
+---
+
+USER QUESTION:
+{question}
+
+CRITICAL INSTRUCTIONS FOR HYBRID ANSWERS:
+1. **START with the STATISTICAL answer** from SQL data (WHAT the numbers are)
+2. **ADD CONTEXTUAL ANALYSIS** from the contextual knowledge (WHY/HOW it matters)
+3. **BLEND both components** - connect stats to analysis with transition words
+4. **CITE sources** - [SQL] for stats, [Source: ...] for insights
+5. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.)
+6. ALWAYS respond in English
+
+EXAMPLE FORMAT:
+"LeBron James scored 1,708 points this season [SQL]. His scoring comes from a mix of drives to the basket and perimeter shooting, making him a versatile offensive threat [Context: ESPN Analysis]."
+
+YOUR ANSWER (combine stats + context):"""
+
+# Contextual prompt: For qualitative analysis
+CONTEXTUAL_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+
+{conversation_history}
+
+CONTEXTUAL KNOWLEDGE:
+---
+{context}
+---
+
+USER QUESTION:
+{question}
+
+CRITICAL INSTRUCTIONS:
+1. **ANALYZE the contextual knowledge** provided above
+2. **SYNTHESIZE insights** from multiple sources if available
+3. **CITE specific sources** when making claims using [Source: ...] format
+4. Focus on qualitative analysis (playing style, strategy, impact, comparisons)
+5. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.)
+6. **If the context lacks relevant information**, say: "The available context doesn't contain information about [specific aspect]"
+7. ALWAYS respond in English
+
+ANSWER:"""
 
 
 class ChatService:
@@ -225,6 +308,59 @@ class ChatService:
         history_lines.append("---\n")
         return "\n".join(history_lines)
 
+    def _format_sql_results(self, sql_results: list[dict]) -> str:
+        """Format SQL results with special handling for scalar values (COUNT, AVG, SUM).
+
+        Args:
+            sql_results: List of result dictionaries from SQL query
+
+        Returns:
+            Formatted string for LLM prompt
+        """
+        if not sql_results:
+            return "No results found."
+
+        num_rows = len(sql_results)
+
+        # SPECIAL CASE 1: Single scalar result (COUNT, AVG, SUM, MAX, MIN)
+        if num_rows == 1 and len(sql_results[0]) == 1:
+            key, value = list(sql_results[0].items())[0]
+            key_lower = key.lower()
+
+            # Format based on aggregation type
+            if "count" in key_lower:
+                return f"COUNT Result: {value} (total number of records matching the criteria)"
+            elif "avg" in key_lower or "average" in key_lower:
+                return f"AVERAGE Result: {value:.2f}"
+            elif "sum" in key_lower or "total" in key_lower:
+                return f"SUM/TOTAL Result: {value}"
+            elif "max" in key_lower or "maximum" in key_lower:
+                return f"MAXIMUM Result: {value}"
+            elif "min" in key_lower or "minimum" in key_lower:
+                return f"MINIMUM Result: {value}"
+            else:
+                return f"Result: {value}"
+
+        # SPECIAL CASE 2: Single record (player/team lookup)
+        if num_rows == 1:
+            row = sql_results[0]
+            row_text = "\n".join(f"  • {k}: {v}" for k, v in row.items())
+            return f"Found 1 matching record:\n\n{row_text}"
+
+        # GENERAL CASE: Multiple records (top N, rankings, comparisons)
+        formatted_rows = []
+        for i, row in enumerate(sql_results[:20], 1):
+            row_parts = [f"{k}: {v}" for k, v in row.items()]
+            formatted_rows.append(f"{i}. {', '.join(row_parts)}")
+
+        result = "\n".join(formatted_rows)
+
+        if num_rows > 20:
+            result += f"\n\n(Showing top 20 of {num_rows} total results)"
+            return f"Found {num_rows} matching records (showing top 20):\n\n{result}"
+        else:
+            return f"Found {num_rows} matching records:\n\n{result}"
+
     @logfire.instrument("ChatService.search {query=}")
     def search(
         self,
@@ -348,6 +484,65 @@ class ChatService:
             logger.error("LLM call failed: %s", e)
             raise LLMError(f"LLM call failed: {e}") from e
 
+    @logfire.instrument("ChatService.generate_response_hybrid")
+    def generate_response_hybrid(
+        self,
+        query: str,
+        sql_context: str,
+        vector_context: str,
+        conversation_history: str = "",
+    ) -> str:
+        """Generate LLM response for hybrid queries (SQL + Vector).
+
+        Args:
+            query: User query
+            sql_context: SQL query results context
+            vector_context: Vector search context
+            conversation_history: Conversation history context (optional)
+
+        Returns:
+            Generated response text
+
+        Raises:
+            LLMError: If LLM call fails
+        """
+        # Build prompt with separate SQL and vector contexts
+        prompt = HYBRID_PROMPT.format(
+            app_name=settings.app_name,
+            conversation_history=conversation_history,
+            sql_context=sql_context,
+            vector_context=vector_context,
+            question=query,
+        )
+
+        try:
+            logger.info("Calling Gemini LLM with model %s (hybrid query)", self._model)
+
+            response = self.client.models.generate_content(
+                model=self._model,
+                contents=prompt,
+                config={
+                    "temperature": self._temperature,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "max_output_tokens": 2048,
+                },
+            )
+
+            if response.text:
+                return response.text
+
+            logger.warning("Gemini returned no text")
+            return "I could not generate a response."
+
+        except ClientError as e:
+            logger.error("Gemini API error: %s", e)
+            raise LLMError(f"LLM API error: {e}") from e
+
+        except Exception as e:
+            logger.error("LLM call failed: %s", e)
+            raise LLMError(f"LLM call failed: {e}") from e
+
     @logfire.instrument("ChatService.chat")
     def chat(self, request: ChatRequest) -> ChatResponse:
         """Process a chat request through hybrid RAG pipeline (SQL + Vector Search).
@@ -383,10 +578,11 @@ class ChatService:
         query_type = self.query_classifier.classify(query) if self._enable_sql else QueryType.CONTEXTUAL
 
         # Route to appropriate data source(s)
-        context_parts = []
         search_results = []
         sql_failed = False  # Track SQL failure for fallback
         sql_success = False  # Track SQL success
+        sql_context = ""
+        vector_context = ""
 
         # Statistical query → SQL tool
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
@@ -402,35 +598,9 @@ class ChatService:
                         logger.warning("SQL query returned no results - falling back to vector search")
                         sql_failed = True
                     else:
-                        # Format SQL results with enhanced structure for better LLM comprehension
-                        num_rows = len(sql_result["results"])
-
-                        # Create clear, numbered formatting
-                        if num_rows == 1:
-                            # Single result - use key-value format
-                            row = sql_result["results"][0]
-                            formatted_data = []
-                            for key, value in row.items():
-                                formatted_data.append(f"  • {key}: {value}")
-                            sql_context = "\n".join(formatted_data)
-                            header = "STATISTICAL DATA (FROM SQL DATABASE):\nFound 1 matching record:\n\n"
-                        else:
-                            # Multiple results - use numbered list format
-                            formatted_rows = []
-                            for i, row in enumerate(sql_result["results"][:20], 1):  # Limit to top 20
-                                row_parts = [f"{k}: {v}" for k, v in row.items()]
-                                formatted_rows.append(f"{i}. {', '.join(row_parts)}")
-
-                            sql_context = "\n".join(formatted_rows)
-
-                            if num_rows > 20:
-                                sql_context += f"\n\n(Showing top 20 of {num_rows} total results)"
-                                header = f"STATISTICAL DATA (FROM SQL DATABASE):\nFound {num_rows} matching records (showing top 20):\n\n"
-                            else:
-                                header = f"STATISTICAL DATA (FROM SQL DATABASE):\nFound {num_rows} matching records:\n\n"
-
-                        context_parts.append(header + sql_context)
-                        logger.info(f"SQL query returned {num_rows} rows")
+                        # Use new _format_sql_results() method with scalar handling
+                        sql_context = self._format_sql_results(sql_result["results"])
+                        logger.info(f"SQL query returned {len(sql_result['results'])} rows")
                         sql_success = True
 
                 except Exception as e:
@@ -463,37 +633,76 @@ class ChatService:
                 vector_context = "\n\n---\n\n".join(
                     [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
                 )
-                context_parts.append(f"DOCUMENTS AND ANALYSIS:\n{vector_context}")
 
-        # Combine contexts
-        if context_parts:
-            context = "\n\n=== === ===\n\n".join(context_parts)
+        # Select prompt template and format context based on query type
+        if query_type == QueryType.STATISTICAL and sql_success:
+            # SQL-only: Use SQL_ONLY_PROMPT
+            prompt_template = SQL_ONLY_PROMPT
+            context = sql_context
+        elif query_type == QueryType.HYBRID and sql_success and vector_context:
+            # Hybrid: Use HYBRID_PROMPT with separate SQL and vector sections
+            prompt_template = HYBRID_PROMPT
+            # HYBRID_PROMPT expects separate sql_context and vector_context parameters
+            # We'll handle this in generate_response call
+            context = None  # Signal to use sql_context + vector_context
+        elif query_type == QueryType.CONTEXTUAL and vector_context:
+            # Contextual: Use CONTEXTUAL_PROMPT
+            prompt_template = CONTEXTUAL_PROMPT
+            context = vector_context
         else:
-            context = "No relevant information found."
+            # Fallback: Use default SYSTEM_PROMPT_TEMPLATE
+            prompt_template = SYSTEM_PROMPT_TEMPLATE
+            # Combine contexts for fallback
+            context_parts = []
+            if sql_context:
+                context_parts.append(f"STATISTICAL DATA (FROM SQL DATABASE):\n{sql_context}")
+            if vector_context:
+                context_parts.append(f"DOCUMENTS AND ANALYSIS:\n{vector_context}")
+            context = "\n\n=== === ===\n\n".join(context_parts) if context_parts else "No relevant information found."
 
-        # Generate response
-        answer = self.generate_response(query=query, context=context, conversation_history=conversation_history)
+        # Generate response with appropriate prompt
+        if context is None:
+            # HYBRID case: pass sql_context and vector_context separately
+            answer = self.generate_response_hybrid(
+                query=query,
+                sql_context=sql_context,
+                vector_context=vector_context,
+                conversation_history=conversation_history,
+            )
+        else:
+            # All other cases: use standard generate_response
+            answer = self.generate_response(
+                query=query,
+                context=context,
+                conversation_history=conversation_history,
+                prompt_template=prompt_template,
+            )
 
         # SMART FALLBACK: If SQL succeeded but LLM still says "cannot find", retry with vector search
         if sql_success and not sql_failed and "cannot find" in answer.lower():
             logger.warning("SQL succeeded but LLM couldn't use results - retrying with vector search")
 
-            # Get vector search results
-            search_results = self.search(
-                query=query,
-                k=request.k,
-                min_score=request.min_score,
-            )
+            # Get vector search results (if not already retrieved)
+            if not search_results:
+                search_results = self.search(
+                    query=query,
+                    k=request.k,
+                    min_score=request.min_score,
+                )
 
             if search_results:
-                # Retry with vector context
-                vector_context = "\n\n---\n\n".join(
+                # Retry with vector context using CONTEXTUAL_PROMPT
+                fallback_vector_context = "\n\n---\n\n".join(
                     [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
                 )
-                fallback_context = f"DOCUMENTS AND ANALYSIS:\n{vector_context}"
 
                 # Regenerate response with vector context
-                answer = self.generate_response(query=query, context=fallback_context, conversation_history=conversation_history)
+                answer = self.generate_response(
+                    query=query,
+                    context=fallback_vector_context,
+                    conversation_history=conversation_history,
+                    prompt_template=CONTEXTUAL_PROMPT,
+                )
                 logger.info("Vector search fallback succeeded")
 
         # Calculate processing time
