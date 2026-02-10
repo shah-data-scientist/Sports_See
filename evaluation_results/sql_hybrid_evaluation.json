@@ -1,15 +1,7 @@
 {
   "test_set": "3",
-  "sample_count": 68,
+  "sample_count": 59,
   "samples": [
-    {
-      "query": "Who scored the most points this season?",
-      "query_type": "sql_only",
-      "response": "Shai Gilgeous-Alexander scored the most points this season, with 2,485 points.\n",
-      "overall_score": 0.91,
-      "sql_accuracy": 1.0,
-      "integration_score": null
-    },
     {
       "query": "What is LeBron James' average points per game?",
       "query_type": "sql_only",
@@ -45,7 +37,7 @@
     {
       "query": "How many games did Damian Lillard play?",
       "query_type": "sql_only",
-      "response": "Damian Lillard played 58 games [SQL]. He averaged 36.1 minutes per game and had a usage rate of 29.9% [Source: regular NBA.xlsx (Feuille: Données NBA)]. Lillard is known as a strong scorer, as highlighted in the Reddit discussion, and was considered a clear notch below other top point guards in the West during his prime, such as CP3, Westbrook, and Harden [Source: Reddit 3.pdf]. Despite the competition, Lillard has been recognized as an All-NBA selection [Source: Reddit 3.pdf].\n",
+      "response": "Damian Lillard played 58 games [SQL]. According to the contextual data, in those 58 games, he averaged 36.1 minutes per game, with a usage rate of 29.9% [Source: regular NBA.xlsx (Feuille: Données NBA)]. His offensive rating was 115.3, and his defensive rating was 114.6, resulting in a net rating of 0.7 [Source: regular NBA.xlsx (Feuille: Données NBA)]. He demonstrates a high free throw percentage of 92.1% [Source: regular NBA.xlsx (Feuille: Données NBA)].\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -55,14 +47,6 @@
       "query_type": "sql_only",
       "response": "Kevin Durant's field goal percentage is 52.7%. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.91,
-      "sql_accuracy": 1.0,
-      "integration_score": null
-    },
-    {
-      "query": "Who has the most assists this season?",
-      "query_type": "sql_only",
-      "response": "Trae Young has 882 assists this season.\n",
-      "overall_score": 0.86,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
@@ -101,7 +85,7 @@
     {
       "query": "How many games did Anthony Edwards play?",
       "query_type": "sql_only",
-      "response": "Anthony Edwards played 79 games [SQL]. While the provided contextual knowledge doesn't directly discuss Edwards' playing style or impact, it does highlight the competitive landscape for guards in the Western Conference [Source: Reddit 3.pdf]. The analysis suggests that even a top player like Edwards might have faced challenges in earning All-Star selections in certain eras due to the presence of multiple MVP-caliber guards [Source: Reddit 3.pdf]. This context underscores the depth of talent at the guard position and the potential difficulty in standing out, even with strong performance.\n",
+      "response": "Anthony Edwards played 79 games [SQL]. Edwards' performance can be contextualized by looking at other players in the league; for example, Dorian Finney-Smith played 82 games [Source: regular NBA.xlsx], while Jaxson Hayes played 78 games [Source: regular NBA.xlsx]. This comparison provides a sense of Edwards' availability relative to his peers.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -110,8 +94,8 @@
       "query": "Who has the highest true shooting percentage?",
       "query_type": "sql_only",
       "response": "Alondes Williams has the highest true shooting percentage at 125.\n",
-      "overall_score": 0.81,
-      "sql_accuracy": 0.75,
+      "overall_score": 0.51,
+      "sql_accuracy": 0.0,
       "integration_score": null
     },
     {
@@ -125,7 +109,7 @@
     {
       "query": "List all players on the Golden State Warriors.",
       "query_type": "sql_only",
-      "response": "The players on the Golden State Warriors are Jackson Rowe, Kevon Looney, Draymond Green and Quinten Post. [Source: regular NBA.xlsx]\n",
+      "response": "The players on the Golden State Warriors are Jackson Rowe, Kevon Looney, Quinten Post, and Draymond Green. [Source: regular NBA.xlsx]\n",
       "overall_score": 0.5225,
       "sql_accuracy": 0.5,
       "integration_score": null
@@ -157,7 +141,7 @@
     {
       "query": "Compare LeBron James and Kevin Durant's scoring",
       "query_type": "sql_only",
-      "response": "Based on the context, LeBron James is considered an elite, generational talent [Source: Reddit 2.pdf]. Kevin Durant played 36 games with 1649 points [Source: regular NBA.xlsx (Feuille: Données NBA)].\n",
+      "response": "LeBron James scored 476 points over 70 games, while Kevin Durant scored 1649 points over 36 games. [Source: regular NBA.xlsx (Feuille: Analyse), regular NBA.xlsx (Feuille: Données NBA)]\n",
       "overall_score": 0.8028571428571428,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -165,24 +149,8 @@
     {
       "query": "Who shoots better from 3, Curry or Lillard?",
       "query_type": "sql_only",
-      "response": "Curry shoots better from 3 than Lillard. [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
-      "overall_score": 0.81,
-      "sql_accuracy": 1.0,
-      "integration_score": null
-    },
-    {
-      "query": "Compare Trae Young and Luka Dončić's assists",
-      "query_type": "sql_only",
-      "response": "Luka Dončić has 385 assists while Trae Young has 882 assists. [Source: regular NBA.xlsx (Feuille: Analyse)]\n[Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
-      "overall_score": 0.8671428571428571,
-      "sql_accuracy": 1.0,
-      "integration_score": null
-    },
-    {
-      "query": "Who is more efficient, Jokić or Embiid?",
-      "query_type": "sql_only",
-      "response": "Nikola Jokić is more efficient than Joel Embiid. [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
-      "overall_score": 0.79,
+      "response": "Stephen Curry shoots better from 3 than Damian Lillard. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n",
+      "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
     },
@@ -205,7 +173,7 @@
     {
       "query": "Who has more rebounds, Jokić or Sabonis?",
       "query_type": "sql_only",
-      "response": "Domantas Sabonis has more rebounds (973) than Nikola Jokić (889).\n",
+      "response": "Domantas Sabonis has 973 rebounds, while Nikola Jokić has 889. Therefore, Sabonis has more rebounds than Jokić.\n",
       "overall_score": 0.91,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -213,7 +181,7 @@
     {
       "query": "Compare Jayson Tatum and Kevin Durant scoring efficiency",
       "query_type": "sql_only",
-      "response": "Jayson Tatum and Kevin Durant have different scoring efficiencies. According to the regular NBA data, Kevin Durant has a field goal percentage of 52.7% and a 3-point percentage of 43% [Source: regular NBA.xlsx (Feuille: Données NBA)]. Jayson Tatum has a field goal percentage of 45.2% and a 3-point percentage of 34.3% [Source: regular NBA.xlsx (Feuille: Analyse)].\n",
+      "response": "Jayson Tatum and Kevin Durant have different scoring efficiencies based on the provided data.\n\n*   **Jayson Tatum:** He scored 1930 points with a field goal percentage of 45.2%, a 3-point percentage of 34.3%, and a free throw percentage of 81.4%. [Source: regular NBA.xlsx (Feuille: Analyse)]\n*   **Kevin Durant:** He scored 1649 points with a field goal percentage of 52.7%, a 3-point percentage of 43%, and a free throw percentage of 83.9%. [Source: regular NBA.xlsx (Feuille: Données NBA)]\n\nDurant demonstrates better scoring efficiency due to his higher field goal and 3-point percentages.\n",
       "overall_score": 0.79,
       "sql_accuracy": 1.0,
       "integration_score": null
@@ -293,8 +261,8 @@
     {
       "query": "How many players have a true shooting percentage over 60%?",
       "query_type": "sql_only",
-      "response": "560 players have a true shooting percentage over 60%.\n",
-      "overall_score": 0.81,
+      "response": "The available data doesn't contain this information",
+      "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
@@ -373,8 +341,8 @@
     {
       "query": "How many players have a Player Impact Estimate (PIE) above 0.15?",
       "query_type": "sql_only",
-      "response": "To determine how many players have a Player Impact Estimate (PIE) above 0.15, I need to look at the \"Estimation de l’impact du joueur\" column in the provided data. Based on the data from the \"regular NBA.xlsx\" (Feuille: Analyse), the following players have a PIE above 15%:\n\n*   Shai Gilgeous-Alexander: 19.9\n*   Nikola Jokić: 20.6\n*   Giannis Antetokounmpo: 21\n*   Jayson Tatum: 15.8\n\nTherefore, there are 4 players with a PIE above 0.15 [Source: regular NBA.xlsx (Feuille: Analyse)].",
-      "overall_score": 0.71,
+      "response": "To determine how many players have a Player Impact Estimate (PIE) above 0.15, I need to look at the \"Estimation de l’impact du joueur\" column in the provided data and count the players with a value greater than 15.8. Based on the data, the following players have a PIE above 15.0: Shai Gilgeous-Alexander (19.9), Nikola Jokić (20.6), Giannis Antetokounmpo (21), and Jayson Tatum (15.8). [Source: regular NBA.xlsx (Feuille: Analyse)]\n\nTherefore, there are 4 players with a PIE above 15.0.\n",
+      "overall_score": 0.76,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
@@ -389,7 +357,7 @@
     {
       "query": "Which players score more points per game than the league average?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, the following players score more points per game than the league average:\n\n1.  Shai Gilgeous-Alexander (32.7 ppg)\n2.  Giannis Antetokounmpo (30.4 ppg)\n3.  Nikola Jokić (29.6 ppg)\n4.  Anthony Edwards (27.6 ppg)\n5.  Jayson Tatum (26.8 ppg)\n6.  Kevin Durant (26.6 ppg)\n7.  Cade Cunningham (26.1 ppg)\n8.  Jalen Brunson (26.0 ppg)\n9.  Devin Booker (25.6 ppg)\n10. Stephen Curry (24.5 ppg)\n11. Karl-Anthony Towns (24.4 ppg)\n12. LeBron James (24.4 ppg)\n13. Trae Young (24.2 ppg)\n14. Donovan Mitchell (24.0 ppg)\n15. Tyler Herro (23.9 ppg)\n16. Zach LaVine (23.3 ppg)\n17. James Harden (22.8 ppg)\n18. Jaren Jackson Jr, (22.2 ppg)\n19. DeMar DeRozan (22.2 ppg)\n20. Jalen Green (21.0 ppg)\n",
+      "response": "The available data doesn't contain the league average points per game, so I cannot determine which players score more than that.\n",
       "overall_score": 0.585,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -397,7 +365,7 @@
     {
       "query": "Find players with both high scoring (1500+ points) and high assists (300+ assists)",
       "query_type": "sql_only",
-      "response": "The following players have scored over 1500 points and have over 300 assists:\n\n*   Shai Gilgeous-Alexander: 2485 points, 486 assists\n*   Anthony Edwards: 2180 points, 356 assists\n*   Nikola Jokić: 2072 points, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 436 assists\n*   Jayson Tatum: 1930 points, 432 assists\n*   Devin Booker: 1920 points, 533 assists\n*   Tyler Herro: 1840 points, 424 assists\n*   Trae Young: 1839 points, 882 assists\n*   Cade Cunningham: 1827 points, 637 assists\n*   James Harden: 1801 points, 687 assists\n*   Zach LaVine: 1724 points, 311 assists\n*   Stephen Curry: 1715 points, 420 assists\n*   DeMar DeRozan: 1709 points, 339 assists\n*   LeBron James: 1708 points, 574 assists\n*   Donovan Mitchell: 1704 points, 355 assists\n*   Jalen Brunson: 1690 points, 475 assists\n*   Darius Garland: 1545 points, 503 assists\n*   Coby White: 1510 points, 333 assists\n",
+      "response": "The following players have scored over 1500 points and have over 300 assists:\n\n*   Shai Gilgeous-Alexander: 2485 points, 486 assists\n*   Anthony Edwards: 2180 points, 356 assists\n*   Nikola Jokić: 2072 points, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 436 assists\n*   Jayson Tatum: 1930 points, 432 assists\n*   Devin Booker: 1920 points, 533 assists\n*   Tyler Herro: 1840 points, 424 assists\n*   Trae Young: 1839 points, 882 assists\n*   Cade Cunningham: 1827 points, 637 assists\n*   James Harden: 1801 points, 687 assists\n*   Zach LaVine: 1724 points, 311 assists\n*   Stephen Curry: 1715 points, 420 assists\n*   DeMar DeRozan: 1709 points, 339 assists\n*   LeBron James: 1708 points, 574 assists\n*   Donovan Mitchell: 1704 points, 355 assists\n*   Jalen Brunson: 1690 points, 475 assists\n*   Darius Garland: 1545 points, 503 assists\n*   Coby White: 1510 points, 333 assists",
       "overall_score": 0.6225,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -405,7 +373,7 @@
     {
       "query": "Who are the most efficient scorers among players with 50+ games played?",
       "query_type": "sql_only",
-      "response": "Based on the data provided, here are the most efficient scorers (measured by True Shooting Percentage, TS%) among players with 50+ games played:\n\n1. Jarrett Allen, TS%: 72.4\n2. Jaxson Hayes, TS%: 72\n3. Daniel Gafford, TS%: 71.6\n4. Adem Bona, TS%: 71.4\n5. Dwight Powell, TS%: 71.3\n6. Jalen Duren, TS%: 70.3\n7. Rudy Gobert, TS%: 68.7\n8. Luke Kornet, TS%: 68.3\n9. Neemias Queta, TS%: 67.4\n10. Jay Huff, TS%: 66.6\n",
+      "response": "Based on the data provided, here are the most efficient scorers (measured by True Shooting Percentage, TS%) among players with 50+ games played:\n\n1. Jarrett Allen, TS%: 72.4\n2. Jaxson Hayes, TS%: 72\n3. Daniel Gafford, TS%: 71.6\n4. Adem Bona, TS%: 71.4\n5. Dwight Powell, TS%: 71.3\n",
       "overall_score": 0.7350000000000001,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -415,14 +383,6 @@
       "query_type": "sql_only",
       "response": "The available context doesn't contain this information.\n",
       "overall_score": 0.51,
-      "sql_accuracy": 0.75,
-      "integration_score": null
-    },
-    {
-      "query": "Find the top 5 players by total defensive actions (steals + blocks)",
-      "query_type": "sql_only",
-      "response": "The top 5 players by total defensive actions are:\n\n1. Dyson Daniels: 281\n2. Victor Wembanyama: 226\n3. Shai Gilgeous-Alexander: 205\n4. Myles Turner: 202\n5. Jaren Jackson Jr: 200\n",
-      "overall_score": 0.67875,
       "sql_accuracy": 0.75,
       "integration_score": null
     },
@@ -453,7 +413,7 @@
     {
       "query": "Find all players who score more than they assist by at least 10 points per game",
       "query_type": "sql_only",
-      "response": "Here are the players who score more than they assist by at least 10 points per game, based on the provided data:\n\nTo determine this, I calculated each player's points per game (PPG) and assists per game (APG), then found the difference. I only included players where PPG - APG was greater than or equal to 10.\n\nHere's the list:\n\n*   **Shai Gilgeous-Alexander:** PPG = 30.1, APG = 5.9, Difference = 24.2\n*   **Anthony Edwards:** PPG = 25.9, APG = 4.2, Difference = 21.7\n*   **Nikola Jokić:** PPG = 26.4, APG = 9.0, Difference = 17.4\n*   **Giannis Antetokounmpo:** PPG = 30.1, APG = 6.4, Difference = 23.7\n*   **Jayson Tatum:** PPG = 27.1, APG = 6.1, Difference = 21.0\n*   **Devin Booker:** PPG = 27.1, APG = 7.6, Difference = 19.5\n*   **Tyler Herro:** PPG = 21.2, APG = 4.9, Difference = 16.3\n*   **Karl-Anthony Towns:** PPG = 21.4, APG = 2.7, Difference = 18.7\n*   **Zach LaVine:** PPG = 24.2, APG = 3.9, Difference = 20.3\n*   **Jalen Green:** PPG = 22.0, APG = 4.0, Difference = 18.0\n*   **Stephen Curry:** PPG = 29.4, APG = 8.1, Difference = 21.3\n*   **DeMar DeRozan:** PPG = 24.7, APG = 4.9, Difference = 19.8\n*   **LeBron James:** PPG = 24.7, APG = 6.9, Difference = 17.8\n*   **Donovan Mitchell:** PPG = 26.4, APG = 6.1, Difference = 20.3\n*   **Kevin Durant:** PPG = 27.5, APG = 4.3, Difference = 23.2\n*   **Jaren Jackson Jr:** PPG = 22.3, APG = 2.1, Difference = 20.2",
+      "response": "Here are the players who score more than they assist by at least 10 points per game, based on the provided data:\n\nTo determine this, I calculated each player's points per game (PPG) and assists per game (APG), then found the difference. I only included players where PPG - APG was greater than or equal to 10.\n\nHere's the list:\n\n*   Shai Gilgeous-Alexander: PPG = 2485/82 ≈ 30.3, APG = 486/82 ≈ 5.9, Difference ≈ 24.4\n*   Anthony Edwards: PPG = 2180/82 ≈ 26.6, APG = 356/82 ≈ 4.3, Difference ≈ 22.3\n*   Nikola Jokić: PPG = 2072/82 ≈ 25.3, APG = 714/82 ≈ 8.7, Difference ≈ 16.6\n*   Giannis Antetokounmpo: PPG = 2037/82 ≈ 24.8, APG = 436/82 ≈ 5.3, Difference ≈ 19.5\n*   Jayson Tatum: PPG = 1930/82 ≈ 23.5, APG = 432/82 ≈ 5.3, Difference ≈ 18.2\n*   Devin Booker: PPG = 1920/82 ≈ 23.4, APG = 533/82 ≈ 6.5, Difference ≈ 16.9\n*   Tyler Herro: PPG = 1840/82 ≈ 22.4, APG = 424/82 ≈ 5.2, Difference ≈ 17.2\n*   Karl-Anthony Towns: PPG = 1757/82 ≈ 21.4, APG = 223/82 ≈ 2.7, Difference ≈ 18.7\n*   Zach LaVine: PPG = 1724/82 ≈ 21.0, APG = 311/82 ≈ 3.8, Difference ≈ 17.2\n*   Jalen Green: PPG = 1722/82 ≈ 21.0, APG = 279/82 ≈ 3.4, Difference ≈ 17.6\n*   Stephen Curry: PPG = 1715/82 ≈ 20.9, APG = 420/82 ≈ 5.1, Difference ≈ 15.8\n*   DeMar DeRozan: PPG = 1709/82 ≈ 20.8, APG = 339/82 ≈ 4.1, Difference ≈ 16.7\n*   LeBron James: PPG = 1708/82 ≈ 20.8, APG = 574/82 ≈ 7.0, Difference ≈ 13.8\n*   Donovan Mitchell: PPG = 1704/82 ≈ 20.8, APG = 355/82 ≈ 4.3, Difference ≈ 16.5\n*   Kevin Durant: PPG = 1649/82 ≈ 20.1, APG = 260/82 ≈ 3.2, Difference ≈ 16.9\n*   Jaren Jackson Jr,: PPG = 1643/82 ≈ 20.0, APG = 148/82 ≈ 1.8, Difference ≈ 18.2\n*   Trae Young: PPG = 1839/82 ≈ 22.4, APG = 882/82 ≈ 10.8, Difference ≈ 11.6\n*   Cade Cunningham: PPG = 1827/82 ≈ 22.3, APG = 637/82 ≈ 7.8, Difference ≈ 14.5\n*   James Harden: PPG = 1801/82 ≈ 21.9, APG = 687/82 ≈ 8.4, Difference ≈ 13.5\n*   Jalen Brunson: PPG = 1690/82 ≈ 20.6, APG = 475/82 ≈ 5.8, Difference ≈ 14.8\n",
       "overall_score": 0.5449999999999999,
       "sql_accuracy": 0.5,
       "integration_score": null
@@ -461,7 +421,7 @@
     {
       "query": "Which players have the best assist-to-turnover ratio among those with 300+ assists?",
       "query_type": "sql_only",
-      "response": "Based on the provided data, here are the players with 300 or more assists, ranked by their assist-to-steal ratio:\n\n1.  Trae Young: 9.59\n2.  Cade Cunningham: 8.97\n3.  Domantas Sabonis: 8.40\n4.  LeBron James: 8.08\n5.  Jalen Brunson: 7.92\n6.  Keyonte George: 7.81\n7.  Devin Booker: 7.72\n8.  Giannis Antetokounmpo: 7.15\n9.  Isaiah Collier: 6.88\n10. RJ Barrett: 6.66\n11. Julius Randle: 6.61\n12. LaMelo Ball: 6.57\n13. Tyrese Haliburton: 6.52\n14. Bub Carrington: 6.22\n15. Malik Monk: 6.07\n16. Tyler Herro: 6.06\n17. Ja Morant: 5.98\n18. Josh Giddey: 5.93\n19. Dennis Schroder: 5.87\n20. Damian Lillard: 5.80\n",
+      "response": "Based on the provided data, here are the players with the best assist-to-steal ratio among those with 300 or more assists:\n\n1.  Trae Young: 9.59\n2.  Cade Cunningham: 8.97\n3.  Domantas Sabonis: 8.40\n4.  LeBron James: 8.08\n5.  Jalen Brunson: 7.92\n6.  Keyonte George: 7.81\n7.  Devin Booker: 7.72\n8.  Giannis Antetokounmpo: 7.15\n9.  Isaiah Collier: 6.88\n10. RJ Barrett: 6.66\n11. Julius Randle: 6.61\n12. LaMelo Ball: 6.57\n13. Tyrese Haliburton: 6.52\n14. Bub Carrington: 6.22\n15. Malik Monk: 6.07\n16. Tyler Herro: 6.06\n17. Ja Morant: 5.98\n18. Josh Giddey: 5.93\n19. Dennis Schroder: 5.87\n20. Damian Lillard: 5.80\n",
       "overall_score": 0.61,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -469,15 +429,7 @@
     {
       "query": "Find the most versatile players with at least 1000 points, 400 rebounds, and 200 assists",
       "query_type": "sql_only",
-      "response": "Based on the provided data, here are the most versatile players with at least 1000 points, 400 rebounds, and 200 assists:\n\n*   Anthony Edwards: 2180 points, 450 rebounds, 356 assists\n*   Nikola Jokić: 2072 points, 889 rebounds, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 797 rebounds, 436 assists\n*   Jayson Tatum: 1930 points, 626 rebounds, 432 assists\n*   Tyler Herro: 1840 points, 400 rebounds, 424 assists\n*   Cade Cunningham: 1827 points, 427 rebounds, 637 assists\n*   James Harden: 1801 points, 458 rebounds, 687 assists\n*   Karl-Anthony Towns: 1757 points, 922 rebounds, 223 assists\n*   LeBron James: 1708 points, 546 rebounds, 574 assists\n*   Pascal Siakam: 1576 points, 538 rebounds, 265 assists\n*   Alperen Sengun: 1452 points, 783 rebounds, 372 assists\n*   Bam Adebayo: 1412 points, 749 rebounds, 335 assists\n*   Luka Dončić: 1410 points, 410 rebounds, 385 assists\n*   Nikola Vučević: 1351 points, 737 rebounds, 256 assists\n*   Domantas Sabonis: 1337 points, 973 rebounds, 420 assists\n*   Desmond Bane: 1325 points, 421 rebounds, 366 assists\n*   Evan Mobley: 1314 points, 660 rebounds, 227 assists\n*   Miles Bridges: 1299 points, 480 rebounds, 250 assists\n*   Julius Randle: 1290 points, 490 rebounds, 324 assists",
-      "overall_score": 0.51,
-      "sql_accuracy": 0.75,
-      "integration_score": null
-    },
-    {
-      "query": "What percentage of players have a true shooting percentage above 60%?",
-      "query_type": "sql_only",
-      "response": "The available context doesn't contain this information.\n",
+      "response": "Based on the provided data, here are the players with at least 1000 points, 400 rebounds, and 200 assists:\n\n*   Anthony Edwards: 2180 points, 450 rebounds, 356 assists\n*   Nikola Jokić: 2072 points, 889 rebounds, 714 assists\n*   Giannis Antetokounmpo: 2037 points, 797 rebounds, 436 assists\n*   Jayson Tatum: 1930 points, 626 rebounds, 432 assists\n*   Tyler Herro: 1840 points, 400 rebounds, 424 assists\n*   Cade Cunningham: 1827 points, 427 rebounds, 637 assists\n*   James Harden: 1801 points, 458 rebounds, 687 assists\n*   Karl-Anthony Towns: 1757 points, 922 rebounds, 223 assists\n*   LeBron James: 1708 points, 546 rebounds, 574 assists\n*   Pascal Siakam: 1576 points, 538 rebounds, 265 assists\n*   Alperen Sengun: 1452 points, 783 rebounds, 372 assists\n*   Bam Adebayo: 1412 points, 749 rebounds, 335 assists\n*   Luka Dončić: 1410 points, 410 rebounds, 385 assists\n*   Nikola Vučević: 1351 points, 737 rebounds, 256 assists\n*   Domantas Sabonis: 1337 points, 973 rebounds, 420 assists\n*   Desmond Bane: 1325 points, 421 rebounds, 366 assists\n*   Evan Mobley: 1314 points, 660 rebounds, 227 assists\n*   Miles Bridges: 1299 points, 480 rebounds, 250 assists\n*   Julius Randle: 1290 points, 490 rebounds, 324 assists",
       "overall_score": 0.51,
       "sql_accuracy": 0.75,
       "integration_score": null
@@ -501,33 +453,9 @@
     {
       "query": "Who's the best rebounder?",
       "query_type": "sql_only",
-      "response": "The available context doesn't contain this information.\n",
-      "overall_score": 0.6599999999999999,
+      "response": "The available context doesn't contain enough information to determine who the best rebounder is.\n",
+      "overall_score": 0.71,
       "sql_accuracy": 1.0,
-      "integration_score": null
-    },
-    {
-      "query": "How many games did he play?",
-      "query_type": "sql_only",
-      "response": "Please provide the name of the player you are asking about. I need a name to find the number of games played in the statistical data. Once you provide the name, I will combine the statistical data with relevant contextual analysis.\n",
-      "overall_score": 0.6385714285714286,
-      "sql_accuracy": 0.75,
-      "integration_score": null
-    },
-    {
-      "query": "Tell me about LeBron's stats",
-      "query_type": "sql_only",
-      "response": "LeBron James played 70 games [Source: regular NBA.xlsx (Feuille: Données NBA)], scored 3297 points [Source: regular NBA.xlsx (Feuille: Données NBA)], with a usage rate of 25.6 [Source: regular NBA.xlsx (Feuille: Données NBA)], and an offensive rating of 112.7 [Source: regular NBA.xlsx (Feuille: Données NBA)]. He averaged 16.9 points in the analysis data [Source: regular NBA.xlsx (Feuille: Analyse)].\n",
-      "overall_score": 0.66625,
-      "sql_accuracy": 1.0,
-      "integration_score": null
-    },
-    {
-      "query": "Compare him to Curry",
-      "query_type": "sql_only",
-      "response": "Based on the provided data, Stephen Curry has a higher free throw percentage (93.3%) compared to Zach LaVine (82.5%) and Jalen Green (81.3%). [Source: regular NBA.xlsx (Feuille: Analyse)]\n",
-      "overall_score": 0.6000000000000001,
-      "sql_accuracy": 0.75,
       "integration_score": null
     },
     {

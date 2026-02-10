@@ -235,13 +235,129 @@ Documents (inputs/)
     ↓
 Text Extraction (PyPDF2, python-docx, pandas)
     ↓
-Chunking (LangChain RecursiveCharacterTextSplitter)
+Reddit Detection (optional)
+    ↓
+Chunking (Reddit-aware OR RecursiveCharacterTextSplitter)
     ↓
 Embedding Generation (Mistral API)
     ↓
 FAISS Index Creation
     ↓
 Persistence (vector_db/)
+```
+
+## Reddit-Specific Chunking Strategy
+
+For Reddit discussion threads (e.g., r/nba posts), the system uses **thread-aware chunking** to preserve conversational context and filter noise.
+
+### Why Thread-Aware Chunking?
+
+Reddit threads are **discussions**, not standalone documents. Breaking them arbitrarily loses context:
+
+❌ **Without thread-aware chunking:**
+- Comments separated from original post → no context
+- Advertisements polluting vector database → poor retrieval
+- Random 1500-char splits → mid-comment breaks
+- User asks "What did people think about Randle?" → retrieves isolated comments without knowing which post
+
+✅ **With thread-aware chunking:**
+- Post + top 5 comments grouped together → full context
+- Ads filtered out → cleaner data
+- Semantic units preserved → better retrieval
+- Comments sorted by upvotes → quality prioritization
+
+### Reddit Chunking Algorithm
+
+```python
+# Automatic detection
+if is_reddit_content(text):
+    # 1. Filter advertisements
+    cleaned = remove_ads(text)  # "Sponsoris(e)", promotional URLs, UI noise
+
+    # 2. Extract post metadata
+    post = extract_post(cleaned)  # title, author, upvotes
+
+    # 3. Parse comments
+    comments = extract_comments(cleaned)  # text, author, upvotes
+
+    # 4. Sort by quality
+    top_comments = sort_by_upvotes(comments)[:5]
+
+    # 5. Create semantic chunk
+    chunk = f"""
+    === REDDIT POST ===
+    Title: {post.title}
+    Author: u/{post.author}
+    Upvotes: {post.upvotes}
+
+    === TOP COMMENTS (5) ===
+    [1] u/{comment1.author} ({upvotes} upvotes): {comment1.text}
+    [2] u/{comment2.author} ({upvotes} upvotes): {comment2.text}
+    ...
+    """
+```
+
+### Advertisement Filtering
+
+Removes noise patterns commonly found in Reddit PDFs:
+
+- **Sponsored content**: "Sponsoris(e)", "Sponsored", advertiser names
+- **Promotional CTAs**: "En savoir plus", "Learn more" + URLs
+- **Reddit UI elements**: "Rejoindre la conversation", "Trier par", "Rechercher des commentaires"
+- **OCR artifacts**: Misspelled UI text from image-based PDFs
+
+### NBA Official Content Weighting
+
+Comments from official NBA accounts (`u/NBA`, `u/Lakers`, `u/Celtics`, etc.) are tagged with `[NBA OFFICIAL]` metadata for potential future weighting in retrieval.
+
+### Example Transformation
+
+**Before (arbitrary 1500-char split):**
+```
+...xometry_europe Sponsoris(e) "Si seulement je l'avais su plus tôt"
+En savoir plus pages.xometry.eu NotWD Ant's been a machine as
+expected; but Randle's genuinely beating the beyblade allegations...
+[cuts off mid-comment]
+```
+
+**After (thread-aware chunk):**
+```
+=== REDDIT POST ===
+Title: Who are teams in the playoffs that have impressed you?
+Author: u/MannerSuperb
+Upvotes: 31 | Total Comments: 236
+
+=== TOP COMMENTS (5) ===
+[1] u/NotWD (186 upvotes): Ant's been a machine as expected; but Randle's
+genuinely beating the beyblade allegations and it's so nice to see
+
+[2] u/MG_MN (55 upvotes): Randle has been a revelation. His bully ball
+has worked perfectly on offense...
+
+[3] u/IGbaby245 (32 upvotes): Randle knows he can out muscle most guys...
+```
+
+### Fallback to Standard Chunking
+
+Non-Reddit documents (Word, CSV, text PDFs) use standard `RecursiveCharacterTextSplitter` with 1500-char chunks and 150-char overlap.
+
+### Detection Criteria
+
+Text is classified as Reddit content if it contains **at least 2 of:**
+- `r/nba` or `r/[subreddit]` patterns
+- "Répondre" / "Rpondre" (Reply button, French)
+- "Partager" (Share button, French)
+- "upvotes?" patterns
+- "commentaires?" (Comments, French)
+
+### Configuration
+
+Adjust in [src/pipeline/reddit_chunker.py](src/pipeline/reddit_chunker.py):
+
+```python
+RedditThreadChunker(
+    max_comments_per_chunk=5  # Top N comments to include
+)
 ```
 
 ## Documentation

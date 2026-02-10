@@ -16,6 +16,8 @@ import time
 import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from src.pipeline.reddit_chunker import RedditThreadChunker
+
 from src.core.config import settings
 from src.core.observability import logfire
 from src.models.document import DocumentChunk
@@ -259,6 +261,9 @@ class DataPipeline:
     ) -> ChunkStageOutput:
         """Stage 3: Split documents into overlapping chunks.
 
+        Uses Reddit-specific chunking for Reddit PDFs (preserves thread structure),
+        falls back to RecursiveCharacterTextSplitter for other documents.
+
         Args:
             documents: Cleaned documents to split.
             chunk_size: Characters per chunk (default from settings).
@@ -270,34 +275,57 @@ class DataPipeline:
         chunk_size = chunk_size or settings.chunk_size
         chunk_overlap = chunk_overlap or settings.chunk_overlap
 
-        splitter = RecursiveCharacterTextSplitter(
+        # Initialize both chunkers
+        text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             length_function=len,
             add_start_index=True,
         )
+        reddit_chunker = RedditThreadChunker(max_comments_per_chunk=5)
 
         all_chunks: list[ChunkData] = []
         doc_counter = 0
 
         for doc in documents:
-            texts = splitter.split_text(doc.page_content)
-            for i, chunk_text in enumerate(texts):
-                # Determine data type from content analysis
-                data_type = self._analyze_chunk_content(chunk_text)
+            # Check if this is Reddit content
+            is_reddit = reddit_chunker.is_reddit_content(doc.page_content)
 
-                all_chunks.append(
-                    ChunkData(
-                        id=f"{doc_counter}_{i}",
-                        text=chunk_text,
-                        metadata={
-                            **doc.metadata,
-                            "chunk_id_in_doc": i,
-                            "total_chunks_in_doc": len(texts),
-                            "data_type": data_type,
-                        },
-                    )
+            if is_reddit:
+                # Use Reddit-specific chunking
+                logger.info(f"Detected Reddit content in {doc.metadata.get('source', 'unknown')}")
+                reddit_chunks = reddit_chunker.chunk_reddit_thread(
+                    doc.page_content,
+                    source=doc.metadata.get("source", "unknown"),
                 )
+
+                # Add Reddit chunks with IDs
+                for i, chunk in enumerate(reddit_chunks):
+                    chunk.id = f"{doc_counter}_{i}"
+                    chunk.metadata["chunk_id_in_doc"] = i
+                    chunk.metadata["total_chunks_in_doc"] = len(reddit_chunks)
+                    all_chunks.append(chunk)
+
+            else:
+                # Use standard text splitting for non-Reddit content
+                texts = text_splitter.split_text(doc.page_content)
+                for i, chunk_text in enumerate(texts):
+                    # Determine data type from content analysis
+                    data_type = self._analyze_chunk_content(chunk_text)
+
+                    all_chunks.append(
+                        ChunkData(
+                            id=f"{doc_counter}_{i}",
+                            text=chunk_text,
+                            metadata={
+                                **doc.metadata,
+                                "chunk_id_in_doc": i,
+                                "total_chunks_in_doc": len(texts),
+                                "data_type": data_type,
+                            },
+                        )
+                    )
+
             doc_counter += 1
 
         # Apply quality filtering
