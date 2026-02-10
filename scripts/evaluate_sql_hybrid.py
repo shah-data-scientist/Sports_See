@@ -22,9 +22,37 @@ from src.evaluation.sql_evaluation import (
 )
 from src.evaluation.hybrid_test_cases import HYBRID_TEST_CASES as HYBRID_CASES_NEW
 from src.evaluation.sql_test_cases import SQL_TEST_CASES
+from src.evaluation.models import TestCategory
 from src.services.chat import ChatService
+from src.services.conversation import ConversationService
+from src.repositories.conversation import ConversationRepository
+from src.repositories.feedback import FeedbackRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _is_followup_question(question: str) -> bool:
+    """Check if question is a follow-up requiring conversation context."""
+    question_lower = question.lower()
+    # Pronouns indicating follow-up
+    followup_indicators = [
+        "his ", "her ", "their ", "its ", "he ", "she ", "they ",
+        "what about", "and what", "how does that", "how does this",
+        "going back to", "could they", "is he", "is she", "are they",
+        "compare him", "which of them"
+    ]
+    return any(indicator in question_lower for indicator in followup_indicators)
+
+
+def _is_conversational_case(test_case) -> bool:
+    """Check if test case is conversational (works for both SQL and Hybrid test cases)."""
+    # For SQL test cases: category is a string like "conversational_followup"
+    if hasattr(test_case, 'category') and isinstance(test_case.category, str):
+        return "conversational" in test_case.category.lower()
+    # For Hybrid test cases: category is TestCategory enum
+    if hasattr(test_case, 'category') and isinstance(test_case.category, TestCategory):
+        return test_case.category == TestCategory.CONVERSATIONAL
+    return False
 
 
 def evaluate_sql_accuracy(
@@ -144,7 +172,7 @@ def evaluate_hybrid_integration(
 
 
 def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
-    """Run comprehensive SQL + Hybrid evaluation.
+    """Run comprehensive SQL + Hybrid evaluation with conversation support.
 
     Args:
         test_cases: List of SQL evaluation test cases
@@ -153,7 +181,7 @@ def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
     Returns:
         List of tuples (sample, test_case) - maintains alignment even when queries fail
     """
-    logger.info(f"Running SQL + Hybrid evaluation on {len(test_cases)} test cases")
+    logger.info(f"Running SQL + Hybrid evaluation on {len(test_cases)} test cases (with conversation support)")
 
     # Initialize chat service and SQL tool separately for evaluation
     chat_service = ChatService(enable_sql=use_sql)
@@ -163,16 +191,55 @@ def run_sql_hybrid_evaluation(test_cases: list, use_sql: bool = True):
     from src.tools.sql_tool import NBAGSQLTool
     sql_tool = NBAGSQLTool()
 
+    # Initialize conversation tracking for conversational test cases
+    conversation_repo = ConversationRepository()
+    conversation_service = ConversationService(repository=conversation_repo)
+    feedback_repo = FeedbackRepository()
+
+    current_conversation_id = None
+    current_turn_number = 0
+
     results = []  # List of (sample, test_case) tuples
 
     for i, test_case in enumerate(test_cases):
         logger.info(f"[{i+1}/{len(test_cases)}] {test_case.category}: {test_case.question[:60]}...")
 
+        # Handle conversational test cases with conversation context
+        if _is_conversational_case(test_case):
+            # Determine if this is a new conversation or continuation
+            if _is_followup_question(test_case.question):
+                # Continue existing conversation
+                if current_conversation_id is None:
+                    # Start new conversation if none exists
+                    conversation = conversation_service.start_conversation()
+                    current_conversation_id = conversation.id
+                    current_turn_number = 1
+                    logger.info(f"  Started new conversation: {current_conversation_id}")
+                else:
+                    current_turn_number += 1
+                    logger.info(f"  Continuing conversation {current_conversation_id}, turn {current_turn_number}")
+            else:
+                # Start new conversation
+                conversation = conversation_service.start_conversation()
+                current_conversation_id = conversation.id
+                current_turn_number = 1
+                logger.info(f"  Started new conversation: {current_conversation_id}")
+        else:
+            # Reset conversation tracking for non-conversational cases
+            current_conversation_id = None
+            current_turn_number = 0
+
         # Execute query through chat service
         try:
             from src.models.chat import ChatRequest
 
-            request = ChatRequest(query=test_case.question, k=5, include_sources=True)
+            request = ChatRequest(
+                query=test_case.question,
+                k=5,
+                include_sources=True,
+                conversation_id=current_conversation_id,  # ✅ Conversation context
+                turn_number=current_turn_number if current_conversation_id else 1
+            )
             response = chat_service.chat(request)
 
             # For SQL queries, also execute directly to get raw results for evaluation

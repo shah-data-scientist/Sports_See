@@ -16,10 +16,27 @@ from src.evaluation.sql_evaluation import (
     QueryType,
 )
 from src.evaluation.sql_test_cases import HYBRID_TEST_CASES
+from src.evaluation.models import TestCategory
 from src.models.chat import ChatRequest
 from src.services.chat import ChatService
+from src.services.conversation import ConversationService
+from src.repositories.conversation import ConversationRepository
+from src.repositories.feedback import FeedbackRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _is_followup_question(question: str) -> bool:
+    """Check if question is a follow-up requiring conversation context."""
+    question_lower = question.lower()
+    # Pronouns indicating follow-up
+    followup_indicators = [
+        "his ", "her ", "their ", "its ", "he ", "she ", "they ",
+        "what about", "and what", "how does that", "how does this",
+        "going back to", "could they", "is he", "is she", "are they",
+        "compare him", "which of them"
+    ]
+    return any(indicator in question_lower for indicator in followup_indicators)
 
 
 def evaluate_integration_quality(
@@ -89,7 +106,7 @@ def evaluate_integration_quality(
 
 
 def run_hybrid_evaluation(test_cases: list):
-    """Run hybrid query evaluation.
+    """Run hybrid query evaluation with conversation support.
 
     Args:
         test_cases: List of hybrid test cases
@@ -97,23 +114,58 @@ def run_hybrid_evaluation(test_cases: list):
     Returns:
         List of (test_case, response, sources, metrics) tuples
     """
-    logger.info(f"Running hybrid query evaluation on {len(test_cases)} test cases")
+    logger.info(f"Running hybrid query evaluation on {len(test_cases)} test cases (with conversation support)")
 
     # Initialize chat service with SQL enabled
     chat_service = ChatService(enable_sql=True)
     chat_service.ensure_ready()
+
+    # Initialize conversation tracking for CONVERSATIONAL test cases
+    conversation_repo = ConversationRepository()
+    conversation_service = ConversationService(repository=conversation_repo)
+    feedback_repo = FeedbackRepository()
+
+    current_conversation_id = None
+    current_turn_number = 0
 
     results = []
 
     for i, test_case in enumerate(test_cases):
         logger.info(f"[{i+1}/{len(test_cases)}] {test_case.category}: {test_case.question[:60]}...")
 
+        # Handle CONVERSATIONAL test cases with conversation context
+        if test_case.category == TestCategory.CONVERSATIONAL:
+            # Determine if this is a new conversation or continuation
+            if _is_followup_question(test_case.question):
+                # Continue existing conversation
+                if current_conversation_id is None:
+                    # Start new conversation if none exists
+                    conversation = conversation_service.start_conversation()
+                    current_conversation_id = conversation.id
+                    current_turn_number = 1
+                    logger.info(f"  Started new conversation: {current_conversation_id}")
+                else:
+                    current_turn_number += 1
+                    logger.info(f"  Continuing conversation {current_conversation_id}, turn {current_turn_number}")
+            else:
+                # Start new conversation
+                conversation = conversation_service.start_conversation()
+                current_conversation_id = conversation.id
+                current_turn_number = 1
+                logger.info(f"  Started new conversation: {current_conversation_id}")
+        else:
+            # Reset conversation tracking for non-conversational cases
+            current_conversation_id = None
+            current_turn_number = 0
+
         try:
             # Execute query through chat service (hybrid routing)
             request = ChatRequest(
                 query=test_case.question,
                 k=5,
-                include_sources=True
+                include_sources=True,
+                conversation_id=current_conversation_id,  # ✅ Conversation context
+                turn_number=current_turn_number if current_conversation_id else 1
             )
             response = chat_service.chat(request)
 
