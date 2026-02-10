@@ -26,8 +26,23 @@ from src.evaluation.models import (
 )
 from src.evaluation.test_cases import EVALUATION_TEST_CASES
 from src.services.chat import ChatService
+from src.services.conversation import ConversationService
+from src.repositories.conversation import ConversationRepository
+from src.repositories.feedback import FeedbackRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _is_followup_question(question: str) -> bool:
+    """Check if question is a follow-up requiring conversation context."""
+    question_lower = question.lower()
+    # Pronouns indicating follow-up
+    followup_indicators = [
+        "his ", "her ", "their ", "its ", "he ", "she ", "they ",
+        "what about", "and what", "how does that", "how does this",
+        "going back to", "could they", "is he", "is she", "are they"
+    ]
+    return any(indicator in question_lower for indicator in followup_indicators)
 
 
 # Phase 10: Refined Hybrid Prompts (Fixed NOISY handling)
@@ -179,51 +194,116 @@ def generate_subset_samples(subset_indices: list[int]) -> list[EvaluationSample]
     Returns:
         List of evaluation samples
     """
-    logger.info(f"Generating samples for {len(subset_indices)} test cases (Phase 10 refined prompts)")
+    logger.info(f"Generating samples for {len(subset_indices)} test cases (Phase 10 refined prompts with conversation support)")
 
     # Initialize services
     chat_service = ChatService(enable_sql=True)
     chat_service.ensure_ready()
     gemini_client = _build_gemini_client()
 
+    # Initialize conversation tracking for CONVERSATIONAL test cases
+    conversation_repo = ConversationRepository()
+    conversation_service = ConversationService(repository=conversation_repo)
+    feedback_repo = FeedbackRepository()
+
+    current_conversation_id = None
+    current_turn_number = 0
+
     samples = []
     for idx in subset_indices:
         test_case = EVALUATION_TEST_CASES[idx]
         logger.info(f"[{idx+1}] Processing ({test_case.category.value}): {test_case.question[:60]}...")
 
-        # Get category-specific prompt (Phase 10 refined)
-        prompt_template = get_prompt_for_category(test_case.category)
+        # Handle CONVERSATIONAL test cases with conversation context
+        if test_case.category == TestCategory.CONVERSATIONAL:
+            # Determine if this is a new conversation or continuation
+            if _is_followup_question(test_case.question):
+                # Continue existing conversation
+                if current_conversation_id is None:
+                    # Start new conversation if none exists
+                    conversation = conversation_service.start_conversation()
+                    current_conversation_id = conversation.id
+                    current_turn_number = 1
+                    logger.info(f"  Started new conversation: {current_conversation_id}")
+                else:
+                    current_turn_number += 1
+                    logger.info(f"  Continuing conversation {current_conversation_id}, turn {current_turn_number}")
+            else:
+                # Start new conversation
+                conversation = conversation_service.start_conversation()
+                current_conversation_id = conversation.id
+                current_turn_number = 1
+                logger.info(f"  Started new conversation: {current_conversation_id}")
 
-        # Search with Phase 7 query expansion
-        search_results = chat_service.search(test_case.question, k=5)
+            # Use full chat service with conversation context
+            from src.models.chat import ChatRequest
 
-        # Build context from search results
-        context = "\n\n".join([
-            f"[Source: {result.source}]\n{result.text}"
-            for result in search_results
-        ])
+            request = ChatRequest(
+                query=test_case.question,
+                k=5,
+                conversation_id=current_conversation_id,
+                turn_number=current_turn_number,
+            )
 
-        # Build prompt with category-aware template
-        prompt = prompt_template.format(
-            app_name=settings.app_name,
-            context=context,
-            question=test_case.question,
-        )
+            try:
+                chat_response = chat_service.chat(request)
+                response = chat_response.answer
+                retrieved_contexts = [s.text for s in chat_response.sources] if chat_response.sources else []
+                logger.info(f"  Response length: {len(response)} chars (with conversation context)")
+            except Exception as e:
+                logger.error(f"Chat service error: {e}")
+                response = f"[ERROR: {str(e)[:100]}]"
+                retrieved_contexts = []
 
-        # Generate response
-        response = _generate_with_retry(gemini_client, prompt)
+            # Create evaluation sample
+            sample = EvaluationSample(
+                user_input=test_case.question,
+                response=response,
+                retrieved_contexts=retrieved_contexts,
+                reference=test_case.ground_truth,
+                category=test_case.category,
+            )
+            samples.append(sample)
 
-        # Create evaluation sample
-        sample = EvaluationSample(
-            user_input=test_case.question,
-            response=response,
-            retrieved_contexts=[result.text for result in search_results],
-            reference=test_case.ground_truth,
-            category=test_case.category,
-        )
-        samples.append(sample)
+        else:
+            # Non-conversational test cases: use original approach
+            # Reset conversation tracking
+            current_conversation_id = None
+            current_turn_number = 0
 
-        logger.info(f"  Response length: {len(response)} chars")
+            # Get category-specific prompt (Phase 10 refined)
+            prompt_template = get_prompt_for_category(test_case.category)
+
+            # Search with Phase 7 query expansion
+            search_results = chat_service.search(test_case.question, k=5)
+
+            # Build context from search results
+            context = "\n\n".join([
+                f"[Source: {result.source}]\n{result.text}"
+                for result in search_results
+            ])
+
+            # Build prompt with category-aware template
+            prompt = prompt_template.format(
+                app_name=settings.app_name,
+                context=context,
+                question=test_case.question,
+            )
+
+            # Generate response
+            response = _generate_with_retry(gemini_client, prompt)
+
+            # Create evaluation sample
+            sample = EvaluationSample(
+                user_input=test_case.question,
+                response=response,
+                retrieved_contexts=[result.text for result in search_results],
+                reference=test_case.ground_truth,
+                category=test_case.category,
+            )
+            samples.append(sample)
+
+            logger.info(f"  Response length: {len(response)} chars")
 
         # Small delay to avoid rate limits
         time.sleep(2)
