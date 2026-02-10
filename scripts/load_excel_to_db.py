@@ -162,8 +162,11 @@ def load_players_to_db(db: NBADatabase, df: pd.DataFrame) -> dict[str, int]:
         for _, row in players_data.iterrows():
             try:
                 name = str(row["Player"]).strip()
-                team = str(row["Team"]).strip()
+                team_abbr = str(row["Team"]).strip()
                 age = int(row["Age"])
+
+                # Get full team name from abbreviation
+                team_full_name = TEAM_NAMES.get(team_abbr, team_abbr)  # Fallback to abbr if not found
 
                 # Check if player already exists
                 existing = db.get_player_by_name(session, name)
@@ -171,11 +174,11 @@ def load_players_to_db(db: NBADatabase, df: pd.DataFrame) -> dict[str, int]:
                     player_ids[name] = existing.id
                     logger.debug(f"Player '{name}' already exists (ID: {existing.id})")
                 else:
-                    player_model = db.add_player(session, name, team, age)
+                    player_model = db.add_player(session, name, team_full_name, team_abbr, age)
                     session.commit()
                     session.refresh(player_model)
                     player_ids[name] = player_model.id
-                    logger.debug(f"Added player '{name}' (ID: {player_model.id})")
+                    logger.debug(f"Added player '{name}' ({team_full_name}, ID: {player_model.id})")
 
                 success_count += 1
 

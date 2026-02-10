@@ -61,6 +61,7 @@ class PlayerModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, index=True)
+    team = Column(String(100), nullable=False, comment="Full team name (e.g., 'Los Angeles Lakers')")
     team_abbr = Column(String(5), ForeignKey("teams.abbreviation"), nullable=False)
     age = Column(Integer, nullable=False)
 
@@ -217,19 +218,20 @@ class NBADatabase:
         session.add(team)
         return team
 
-    def add_player(self, session: Session, name: str, team_abbr: str, age: int) -> PlayerModel:
+    def add_player(self, session: Session, name: str, team: str, team_abbr: str, age: int) -> PlayerModel:
         """Add a player to the database.
 
         Args:
             session: Database session
             name: Player name
-            team_abbr: Team abbreviation
+            team: Full team name (e.g., 'Los Angeles Lakers')
+            team_abbr: Team abbreviation (e.g., 'LAL')
             age: Player age
 
         Returns:
             Created PlayerModel instance
         """
-        player = PlayerModel(name=name, team_abbr=team_abbr, age=age)
+        player = PlayerModel(name=name, team=team, team_abbr=team_abbr, age=age)
         session.add(player)
         return player
 
