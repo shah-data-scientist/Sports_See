@@ -17,6 +17,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # BLOCKING: Mirror & Modify (src/ changes require test/ changes)
+      - id: mirror-modify-check
+        name: Mirror & Modify Check (src → tests)
+        entry: poetry run python scripts/global_policy/mirror_modify_check.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       # WARNING ONLY: Orphaned files
       - id: check-orphaned-files
         name: Check Orphaned Files (Warning)
