@@ -252,6 +252,48 @@ class DataPipeline:
 
         return filtered
 
+    def _add_global_post_stats(self, chunks: list[ChunkData]) -> list[ChunkData]:
+        """Add global post engagement min/max to Reddit chunks for relative boost.
+
+        Compares post_upvotes across ALL Reddit posts to enable graduated
+        0-1% boost based on relative post engagement.
+
+        Args:
+            chunks: List of all chunks (Reddit + non-Reddit)
+
+        Returns:
+            Chunks with added min_post_upvotes_global and max_post_upvotes_global
+        """
+        # Find all unique Reddit posts and their upvotes
+        reddit_posts: dict[str, int] = {}
+        for chunk in chunks:
+            if chunk.metadata.get("type") == "reddit_thread":
+                post_title = chunk.metadata.get("post_title", "")
+                post_upvotes = chunk.metadata.get("post_upvotes", 0)
+                if post_title and post_title not in reddit_posts:
+                    reddit_posts[post_title] = post_upvotes
+
+        if not reddit_posts:
+            # No Reddit chunks, return as-is
+            return chunks
+
+        # Compute global min/max across all posts
+        min_post_upvotes = min(reddit_posts.values())
+        max_post_upvotes = max(reddit_posts.values())
+
+        logger.info(
+            f"Global post stats: {len(reddit_posts)} posts, "
+            f"upvotes range {min_post_upvotes}-{max_post_upvotes}"
+        )
+
+        # Add to all Reddit chunks
+        for chunk in chunks:
+            if chunk.metadata.get("type") == "reddit_thread":
+                chunk.metadata["min_post_upvotes_global"] = min_post_upvotes
+                chunk.metadata["max_post_upvotes_global"] = max_post_upvotes
+
+        return chunks
+
     @logfire.instrument("Pipeline.chunk")
     def chunk(
         self,
@@ -330,6 +372,9 @@ class DataPipeline:
 
         # Apply quality filtering
         all_chunks = self._filter_low_quality_chunks(all_chunks)
+
+        # Add global post engagement min/max for relative boost (across all posts)
+        all_chunks = self._add_global_post_stats(all_chunks)
 
         return ChunkStageOutput(
             chunks=all_chunks,

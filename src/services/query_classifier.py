@@ -2,7 +2,7 @@
 FILE: query_classifier.py
 STATUS: Active
 RESPONSIBILITY: Classify queries as statistical, contextual, or hybrid for routing
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
@@ -24,46 +24,127 @@ class QueryType(Enum):
 class QueryClassifier:
     """Classify user queries to route to appropriate data source."""
 
+    # ── NBA Database stat column headers (strong statistical signals) ─────
+    # These are the actual column names/aliases from the NBA database.
+    # If a user mentions any of these, the query is almost certainly statistical.
+
+    # Basic stat abbreviations (from player_stats table)
+    _STAT_ABBRS = (
+        r"pts|reb|ast|stl|blk|tov|pf|gp|fgm|fga|fg%|ftm|fta|ft%"
+        r"|3pm|3pa|3p%|efg%|ts%|usg%|oreb|dreb|oreb%|dreb%|reb%"
+        r"|fp|dd2|td3|pie|pace|poss"
+    )
+    # Advanced metric abbreviations
+    _ADV_ABBRS = r"offrtg|defrtg|netrtg|ast%|ast/to|to\s*ratio|ast\s*ratio"
+
+    # Full stat words (natural language equivalents of column headers)
+    _STAT_WORDS = (
+        r"points|rebounds|assists|steals|blocks|turnovers|fouls"
+        r"|wins|losses|games\s*played|minutes"
+        r"|free\s*throws?|field\s*goals?|three.pointers?"
+        r"|double.doubles?|triple.doubles?"
+        r"|possessions?|personal\s+fouls?"
+    )
+    # Data dictionary full names (the words people actually use in questions)
+    # Source: data_dictionary table in nba_stats.db (45 entries)
+    _DICT_NAMES = (
+        r"plus.minus|fantasy\s+points"
+        r"|3.point\s+(percentage|shots?\s*(attempted|made))"
+        r"|assist.to.turnover\s+ratio|assist\s+percentage|assist\s+ratio"
+        r"|defensive\s+rebounds?|defensive\s+rebound\s*%"
+        r"|offensive\s+rebounds?|offensive\s+rebound\s*%"
+        r"|total\s+rebounds?|total\s+rebound\s*%"
+        r"|field\s+goal\s+(percentage|attempted|made)"
+        r"|free\s+throw\s+(percentage|attempted|made)"
+        r"|effective\s+field\s+goal\s*%?"
+        r"|true\s+shooting\s*%?"
+        r"|games\s+played|minutes\s+per\s+game"
+    )
+    # Advanced metric full names
+    _ADV_WORDS = (
+        r"offensive\s+rating|defensive\s+rating|net\s+rating"
+        r"|usage\s+rate|player\s+impact(\s+estimate)?"
+        r"|assist\s+ratio|turnover\s+ratio"
+        r"|rebound\s+percentage|assist\s+percentage"
+    )
+
     # Statistical query patterns (SQL database)
-    # Phase 10: More aggressive - try SQL first, fallback to vector if it fails
     STATISTICAL_PATTERNS = [
-        # Superlatives with statistical terms
-        r"\b(top|most|highest|lowest|leading|leader)\s+\d+",  # "top 5", "most 10"
-        r"\b(who has|which player|which team)\b.*\b(most|highest|top)\b.*\b(points|rebounds|assists|stats)\b",
-        # WHO/WHICH queries with superlatives and stat terms
-        r"\b(who|which player|which team)\b.*\b(scored|has|recorded|made)\b.*\b(most|highest|top|fewest|lowest|least)\b.*\b(points|rebounds|assists|blocks|steals|three.pointers?)\b",
-        r"\b(who|which player)\b.*\b(most|highest|top|fewest|lowest|least)\b.*\b(points|rebounds|assists|blocks|steals|stats)\b",
-        # NEW: "best/better" queries with stat terms (aggressive)
-        r"\b(who\s+is|who.?s|which player|which team)\b.*\b(best|better)\b.*\b(scorer|rebounder|passer|defender|shooter|player)\b",
-        r"\b(best|better)\b.*\b(at|in|for)\b.*\b(scoring|rebounding|assists|defense|shooting)\b",
-        r"\b(who has|which player has)\b.*\b(best|highest|top|better)\b.*\b(percentage|pct|efficiency|rating)\b",  # "Who has the best... percentage/efficiency"
-        # NEW: "Show/List/Find" queries with stats (aggressive)
-        r"\b(show|list|find|get)\b.*\b(assist|rebound|point|steal|block|score|stat).*(leader|top|best)\b",
-        r"\b(show|list|find|get)\b.*(the)?\s*(top|best|leading|leader)",
-        # NEW: Casual statistical queries
-        r"\b(who\s+is|who.?s)\b.*\b(leading|top|number one|#1|the\s+best)\b",
-        # Comparative queries with stat terms
-        r"\b(who has more|which player has more|who recorded more)\b.*\b(points|rebounds|assists|blocks|steals)\b",
-        # Explicit aggregations (strong statistical signal)
-        r"\b(average|mean|total|sum|count|how many)\b",
-        r"\bavg\b.*\b(points|rebounds|assists|per game)\b",
-        # Explicit stat comparisons
+        # ── A. Database column headers as detection patterns ───────────
+        # Stat abbreviations (strong signal: PTS, REB, AST, FG%, TS%, PIE, etc.)
+        rf"\b({_STAT_ABBRS})\b",
+        rf"\b({_ADV_ABBRS})\b",
+        # Full stat words (points, rebounds, assists, steals, blocks, etc.)
+        rf"\b({_STAT_WORDS})\b",
+        # Data dictionary full names (the words people use: "field goal percentage", etc.)
+        rf"({_DICT_NAMES})",
+        # Advanced metric full names (offensive rating, true shooting, etc.)
+        rf"({_ADV_WORDS})",
+
+        # ── B. Superlatives (bidirectional: most↔fewest, highest↔lowest) ──
+        r"\b(top|bottom)\s+\d+",
+        r"\b(most|fewest|highest|lowest|best|worst|leading|leader)\s+\d*",
+        r"\b(who|which)\b.*\b(most|fewest|highest|lowest|best|worst)\b",
+
+        # ── C. Aggregations & calculations ────────────────────────────
+        r"\b(average|mean|total|sum|count|how many|maximum|minimum|median)\b",
+        r"\bwhat\s+(is|are)\b.*\b(percentage|average|total|rating|ratio)\b",
+        r"\bwhat\s+percentage\b",
+        r"\bper\s+game\b",
+
+        # ── D. Comparisons (bidirectional: better↔worse, higher↔lower) ──
+        # Threshold comparisons with numbers
+        r"\b(better|worse|higher|lower|greater|fewer|more|less)\s+than\s+\d+",
+        r"\b(over|under|above|below|exceeds?|at\s+least|at\s+most)\s+\d+",
+        # Comparative queries
+        r"\bcompare\b.*\b(to|vs|versus|and|with)\b",
         r"\bcompare\b.*\b(stats|statistics|numbers)\b",
-        # Explicit stat abbreviations (strong signal)
-        r"\b(pts|reb|ast|stl|blk|fg%|3p%|ft%|ts%|per|ws|ortg|drtg)\b",
-        # Statistical verbs with numbers
-        r"\b(scored|averaging)\b.*\d+",
-        r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b.*\b(points|rebounds|assists)\b",
-        # Explicit filters with numbers
-        r"\b(more than|less than|over|under|above|below)\b\s*\d+\s*(points|rebounds|assists)",
-        r"\b(with|having)\b.*\d+\+?\s*(points|rebounds|assists|games)",
-        # Question words + explicit stats
-        r"\bhow many\b.*\b(points|rebounds|assists|games|wins)\b",
-        r"\bwhat is\b.*\b(percentage|average|total|rating)\b.*\b(of|for)\b",
-        # NEW: Find/filter queries (aggressive)
+        r"\b(who has more|who has fewer|who has less|which player has more|who recorded more)\b",
+
+        # ── E. Explicit filters with numbers ──────────────────────────
+        r"\b(more than|less than|fewer than|over|under|above|below)\b\s*\d+",
+        r"\b(with|having)\b.*\d+\+?\s*(points|rebounds|assists|games|wins|steals|blocks)",
+        r"\d+\+?\s*(points|rebounds|assists|steals|blocks|wins|games|percent)",
+
+        # ── F. Player/team stat queries ───────────────────────────────
+        # Best/better with stat terms
+        r"\b(who\s+is|who.?s|which)\b.*\b(best|better|worst|worse)\b.*\b(scorer|rebounder|passer|defender|shooter|blocker|player)\b",
+        r"\b(best|better|worst|worse)\b.*\b(at|in|for)\b.*\b(scoring|rebounding|assists|defense|shooting|blocking|stealing)\b",
+        r"\b(who has|which player has)\b.*\b(best|worst|highest|lowest|top|better)\b.*\b(percentage|pct|efficiency|rating)\b",
+        # Show/List/Find/Get stat leaders
+        r"\b(show|list|find|get)\b.*\b(assist|rebound|point|steal|block|score|stat).*(leader|top|best|worst)\b",
+        r"\b(show|list|find|get)\b.*(the)?\s*(top|bottom|best|worst|leading|leader)",
+        # Casual queries
+        r"\b(who\s+is|who.?s)\b.*\b(leading|top|number one|#1|the\s+best|the\s+worst)\b",
+        r"\b(tell me about|gimme|give me)\b.*\b(stats|statistics|numbers|leaders?|scoring|averages?)\b",
+        r"\b(leaders?|leader)\b",
+
+        # ── G. Team roster / player list queries ──────────────────────
+        r"\b(list|show|find|get)\b.*\b(all\s+)?\bplayers?\b",
+        r"\bplays?\s+(for|on)\b",
+
+        # ── H. Statistical verbs ──────────────────────────────────────
+        r"\b(scored|averaging|shooting|recording|ranked|ranking)\b.*\d+",
+        r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b",
+
+        # ── I. Possessive & pronoun stat queries ──────────────────────
+        r"\bwhat is\b.*'s?\s+\b(\d-point|three.point|free.throw|field.goal|scoring|shooting|rebound|assist|block|steal)",
+        r"\b(his|her|their|its)\s+(assists?|rebounds?|points?|steals?|blocks?|stats?|scoring|shooting|games?|wins?|losses?|minutes?|turnovers?|fouls?|rating|efficiency|percentage)\b",
+
+        # ── J. 3-point / shooting references ──────────────────────────
+        r"\bfrom\s+3\b|\bfrom\s+three\b|\bfrom\s+downtown\b",
+        r"\b(shoots?|shooting)\b.*\b(better|worse|best|worst|from\s+\d|from\s+three)\b",
+
+        # ── K. Filter/find queries ────────────────────────────────────
         r"\b(find|which|who are)\b.*\b(players?|teams?)\b.*\b(with|having|that)\b",
-        # Specific statistical queries
-        r"\b(who are|list|show me)\b.*\b(top|players with|scorers|leaders)\b",
+        r"\b(who are|list|show me)\b.*\b(top|bottom|players with|scorers|leaders)\b",
+        # Informal
+        r"\bhow many\b",
+
+        # ── L. Player role terms in comparisons ──────────────────────────
+        # "efficient goal maker", "better scorer", "more efficient shooter"
+        r"\b(efficient|effective|productive)\s+(goal\s*maker|scorer|shooter|rebounder|passer|blocker|playmaker|player)\b",
+        r"\b(who\s+is|who.?s)\b.*\b(more|most|less|least)\b.*\b(efficient|effective|productive)\b",
     ]
 
     # Contextual query patterns (vector search)
@@ -78,8 +159,9 @@ class QueryClassifier:
         r"\b(play|playing|game plan)\b",
         # Historical context
         r"\b(history|evolution|changed|transformation)\b",
-        # Qualitative assessments
-        r"\b(better|worse|greatest|goat|best ever|all.time)\b(?!.*\bstats\b)",
+        # Qualitative assessments (exclude "better than [number]" = statistical threshold)
+        r"\b(greatest|goat|best ever|all.time)\b(?!.*\bstats\b)",
+        r"\b(better|worse)\b(?!.*\bstats\b)(?!.*\bthan\s+\d)",
         # Impact and influence
         r"\b(impact|influence|effect|significance)\b",
         # Analysis and interpretation
@@ -158,8 +240,9 @@ class QueryClassifier:
         context_matches = sum(1 for pattern in self.contextual_regex if pattern.search(query_normalized))
 
         # NEW: If both stat and context patterns match strongly → HYBRID
-        # This catches queries like "top scorers and their playing styles"
-        if stat_matches >= 2 and context_matches >= 1:
+        # Requires context >= 2 to avoid false positives (e.g., "shoots better from 3"
+        # where "better" triggers 1 contextual match but the query is purely statistical)
+        if stat_matches >= 2 and context_matches >= 2:
             logger.info(
                 f"Query classified as HYBRID (stat: {stat_matches}, context: {context_matches}) "
                 "- both components detected"

@@ -2,7 +2,7 @@
 FILE: reddit_chunker.py
 STATUS: Active
 RESPONSIBILITY: Reddit-specific chunking with ad filtering and thread preservation
-LAST MAJOR UPDATE: 2026-02-09
+LAST MAJOR UPDATE: 2026-02-10
 MAINTAINER: Shahu
 """
 
@@ -68,15 +68,57 @@ class RedditThreadChunker:
         "Cavaliers",
     ]
 
-    def __init__(self, max_comments_per_chunk: int = 5):
+    # Mistral embedding max is 8192 tokens (~4 chars/token).
+    # Cap at 20000 chars (~5000 tokens) for safety margin.
+    DEFAULT_MAX_CHUNK_CHARS = 20000
+
+    def __init__(self, max_comments_per_chunk: int = 5, max_chunk_chars: int | None = None):
         """
         Initialize Reddit thread chunker.
 
         Args:
-            max_comments_per_chunk: Number of top comments to include per chunk
+            max_comments_per_chunk: Target comments per chunk (may be fewer if chars limit hit)
+            max_chunk_chars: Maximum characters per chunk text (default 20000)
         """
         self.max_comments = max_comments_per_chunk
+        self.max_chunk_chars = max_chunk_chars or self.DEFAULT_MAX_CHUNK_CHARS
         self.ad_regex = [re.compile(p, re.IGNORECASE | re.DOTALL) for p in self.AD_PATTERNS]
+
+    # Line-level noise patterns removed during OCR cleaning
+    _OCR_NOISE_LINE_PATTERNS = [
+        # Date headers repeated per PDF page (e.g., "12/06/2025 13.06")
+        re.compile(r"^\d{2}/\d{2}/\d{4}\s+\d{2}[:.]\d{2}\s*$"),
+        # Standalone subreddit markers ("rInba", "r/nba")
+        re.compile(r"^r/?I?n?ba\s*$", re.IGNORECASE),
+        # Page numbers ("1/15", "23/36")
+        re.compile(r"^\d{1,3}/\d{1,3}\s*$"),
+        # Reddit footer stats ("118 upvotes", "110 commentaires")
+        re.compile(r"^\d[\d,.\s]*k?\s+(?:upvote|commentaire|comment)", re.IGNORECASE),
+        # Sponsored/Official labels
+        re.compile(r"^Sponsoris", re.IGNORECASE),
+        re.compile(r"^Officiel\s*$", re.IGNORECASE),
+        # Ad CTAs
+        re.compile(r"^En savoir plus\s*$", re.IGNORECASE),
+        re.compile(r"^S'inscrire\s*$", re.IGNORECASE),
+        re.compile(r"^Wishlist\s*$", re.IGNORECASE),
+        # Reddit UI navigation
+        re.compile(r"^Afficher\s+plus", re.IGNORECASE),
+        re.compile(r"^Voir\s+\d+", re.IGNORECASE),
+        # Deleted comments (no useful content)
+        re.compile(r"^\[supprim", re.IGNORECASE),
+        # "N réponses supplémentaires"
+        re.compile(r"^\d+\s+r[ée]ponses?\s+suppl[ée]mentaire", re.IGNORECASE),
+        # URL lines (Reddit permalinks, ad URLs)
+        re.compile(r"^https?://", re.IGNORECASE),
+        re.compile(r"^(?:pages|ad)\.\w+\.\w+", re.IGNORECASE),
+        re.compile(r"^ad\.doubleclick", re.IGNORECASE),
+        # Ad brand names as standalone lines
+        re.compile(r"^(?:IBM|ibm|adidas\w*|xometry\w*|enaa)\s*$", re.IGNORECASE),
+        # Very short noise tokens (1-2 non-digit chars, common OCR artifacts)
+        re.compile(r"^(?:YA|Ao|Ll|Vl|Am|U|C|m[.:])$"),
+        # URL path fragments from Reddit links (3+ underscore-separated words)
+        re.compile(r"^\w+_\w+_\w+"),
+    ]
 
     def filter_advertisements(self, text: str) -> str:
         """
@@ -99,86 +141,261 @@ class RedditThreadChunker:
 
         return cleaned.strip()
 
+    def clean_ocr_noise(self, text: str) -> str:
+        """Remove OCR noise, page artifacts, ads, and Reddit UI from raw text.
+
+        This is a comprehensive line-by-line cleaning pass that runs BEFORE
+        comment extraction. It removes:
+        - Date headers (repeated per PDF page)
+        - Standalone subreddit markers (rInba)
+        - Page numbers (1/15, 23/36)
+        - Ad content (Xometry, IBM, adidas blocks)
+        - Reddit UI elements (Sponsorisé, Afficher, upvotes/commentaires footers)
+        - URL fragments
+        - Deleted comments ([supprimé])
+        - Short OCR artifact tokens
+
+        Args:
+            text: Raw OCR text (after filter_advertisements)
+
+        Returns:
+            Cleaned text with noise lines removed
+        """
+        lines = text.split("\n")
+        kept = []
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Keep blank lines (they separate content)
+            if not stripped:
+                kept.append(line)
+                continue
+
+            # Check against all noise patterns
+            is_noise = False
+            for pattern in self._OCR_NOISE_LINE_PATTERNS:
+                if pattern.match(stripped):
+                    is_noise = True
+                    break
+
+            if not is_noise:
+                kept.append(line)
+
+        result = "\n".join(kept)
+        # Collapse excessive blank lines from removed noise
+        result = re.sub(r"\n{3,}", "\n\n", result)
+        return result.strip()
+
+    # Pattern to parse French-style stat numbers ("31", "457", "1,3 k")
+    _STAT_NUM_RE = re.compile(r"^[↑]?[\d][\d,.\s]*\s*[k]?\s*[↓]?$", re.IGNORECASE)
+
+    def _parse_stat_number(self, s: str) -> int:
+        """Parse a stat number like '31', '1,3 k', '457' to int."""
+        s = re.sub(r"[↑↓\s]", "", s).strip()
+        if "k" in s.lower():
+            s = s.lower().replace("k", "").replace(",", ".").strip()
+            return int(float(s) * 1000)
+        return int(re.sub(r"[,.]", "", s))
+
     def extract_post_info(self, text: str) -> dict[str, Any]:
         """
         Extract main post information from Reddit thread.
+
+        Handles easyOCR format (rInba + timestamp + author + title)
+        and RapidOCR format (r/nba · timestamp\\nauthor\\ntitle).
 
         Args:
             text: Cleaned Reddit thread text
 
         Returns:
-            Dictionary with post metadata
+            Dictionary with post metadata including body text
         """
-        # Try to extract post title (usually after r/nba and before author)
-        title_match = re.search(
-            r"r/nba.*?\n(.+?)\n(?:il y a|ago|posted by)",
+        # easyOCR produces "rInba" (slash lost), RapidOCR keeps "r/nba"
+        # Match: subreddit + timestamp + author + optional badge + title
+        post_match = re.search(
+            r"(?:r/?I?n?ba|r/nba)\s*\n"
+            r"(?:il\s*y?\s*a|ily?\s*a)\s+[^\n]+\n"
+            r"([A-Za-z0-9_-]+)[^\n]*\n"
+            r"(?:Comm[^\n]*\n)?"
+            r"([^\n]+)",
             text,
-            re.IGNORECASE | re.DOTALL,
+            re.IGNORECASE,
         )
-
-        # Try to extract author (username before "Who are" or similar)
-        author_match = re.search(
-            r"\n([A-Za-z0-9_-]+)\n(?:Who|What|How|Why|Is|Are|Do|Does|Can|Should)",
-            text,
-        )
-
-        # Try to extract upvotes and comment count
-        stats_match = re.search(r"\n(\d+)\s*\n(\d+)\s*\nPartager", text)
 
         title = "Unknown Title"
-        if title_match:
-            title = title_match.group(1).strip()
-            # Clean up multi-line titles
+        author = "Unknown"
+        title_end = 0
+        if post_match:
+            author = post_match.group(1)
+            title = post_match.group(2).strip()
             title = " ".join(title.split())
+            title_end = post_match.end()
 
-        author = author_match.group(1) if author_match else "Unknown"
-        upvotes = int(stats_match.group(1)) if stats_match else 0
-        num_comments = int(stats_match.group(2)) if stats_match else 0
+        # Find FIRST "Partager" AFTER the title to locate stats
+        upvotes = 0
+        num_comments = 0
+        body = ""
+
+        partager_pos = text.find("Partager", title_end)
+        if partager_pos > title_end:
+            # Scan backwards from Partager for stat numbers (upvotes, comments)
+            pre_partager = text[title_end:partager_pos].rstrip()
+            lines = pre_partager.split("\n")
+
+            stat_lines: list[str] = []
+            for line in reversed(lines):
+                line = line.strip()
+                if not line:
+                    continue
+                if self._STAT_NUM_RE.match(line):
+                    stat_lines.insert(0, line)
+                    if len(stat_lines) >= 2:
+                        break
+                else:
+                    break
+
+            if len(stat_lines) >= 2:
+                upvotes = self._parse_stat_number(stat_lines[0])
+                num_comments = self._parse_stat_number(stat_lines[1])
+            elif len(stat_lines) == 1:
+                upvotes = self._parse_stat_number(stat_lines[0])
+
+            # Body = text between title end and the first stat line
+            body_end_pos = partager_pos
+            if stat_lines:
+                first_stat = stat_lines[0]
+                stat_offset = pre_partager.rfind(first_stat)
+                if stat_offset >= 0:
+                    body_end_pos = title_end + stat_offset
+
+            if body_end_pos > title_end:
+                raw_body = text[title_end:body_end_pos].strip()
+                raw_body = " ".join(raw_body.split())
+                if len(raw_body) > 20:
+                    body = raw_body
 
         return {
             "title": title,
             "author": author,
             "upvotes": upvotes,
             "num_comments": num_comments,
+            "body": body,
         }
+
+    # Noise patterns to skip when extracting comments
+    _SEGMENT_NOISE = re.compile(
+        r"^(?:https?://|r[ée]ponse|Afficher|Voir|\d+\s+r[ée]ponse|\[supprim)",
+        re.IGNORECASE,
+    )
+
+    # Words that look like usernames but are actually UI elements/badges
+    _FAKE_USERNAMES = {
+        "comm", "auteur", "partager", "officiel", "top",
+        "nba", "voir", "ibm", "ibx",
+    }
 
     def extract_comments(self, text: str) -> list[dict[str, Any]]:
         """
-        Extract comments from Reddit thread.
+        Extract comments from Reddit thread using Répondre markers as delimiters.
 
-        Pattern: Username, comment text, upvote count, "Répondre"
+        easyOCR format per segment (between Répondre markers):
+            username\\n[-timestamp]\\n[badge]\\ntext\\nupvotes
+
+        Username detection: First line that is 3-20 alphanumeric/underscore/hyphen
+        chars with no spaces (easyOCR often strips the · separator).
 
         Args:
             text: Cleaned Reddit thread text
 
         Returns:
-            List of comment dictionaries
+            List of comment dictionaries sorted by upvotes (descending)
         """
         comments = []
 
-        # Pattern: Username → text → upvotes → "Répondre" or "Rpondre" (OCR variant)
-        comment_pattern = r"([A-Za-z0-9_-]+)\s*\n(.+?)\n(\d+)\s*\nR[ée]pondre"
+        # Split by Répondre/Repondre/Rpondre markers
+        segments = re.split(r"\s*R[éeè]?pondre\b", text, flags=re.IGNORECASE)
 
-        for match in re.finditer(comment_pattern, text, re.DOTALL):
-            username = match.group(1).strip()
-            comment_text = match.group(2).strip()
-            upvotes_str = match.group(3).strip()
-
-            # Skip if username is too short (likely OCR noise)
-            if len(username) < 3:
+        for segment in segments:
+            segment = segment.strip()
+            if not segment or len(segment) < 20:
                 continue
 
-            # Skip if comment is too short
+            # Skip noise segments (URLs, "réponses supplémentaires", etc.)
+            if self._SEGMENT_NOISE.match(segment):
+                continue
+
+            lines = [l.strip() for l in segment.split("\n") if l.strip()]
+            if len(lines) < 2:
+                continue
+
+            # Find username: first line that looks like a Reddit username
+            # (3-20 alphanumeric/underscore/hyphen, no spaces)
+            # Also accept "username · timestamp" format from RapidOCR
+            username = None
+            username_idx = -1
+            for j, line in enumerate(lines):
+                # Exact username (easyOCR format — no · separator)
+                m = re.match(r"^([A-Za-z0-9_-]{3,20})$", line)
+                if m:
+                    candidate = m.group(1)
+                    # Reject known UI/badge words
+                    if candidate.lower() in self._FAKE_USERNAMES:
+                        continue
+                    # Reject URL fragments (3+ underscore-separated words)
+                    if candidate.count("_") >= 2:
+                        continue
+                    username = candidate
+                    username_idx = j
+                    break
+                # Username with · separator (RapidOCR / some easyOCR variants)
+                m = re.match(r"^([A-Za-z0-9_-]{3,})\s*[·.]", line)
+                if m:
+                    candidate = m.group(1)
+                    if candidate.lower() in self._FAKE_USERNAMES:
+                        continue
+                    if candidate.count("_") >= 2:
+                        continue
+                    username = candidate
+                    username_idx = j
+                    break
+
+            if not username:
+                continue
+
+            # Find upvotes: last line that is just a number
+            upvotes = 0
+            upvote_idx = len(lines)  # default: end of segment
+            for j in range(len(lines) - 1, username_idx, -1):
+                m = re.match(r"^[↑]?(\d+)\s*[↓]?$", lines[j])
+                if m:
+                    upvotes = int(m.group(1))
+                    upvote_idx = j
+                    break
+
+            # Comment text: between username line and upvote line
+            start = username_idx + 1
+
+            # Skip optional timestamp line (e.g. "-1 m", "~1m", "· -1 m.")
+            if start < upvote_idx:
+                ts_line = lines[start]
+                if re.match(r"^[·~\-\s]*\d+\s*m\.?$", ts_line):
+                    start += 1
+
+            # Skip optional community badge line (e.g. "Comm. du top 1%")
+            if start < upvote_idx:
+                if lines[start].startswith("Comm"):
+                    start += 1
+                # Also skip "Auteur-rice" badge
+                elif lines[start].startswith("Auteur"):
+                    start += 1
+
+            comment_lines = lines[start:upvote_idx]
+            comment_text = " ".join(comment_lines)
+
+            # Skip very short comments (likely OCR noise)
             if len(comment_text) < 10:
                 continue
-
-            # Clean up comment text (remove excessive whitespace)
-            comment_text = " ".join(comment_text.split())
-
-            try:
-                upvotes = int(upvotes_str)
-            except ValueError:
-                upvotes = 0
 
             comments.append({
                 "author": username,
@@ -189,31 +406,75 @@ class RedditThreadChunker:
 
         return comments
 
+    def _build_post_context(self, post_info: dict[str, Any]) -> str:
+        """Build compact post context block shared across all chunks.
+
+        Args:
+            post_info: Post metadata from extract_post_info()
+
+        Returns:
+            Formatted post context string
+        """
+        body = post_info.get("body", "")
+        body_line = ""
+        if body:
+            if len(body) <= 300:
+                body_line = f"\nPost: {body}"
+            else:
+                body_line = f"\nPost: {body[:250]}..."
+
+        return (
+            f"=== REDDIT POST ===\n"
+            f"Title: {post_info['title']}\n"
+            f"Author: u/{post_info['author']} | "
+            f"Upvotes: {post_info['upvotes']} | "
+            f"Comments: {post_info['num_comments']}"
+            f"{body_line}"
+        )
+
     def chunk_reddit_thread(self, text: str, source: str) -> list[ChunkData]:
         """
-        Create chunks from Reddit thread preserving context.
+        Create 1-comment-per-chunk from Reddit thread for precise retrieval.
 
         Strategy:
-        1. Filter advertisements
-        2. Extract post metadata
-        3. Extract all comments
-        4. Create chunk: Post + top N comments (by upvotes)
+        1. Filter advertisements (block-level patterns)
+        2. Clean OCR noise (line-level artifacts)
+        3. Extract post metadata (including body)
+        4. Extract all comments
+        5. Sort by upvotes descending
+        6. One chunk per comment, each with post context header + body
 
         Args:
             text: Raw OCR text from Reddit PDF
             source: Source file path
 
         Returns:
-            List of ChunkData objects
+            List of ChunkData objects (one per comment)
         """
-        # Step 1: Filter ads
+        # Step 1: Filter ad blocks
         cleaned_text = self.filter_advertisements(text)
 
-        # Step 2: Extract post info
+        # Step 2: Extract post info BEFORE noise cleaning (needs rInba markers)
         post_info = self.extract_post_info(cleaned_text)
 
-        # Step 3: Extract comments
-        comments = self.extract_comments(cleaned_text)
+        # Step 3: Clean OCR noise (line-level)
+        cleaned_text = self.clean_ocr_noise(cleaned_text)
+
+        # Step 4: Extract comments from AFTER first Partager (skip post area)
+        # The zone between Partager and first Répondre contains ad noise,
+        # so we skip to after the first Répondre to get clean comments.
+        partager_pos = cleaned_text.find("Partager")
+        if partager_pos >= 0:
+            after_partager = cleaned_text[partager_pos + len("Partager"):]
+            # Skip first segment (ad block + first contaminated comment)
+            first_repondre = re.search(r"R[éeè]?pondre\b", after_partager, re.IGNORECASE)
+            if first_repondre:
+                comment_text = after_partager[first_repondre.end():]
+            else:
+                comment_text = after_partager
+        else:
+            comment_text = cleaned_text
+        comments = self.extract_comments(comment_text)
 
         if not comments:
             logger.warning(f"No comments extracted from {source}")
@@ -229,70 +490,73 @@ class RedditThreadChunker:
                         "type": "reddit_thread",
                         "post_title": post_info["title"],
                         "post_author": post_info["author"],
+                        "post_upvotes": post_info["upvotes"],
                         "num_comments": 0,
+                        "chunk_index": 0,
+                        "total_chunks": 1,
+                        "comment_author": "",
+                        "comment_upvotes": 0,
+                        "is_nba_official": 0,
                     },
                 )
             ]
 
-        # Step 4: Sort comments by upvotes (top comments first)
-        top_comments = sorted(comments, key=lambda c: c["upvotes"], reverse=True)[
-            : self.max_comments
-        ]
+        # Step 5: Sort ALL comments by upvotes (descending)
+        sorted_comments = sorted(comments, key=lambda c: c["upvotes"], reverse=True)
 
-        # Step 5: Build chunk text
-        chunk_text = f"""=== REDDIT POST ===
-Title: {post_info['title']}
-Author: u/{post_info['author']}
-Upvotes: {post_info['upvotes']} | Total Comments: {post_info['num_comments']}
+        # Step 6: Compute min/max comment upvotes for relative boost (within this post)
+        comment_upvotes_list = [c["upvotes"] for c in sorted_comments]
+        min_comment_upvotes = min(comment_upvotes_list)
+        max_comment_upvotes = max(comment_upvotes_list)
 
-=== TOP COMMENTS ({len(top_comments)}) ===
-"""
+        # Step 7: Build post context block (shared across all chunks)
+        post_context = self._build_post_context(post_info)
 
-        for i, comment in enumerate(top_comments, 1):
+        # Step 8: One chunk per comment (precise metadata, focused retrieval)
+        total_comments = len(sorted_comments)
+        chunks = []
+
+        for comment_idx, comment in enumerate(sorted_comments):
             nba_tag = " [NBA OFFICIAL]" if comment["is_nba_official"] else ""
-            chunk_text += (
-                f"\n[{i}] u/{comment['author']}{nba_tag} ({comment['upvotes']} upvotes):\n"
+            chunk_text = (
+                f"{post_context}\n\n"
+                f"=== COMMENT ({comment_idx + 1}/{total_comments}) ===\n"
+                f"u/{comment['author']}{nba_tag} "
+                f"({comment['upvotes']} upvotes):\n"
+                f"{comment['text']}\n"
             )
-            chunk_text += f"{comment['text']}\n"
 
-        # Step 5.5: Truncate if exceeds token limit
-        # Conservative estimate for Reddit content: 1 token ≈ 3 characters
-        # (Reddit threads are more token-dense due to formatting, usernames, etc.)
-        MAX_TOKENS = 6500  # Leave safe buffer below 8192 limit
-        MAX_CHARS = MAX_TOKENS * 3  # = 19,500 chars
-        if len(chunk_text) > MAX_CHARS:
-            logger.warning(
-                f"Chunk from {source} exceeds {MAX_TOKENS} tokens "
-                f"({len(chunk_text)} chars), truncating to {MAX_CHARS} chars"
+            chunk_id = hashlib.sha256(chunk_text.encode("utf-8")).hexdigest()[:16]
+
+            chunk = ChunkData(
+                id=chunk_id,
+                text=chunk_text,
+                metadata={
+                    "source": source,
+                    "type": "reddit_thread",
+                    "post_title": post_info["title"],
+                    "post_author": post_info["author"],
+                    "post_upvotes": post_info["upvotes"],
+                    "num_comments": total_comments,
+                    "chunk_index": comment_idx,
+                    "total_chunks": total_comments,
+                    "comment_author": comment["author"],
+                    "comment_upvotes": comment["upvotes"],
+                    "is_nba_official": int(comment["is_nba_official"]),
+                    # Min/max for relative boost calculation (within-post)
+                    "min_comment_upvotes_in_post": min_comment_upvotes,
+                    "max_comment_upvotes_in_post": max_comment_upvotes,
+                },
             )
-            chunk_text = chunk_text[:MAX_CHARS] + "\n\n[...truncated for length]"
-
-        # Step 6: Create chunk with metadata
-        # Generate unique ID from chunk text hash
-        chunk_id = hashlib.sha256(chunk_text.encode("utf-8")).hexdigest()[:16]
-
-        chunk = ChunkData(
-            id=chunk_id,
-            text=chunk_text,
-            metadata={
-                "source": source,
-                "type": "reddit_thread",
-                "post_title": post_info["title"],
-                "post_author": post_info["author"],
-                "post_upvotes": post_info["upvotes"],
-                "num_comments": len(comments),
-                "top_comments_included": len(top_comments),
-                "has_nba_official": any(c["is_nba_official"] for c in top_comments),
-            },
-        )
+            chunks.append(chunk)
 
         logger.info(
-            f"Created Reddit chunk from {source}: "
+            f"Created {len(chunks)} Reddit chunks from {source}: "
             f"{post_info['title'][:50]}... "
-            f"({len(comments)} comments, top {len(top_comments)} included)"
+            f"({total_comments} comments, 1 per chunk)"
         )
 
-        return [chunk]
+        return chunks
 
     def is_reddit_content(self, text: str) -> bool:
         """

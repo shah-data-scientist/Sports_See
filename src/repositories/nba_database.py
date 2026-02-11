@@ -2,7 +2,7 @@
 FILE: nba_database.py
 STATUS: Active
 RESPONSIBILITY: SQLAlchemy models and repository for NBA statistics database
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-10
 MAINTAINER: Shahu
 """
 
@@ -72,6 +72,22 @@ class PlayerModel(Base):
     def __repr__(self) -> str:
         """String representation."""
         return f"<Player(name='{self.name}', team='{self.team_abbr}', age={self.age})>"
+
+
+class DataDictionaryModel(Base):
+    """Data dictionary table - maps stat abbreviations to descriptions and SQL columns."""
+
+    __tablename__ = "data_dictionary"
+
+    abbreviation = Column(String(20), primary_key=True, comment="Stat abbreviation (e.g., PTS, AST)")
+    full_name = Column(String(100), nullable=False, comment="English full name (e.g., Points)")
+    description = Column(String(500), nullable=False, comment="French description from Excel")
+    column_name = Column(String(50), nullable=True, comment="Mapped SQL column in player_stats (NULL if not a stat)")
+    table_name = Column(String(50), nullable=True, comment="Table containing this column (player_stats or players)")
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"<DataDictionary(abbr='{self.abbreviation}', col='{self.column_name}')>"
 
 
 class PlayerStatsModel(Base):
@@ -161,7 +177,7 @@ class NBADatabase:
         """Initialize NBA database.
 
         Args:
-            db_path: Path to SQLite database file (default: database/nba_stats.db)
+            db_path: Path to SQLite database file (default: data/sql/nba_stats.db)
         """
         if db_path is None:
             db_path = str(Path(settings.database_dir) / "nba_stats.db")
@@ -309,4 +325,43 @@ class NBADatabase:
             "teams": session.query(TeamModel).count(),
             "players": session.query(PlayerModel).count(),
             "player_stats": session.query(PlayerStatsModel).count(),
+            "data_dictionary": session.query(DataDictionaryModel).count(),
         }
+
+    def get_all_dictionary_entries(self, session: Session) -> list[DataDictionaryModel]:
+        """Get all data dictionary entries.
+
+        Args:
+            session: Database session
+
+        Returns:
+            List of all DataDictionaryModel instances
+        """
+        return session.query(DataDictionaryModel).order_by(DataDictionaryModel.abbreviation).all()
+
+    def get_dictionary_for_prompt(self, session: Session) -> list[dict[str, str | None]]:
+        """Get dictionary entries formatted for SQL prompt injection.
+
+        Returns only entries that map to actual SQL columns.
+
+        Args:
+            session: Database session
+
+        Returns:
+            List of dicts with abbreviation, full_name, column_name, table_name
+        """
+        entries = (
+            session.query(DataDictionaryModel)
+            .filter(DataDictionaryModel.column_name.isnot(None))
+            .order_by(DataDictionaryModel.abbreviation)
+            .all()
+        )
+        return [
+            {
+                "abbreviation": e.abbreviation,
+                "full_name": e.full_name,
+                "column_name": e.column_name,
+                "table_name": e.table_name,
+            }
+            for e in entries
+        ]

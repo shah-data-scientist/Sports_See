@@ -14,7 +14,7 @@ from pathlib import PurePosixPath
 def get_staged_files() -> list[str]:
     """Get list of staged Python files."""
     result = subprocess.run(
-        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
         capture_output=True, text=True,
     )
     return [f.strip() for f in result.stdout.strip().splitlines() if f.strip()]

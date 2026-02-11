@@ -47,7 +47,7 @@ def extract_schema(file_path: str) -> dict:
 
 
 if __name__ == "__main__":
-    file_path = "inputs/regular NBA.xlsx"
+    file_path = "data/inputs/regular NBA.xlsx"
     output_path = "excel_schema.json"
 
     print(f"Extracting schema from: {file_path}")

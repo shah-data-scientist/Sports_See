@@ -90,10 +90,10 @@ class Settings(BaseSettings):
         description="Minimum similarity score (0-1) for results",
     )
 
-    # Paths (relative to project root)
-    input_dir: str = Field(default="inputs")
-    vector_db_dir: str = Field(default="vector_db")
-    database_dir: str = Field(default="database")
+    # Paths (relative to project root, consolidated under data/)
+    input_dir: str = Field(default="data/inputs")
+    vector_db_dir: str = Field(default="data/vector")
+    database_dir: str = Field(default="data/sql")
 
     # Application
     app_title: str = Field(default="NBA Analyst AI")

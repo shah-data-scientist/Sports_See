@@ -8,7 +8,7 @@ MAINTAINER: Shahu
 
 from langchain_community.utilities import SQLDatabase
 
-db = SQLDatabase.from_uri('sqlite:///database/nba_stats.db')
+db = SQLDatabase.from_uri('sqlite:///data/sql/nba_stats.db')
 
 sql = "SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1;"
 

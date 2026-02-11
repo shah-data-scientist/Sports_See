@@ -1,0 +1,139 @@
+{
+  "timestamp": "2026-02-11T13:59:28.340027",
+  "total_sampled": 16,
+  "validations": [
+    {
+      "index": 0,
+      "category": "simple",
+      "question": "What do Reddit users think about teams that have impressed in the playoffs?",
+      "ground_truth": "Reddit post discusses which playoff teams have impressed fans. Comments should contain user opinions about surprising or impressive playoff performances.",
+      "status": "error",
+      "error": "('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))"
+    },
+    {
+      "index": 3,
+      "category": "simple",
+      "question": "What do fans debate about Reggie Miller's efficiency?",
+      "ground_truth": "Reddit post titled 'Reggie Miller is the most efficient first option in NBA playoffs' with 1300 upvotes. Comments debate his playoff efficiency and historical comparisons.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 9,
+      "category": "complex",
+      "question": "What are the common themes in NBA Reddit discussions about playoffs?",
+      "ground_truth": "Across 4 Reddit posts, common themes include: impressive teams, top teams' performance, efficiency of scorers, and home court advantage. Should synthesize across multiple posts.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 15,
+      "category": "simple",
+      "question": "Tell me about the most discussed playoff efficiency topic.",
+      "ground_truth": "Reddit post about Reggie Miller's efficiency has highest engagement (1300 post upvotes, 11515 max comment upvotes). Boosting should rank this post's content highest.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 16,
+      "category": "simple",
+      "question": "What's the most popular Reddit discussion about playoffs?",
+      "ground_truth": "Post engagement boost (0-1%) should prioritize Reggie Miller post (1300 upvotes) over others (457, 272, 31 upvotes). Tests post-level boosting.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 19,
+      "category": "complex",
+      "question": "What do authoritative voices say about playoff basketball?",
+      "ground_truth": "Should prioritize NBA official accounts or highly-upvoted comments as more authoritative. Tests combined boosting logic.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 25,
+      "category": "simple",
+      "question": "What is a pick and roll?",
+      "ground_truth": "Basketball glossary should define pick and roll as an offensive play where a player sets a screen (pick) and moves toward the basket (roll).",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 27,
+      "category": "simple",
+      "question": "What does zone defense mean?",
+      "ground_truth": "Zone defense is a defensive strategy where players guard areas rather than specific opponents. Glossary should define this term.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 29,
+      "category": "simple",
+      "question": "What is a triple-double?",
+      "ground_truth": "Triple-double means double-digit totals in three statistical categories (e.g., points, rebounds, assists). Glossary should define.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 33,
+      "category": "noisy",
+      "question": "What is the weather forecast for Los Angeles tomorrow?",
+      "ground_truth": "Weather is completely out of scope. Knowledge base only contains NBA statistics, Reddit discussions, and basketball glossary.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 35,
+      "category": "noisy",
+      "question": "Tell me about the latest political election results.",
+      "ground_truth": "Politics is out of scope. Knowledge base contains only NBA-related content.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 37,
+      "category": "noisy",
+      "question": "Best strategy for winning in NBA 2K24 video game?",
+      "ground_truth": "Video game strategies are out of scope. Knowledge base covers real NBA, not video games.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 53,
+      "category": "conversational",
+      "question": "Tell me about playoff teams that surprised people.",
+      "ground_truth": "Reddit post 'Who are teams in the playoffs that have impressed you?' discusses surprising or impressive playoff teams.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 57,
+      "category": "conversational",
+      "question": "Who is the most efficient according to fans?",
+      "ground_truth": "Follow-up asking for specific player. Reggie Miller discussion (1300 upvotes) should be highly relevant. Tests boosting + context.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 61,
+      "category": "conversational",
+      "question": "Returning to home court, which teams historically lacked it?",
+      "ground_truth": "Another topic switch back to home court. Should handle non-linear conversation flow.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    },
+    {
+      "index": 68,
+      "category": "noisy",
+      "question": "yo what ppl saying bout top teams",
+      "ground_truth": "Casual slang asking about top teams discussions. Should retrieve Reddit post about 'two best teams in playoffs'.",
+      "status": "error",
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/chat (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+    }
+  ],
+  "summary": {
+    "matches": 0,
+    "mismatches": 0,
+    "errors": 16
+  }
+}

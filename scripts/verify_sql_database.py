@@ -22,7 +22,7 @@ def main():
     print("  Direct SQL execution to verify database structure and data")
     print("="*80 + "\n")
 
-    db_path = Path("database/nba_stats.db")
+    db_path = Path("data/sql/nba_stats.db")
 
     if not db_path.exists():
         print(f"ERROR: Database not found at {db_path}")

@@ -16,7 +16,7 @@ if sys.stdout.encoding != 'utf-8':
 import pandas as pd
 
 # Read Excel
-df = pd.read_excel("inputs/regular NBA.xlsx", sheet_name="Données NBA")
+df = pd.read_excel("data/inputs/regular NBA.xlsx", sheet_name="Données NBA")
 headers = df.iloc[0].tolist()
 df.columns = headers
 df = df.drop(0).reset_index(drop=True)

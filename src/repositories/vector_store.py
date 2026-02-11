@@ -2,7 +2,7 @@
 FILE: vector_store.py
 STATUS: Active
 RESPONSIBILITY: FAISS vector store data access layer for index CRUD operations
-LAST MAJOR UPDATE: 2026-02-06
+LAST MAJOR UPDATE: 2026-02-10
 MAINTAINER: Shahu
 """
 
@@ -178,6 +178,65 @@ class VectorStoreRepository:
 
         logger.info("Built index with %d vectors", self._index.ntotal)
 
+    @staticmethod
+    def _compute_metadata_boost(chunk: DocumentChunk) -> float:
+        """Compute additive score boost from Reddit metadata.
+
+        With 1-comment-per-chunk, each chunk has exact per-comment metadata.
+
+        Boost components (max total 5%):
+        - Comment upvotes: 0-2% (relative ranking within same post)
+          Lowest upvoted comment in post → 0%, highest → 2%
+        - Post engagement: 0-1% (relative ranking across all 4 posts)
+          Lowest upvoted post → 0%, highest → 1%
+        - NBA official: +2.0 if is_nba_official == 1 → 0 or 2%
+          (authoritative source)
+
+        Non-Reddit chunks get 0.0 boost.
+
+        Args:
+            chunk: Document chunk with metadata
+
+        Returns:
+            Additive boost value (0.0 to 5.0)
+        """
+        if chunk.metadata.get("type") != "reddit_thread":
+            return 0.0
+
+        boost = 0.0
+
+        # Comment upvotes boost (0-2%): relative within post
+        comment_upvotes = chunk.metadata.get("comment_upvotes", 0)
+        min_comment_upvotes = chunk.metadata.get("min_comment_upvotes_in_post", 0)
+        max_comment_upvotes = chunk.metadata.get("max_comment_upvotes_in_post", 0)
+
+        if isinstance(comment_upvotes, (int, float)) and max_comment_upvotes > min_comment_upvotes:
+            # Linear gradation: 0% for lowest, 2% for highest
+            ratio = (comment_upvotes - min_comment_upvotes) / (max_comment_upvotes - min_comment_upvotes)
+            boost += 2.0 * ratio
+        elif max_comment_upvotes == min_comment_upvotes and comment_upvotes > 0:
+            # All comments have same upvotes → give middle value
+            boost += 1.0
+
+        # Post engagement boost (0-1%): relative across all posts
+        post_upvotes = chunk.metadata.get("post_upvotes", 0)
+        min_post_upvotes = chunk.metadata.get("min_post_upvotes_global", 0)
+        max_post_upvotes = chunk.metadata.get("max_post_upvotes_global", 0)
+
+        if isinstance(post_upvotes, (int, float)) and max_post_upvotes > min_post_upvotes:
+            # Linear gradation: 0% for lowest post, 1% for highest post
+            ratio = (post_upvotes - min_post_upvotes) / (max_post_upvotes - min_post_upvotes)
+            boost += 1.0 * ratio
+        elif max_post_upvotes == min_post_upvotes and post_upvotes > 0:
+            # All posts have same upvotes → give middle value
+            boost += 0.5
+
+        # NBA official boost (0 or 2%)
+        if chunk.metadata.get("is_nba_official") == 1:
+            boost += 2.0
+
+        return boost
+
     @logfire.instrument("VectorStoreRepository.search {k=}")
     def search(
         self,
@@ -267,7 +326,13 @@ class VectorStoreRepository:
 
                 results.append((self._chunks[idx], score_percent))
 
-            # Sort by score descending and limit to k
+            # Apply metadata boost for Reddit re-ranking
+            results = [
+                (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                for chunk, score in results
+            ]
+
+            # Sort by boosted score descending and limit to k
             results.sort(key=lambda x: x[1], reverse=True)
             return results[:k]
 

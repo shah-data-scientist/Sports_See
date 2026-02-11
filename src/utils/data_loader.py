@@ -2,7 +2,7 @@
 FILE: data_loader.py
 STATUS: Active
 RESPONSIBILITY: Multi-format document loading utilities (PDF, DOCX, CSV, etc.)
-LAST MAJOR UPDATE: 2026-02-06
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
@@ -25,7 +25,10 @@ _ocr_initialized = False
 
 
 def _get_ocr_reader():
-    """Lazy-initialize OCR dependencies (easyocr/torch) only when needed."""
+    """Lazy-initialize OCR dependencies (easyOCR) only when needed.
+
+    Uses lazy-loading to avoid FAISS + torch AVX2 crash on Windows.
+    """
     global fitz, Image, _ocr_reader, _ocr_initialized
 
     if _ocr_initialized:
@@ -40,9 +43,9 @@ def _get_ocr_reader():
         fitz = _fitz
         Image = _Image
 
-        logging.info("Initialisation du lecteur EasyOCR...")
-        _ocr_reader = easyocr.Reader(['en', 'fr'])
-        logging.info("Lecteur EasyOCR initialisé.")
+        logging.info("Initialisation du lecteur easyOCR (en, fr)...")
+        _ocr_reader = easyocr.Reader(["en", "fr"], gpu=False)
+        logging.info("Lecteur easyOCR initialisé.")
     except ImportError as e:
         logging.warning(f"Modules OCR (PyMuPDF, Pillow, easyocr) non installés ou erreur: {e}. L'OCR pour PDF ne sera pas disponible.")
     except Exception as e:
@@ -56,7 +59,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- Fonctions d'extraction de texte ---
 
 def extract_text_from_pdf_with_ocr(file_path: str) -> Optional[str]:
-    """Extrait le texte d'un fichier PDF en utilisant l'OCR (EasyOCR)."""
+    """Extrait le texte d'un fichier PDF en utilisant l'OCR (easyOCR)."""
     reader = _get_ocr_reader()
     if not fitz or not reader:
         logging.warning("Modules/Modèle OCR non disponibles. Impossible d'effectuer l'OCR.")
@@ -65,20 +68,22 @@ def extract_text_from_pdf_with_ocr(file_path: str) -> Optional[str]:
     text_content = []
     try:
         doc = fitz.open(file_path)
-        # Utiliser tqdm pour la barre de progression
         for page_num in tqdm(range(len(doc)), desc=f"OCR de {os.path.basename(file_path)}"):
             page = doc.load_page(page_num)
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # Augmenter la résolution pour l'OCR
+            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
             try:
                 img_np = np.array(img)
-                results = reader.readtext(img_np)
-                page_text = "\n".join([res[1] for res in results])
+                # easyOCR returns [(bbox, text, confidence), ...]
+                result = reader.readtext(img_np)
+                if result:
+                    page_text = "\n".join([line[1] for line in result])
+                else:
+                    page_text = ""
                 text_content.append(page_text)
-                # logging.info(f"OCR effectuée sur la page {page_num + 1} de {file_path} avec EasyOCR") # Commenté pour éviter le spam de logs avec tqdm
             except Exception as ocr_e:
-                logging.error(f"Erreur lors de l'OCR de la page {page_num + 1} de {file_path} avec EasyOCR: {ocr_e}")
+                logging.error(f"Erreur lors de l'OCR de la page {page_num + 1} de {file_path} avec easyOCR: {ocr_e}")
                 continue
 
         doc.close()
@@ -173,18 +178,47 @@ def extract_text_from_csv(file_path: str) -> Optional[str]:
         logging.error(f"Erreur extraction CSV {file_path}: {e}")
         return None
 
+# Sheets to exclude from vectorization (structured data already in SQL or empty)
+EXCLUDED_EXCEL_SHEETS = {
+    "Données NBA",    # Player stats → already in nba_stats.db
+    "Equipe",         # Team lookup → already in nba_stats.db
+    "Analyse",        # Empty template
+    "Analyse Vide",   # Empty template
+}
+
+
 def extract_text_from_excel(file_path: str) -> Optional[Union[str, Dict[str, str]]]:
-    """Extrait le texte de chaque feuille d'un fichier Excel."""
+    """Extrait le texte de chaque feuille d'un fichier Excel.
+
+    Skips sheets listed in EXCLUDED_EXCEL_SHEETS (structured data already in SQL
+    or empty templates). Uses pre-formatted glossary for the dictionary sheet.
+    """
     try:
         import pandas as pd
-        # Lire toutes les feuilles dans un dictionnaire de DataFrames
         excel_file = pd.ExcelFile(file_path)
         sheets_data = {}
         for sheet_name in excel_file.sheet_names:
+            if sheet_name in EXCLUDED_EXCEL_SHEETS:
+                logging.info(f"Skipping excluded sheet: {sheet_name}")
+                continue
+
+            # Use pre-formatted glossary for dictionary sheet
+            if "dictionnaire" in sheet_name.lower():
+                dict_vectorized = Path(__file__).parent.parent.parent / "data" / "reference" / "nba_dictionary_vectorized.txt"
+                if dict_vectorized.exists():
+                    with open(dict_vectorized, "r", encoding="utf-8") as f:
+                        sheets_data[sheet_name] = f.read()
+                    logging.info(f"Using pre-formatted glossary for sheet: {sheet_name}")
+                    continue
+                logging.warning(f"nba_dictionary_vectorized.txt not found, falling back to raw parse for {sheet_name}")
+
             df = excel_file.parse(sheet_name)
             sheets_data[sheet_name] = df.to_string()
-        
+
         logging.info(f"Texte extrait de {len(sheets_data)} feuille(s) dans Excel: {file_path}")
+        if len(sheets_data) == 0:
+            logging.warning(f"All sheets excluded from {file_path}, no content to vectorize")
+            return None
         # Si une seule feuille, retourne directement le texte pour la compatibilité
         if len(sheets_data) == 1:
             return list(sheets_data.values())[0]

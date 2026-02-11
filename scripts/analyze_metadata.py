@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def analyze_metadata_distribution():
     """Analyze data_type distribution in FAISS index."""
-    index_path = Path("vector_db/document_chunks.pkl")
+    index_path = Path("data/vector/document_chunks.pkl")
 
     with index_path.open("rb") as f:
         chunks = pickle.load(f)

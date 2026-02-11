@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 from src.core.config import settings
-from src.evaluation.test_cases import EVALUATION_TEST_CASES
+from src.evaluation.vector_test_cases import EVALUATION_TEST_CASES
 from src.services.chat import ChatService
 
 logging.basicConfig(

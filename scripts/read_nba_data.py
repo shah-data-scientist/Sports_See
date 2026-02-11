@@ -14,7 +14,7 @@ import pandas as pd
 
 def read_nba_data():
     """Read NBA Excel data and extract schema."""
-    file_path = "inputs/regular NBA.xlsx"
+    file_path = "data/inputs/regular NBA.xlsx"
 
     # Read data - first row is headers
     df = pd.read_excel(file_path, sheet_name="Données NBA")

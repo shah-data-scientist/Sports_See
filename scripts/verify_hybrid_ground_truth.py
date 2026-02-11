@@ -75,7 +75,7 @@ def inspect_database():
     logger.info("DATABASE INSPECTION")
     logger.info("=" * 80)
 
-    db_path = project_root / "database" / "nba_stats.db"
+    db_path = project_root / "data" / "sql" / "nba_stats.db"
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
 
@@ -208,7 +208,7 @@ def verify_test_case(question: str, expected_sql: str = None, query_type: str = 
     # Execute SQL query if applicable
     if expected_sql and query_type in ["SQL_ONLY", "HYBRID"]:
         try:
-            db_path = project_root / "database" / "nba_stats.db"
+            db_path = project_root / "data" / "sql" / "nba_stats.db"
             conn = sqlite3.connect(str(db_path))
             cursor = conn.cursor()
             cursor.execute(expected_sql)

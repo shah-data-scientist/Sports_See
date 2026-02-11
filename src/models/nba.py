@@ -2,13 +2,16 @@
 FILE: nba.py
 STATUS: Active
 RESPONSIBILITY: Pydantic models for NBA player statistics and team data validation
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
+import logging
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+logger = logging.getLogger(__name__)
 
 
 class PlayerStats(BaseModel):
@@ -134,6 +137,40 @@ class PlayerStats(BaseModel):
             parts = v.split(":")
             return int(parts[0])
         return int(v)
+
+    # ── Cross-field consistency validators ──────────────────────
+
+    @model_validator(mode="after")
+    def check_games_consistency(self):
+        """Validate gp == w + l (each game is a win or loss)."""
+        if self.gp != self.w + self.l:
+            logger.warning(
+                f"Games inconsistency for {self.player}: "
+                f"GP={self.gp} != W({self.w}) + L({self.l}) = {self.w + self.l}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_rebound_consistency(self):
+        """Validate reb == oreb + dreb (with tolerance of 1 for rounding)."""
+        expected = self.oreb + self.dreb
+        if abs(self.reb - expected) > 1:
+            logger.warning(
+                f"Rebound inconsistency for {self.player}: "
+                f"REB={self.reb} != OREB({self.oreb}) + DREB({self.dreb}) = {expected}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_shooting_consistency(self):
+        """Validate fgm <= fga, ftm <= fta, three_pm <= three_pa."""
+        if self.fgm > self.fga:
+            logger.warning(f"Shooting inconsistency for {self.player}: FGM({self.fgm}) > FGA({self.fga})")
+        if self.ftm > self.fta:
+            logger.warning(f"Free throw inconsistency for {self.player}: FTM({self.ftm}) > FTA({self.fta})")
+        if self.three_pm > self.three_pa:
+            logger.warning(f"3PT inconsistency for {self.player}: 3PM({self.three_pm}) > 3PA({self.three_pa})")
+        return self
 
 
 class Team(BaseModel):

@@ -68,17 +68,18 @@ logs/
 *.sublime-project
 *.sublime-workspace
 
-# Data files (large files)
-data/
-inputs/*.pdf
-inputs/*.xlsx
-inputs/*.xls
-inputs/*.csv
-!inputs/.gitkeep
+# Data directory (consolidated: inputs, sql, vector, reference)
+data/inputs/
+data/sql/
+data/vector/
+data/reference/
+!data/.gitkeep
+!data/*/.gitkeep
 
-# Vector DB (generated, large files)
+# Legacy folders (removed after migration to data/)
+inputs/
 vector_db/
-!vector_db/.gitkeep
+database/
 
 # Model files (large)
 models/
@@ -87,16 +88,14 @@ models/
 *.h5
 *.hdf5
 *.pkl
-!document_chunks.pkl
 
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/
 notebooks/*.html
 
-# Database files
+# Database files (legacy path + extensions)
 database/
-*.db
 *.db-shm
 *.db-wal
 *.sqlite

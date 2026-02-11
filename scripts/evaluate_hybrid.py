@@ -1,26 +1,36 @@
 """
 FILE: evaluate_hybrid.py
 STATUS: Active
-RESPONSIBILITY: Master Hybrid evaluation - Tests intelligent SQL + Vector routing
-LAST MAJOR UPDATE: 2026-02-10
+RESPONSIBILITY: Master Hybrid evaluation - Tests intelligent SQL + Vector routing via API
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
+import io
 import json
 import logging
+import os
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
-from src.core.config import settings
-from src.evaluation.test_cases import EVALUATION_TEST_CASES
+from starlette.testclient import TestClient
+
+from src.api.dependencies import get_chat_service
+from src.api.main import create_app
 from src.evaluation.hybrid_test_cases import HYBRID_TEST_CASES
 from src.evaluation.models import TestCategory
-from src.services.chat import ChatService
-from src.services.conversation import ConversationService
-from src.repositories.conversation import ConversationRepository
-from src.models.chat import ChatRequest
+from src.evaluation.vector_test_cases import EVALUATION_TEST_CASES
+from src.models.chat import ChatResponse
+from src.models.feedback import ChatInteractionCreate
 
 logger = logging.getLogger(__name__)
+
+# Gemini free tier: 15 RPM
+RATE_LIMIT_DELAY_SECONDS = 9
+MAX_RETRIES = 2
+RETRY_BACKOFF_SECONDS = 15
 
 
 def _is_followup_question(question: str) -> bool:
@@ -38,22 +48,21 @@ def get_hybrid_test_cases():
     Get test cases suitable for hybrid evaluation.
 
     Includes:
-    - HYBRID_TEST_CASES: Dedicated hybrid queries
+    - HYBRID_TEST_CASES: Dedicated true hybrid queries (SQL + Vector)
     - COMPLEX from EVALUATION_TEST_CASES: Multi-step queries
-    - SIMPLE from EVALUATION_TEST_CASES: Statistical queries (for SQL routing)
     - CONVERSATIONAL: Testing routing with conversation context
 
-    This combines statistical queries (SQL), contextual queries (Vector),
-    and complex queries requiring both.
+    NOTE: SIMPLE cases removed - they are pure SQL queries and belong only in SQL evaluation.
     """
     hybrid_cases = []
 
     # Add all dedicated hybrid test cases
     hybrid_cases.extend(HYBRID_TEST_CASES)
 
-    # Add COMPLEX and SIMPLE cases from main evaluation set
+    # Add COMPLEX and CONVERSATIONAL cases from main evaluation set
+    # SIMPLE cases removed - they should only be in SQL evaluation
     for tc in EVALUATION_TEST_CASES:
-        if tc.category in [TestCategory.COMPLEX, TestCategory.SIMPLE, TestCategory.CONVERSATIONAL]:
+        if tc.category in [TestCategory.COMPLEX, TestCategory.CONVERSATIONAL]:
             hybrid_cases.append(tc)
 
     return hybrid_cases
@@ -64,112 +73,154 @@ def run_hybrid_evaluation():
     Master Hybrid evaluation.
 
     Tests intelligent routing between SQL and Vector search.
-    Uses SIMPLE (SQL), COMPLEX (both), CONVERSATIONAL (both), and HYBRID test cases.
+    Uses COMPLEX, CONVERSATIONAL, and HYBRID test cases.
+    Generates results through the FastAPI API (POST /api/v1/chat).
     """
     hybrid_cases = get_hybrid_test_cases()
 
     print("\n" + "="*80)
     print("  HYBRID EVALUATION (SQL + VECTOR)")
     print("  Tests: Intelligent routing between SQL and Vector search")
-    print("  Mode: HYBRID (SQL enabled with Vector fallback)")
+    print("  Mode: API (POST /api/v1/chat) - Full HTTP pipeline")
     print(f"  Test Cases: {len(hybrid_cases)} from multiple sources")
     print("="*80 + "\n")
-
-    # Initialize chat service with SQL ENABLED (hybrid mode)
-    chat_service = ChatService(enable_sql=True)
-    chat_service.ensure_ready()
-
-    # Initialize conversation tracking
-    conversation_repo = ConversationRepository()
-    conversation_service = ConversationService(repository=conversation_repo)
-
-    current_conversation_id = None
-    current_turn_number = 0
 
     results = []
     category_counts = {}
     routing_stats = {"sql": 0, "vector": 0, "both": 0, "unknown": 0}
 
-    for i, test_case in enumerate(hybrid_cases, 1):
-        category = test_case.category.value if hasattr(test_case.category, 'value') else str(test_case.category)
-        category_counts[category] = category_counts.get(category, 0) + 1
+    # Create FastAPI app and run evaluation through HTTP API
+    app = create_app()
+    with TestClient(app) as client:
+        # Access the initialized ChatService for interaction storage
+        chat_service = get_chat_service()
 
-        logger.info(f"[{i}/{len(hybrid_cases)}] {category}: {test_case.question[:60]}...")
+        current_conversation_id = None
+        current_turn_number = 0
 
-        # Handle conversational test cases
-        is_conversational = (
-            (hasattr(test_case.category, 'value') and test_case.category == TestCategory.CONVERSATIONAL) or
-            (isinstance(test_case.category, str) and "conversational" in test_case.category.lower())
-        )
+        for i, test_case in enumerate(hybrid_cases, 1):
+            category = test_case.category.value if hasattr(test_case.category, 'value') else str(test_case.category)
+            category_counts[category] = category_counts.get(category, 0) + 1
 
-        if is_conversational:
-            if _is_followup_question(test_case.question):
-                if current_conversation_id is None:
-                    conversation = conversation_service.start_conversation()
-                    current_conversation_id = conversation.id
-                    current_turn_number = 1
+            logger.info(f"[{i}/{len(hybrid_cases)}] {category}: {test_case.question[:60]}...")
+
+            # Rate limit delay (skip before first query)
+            if i > 1:
+                logger.info(f"  Rate limit delay: {RATE_LIMIT_DELAY_SECONDS}s...")
+                time.sleep(RATE_LIMIT_DELAY_SECONDS)
+
+            # Handle conversational test cases
+            is_conversational = (
+                (hasattr(test_case.category, 'value') and test_case.category == TestCategory.CONVERSATIONAL) or
+                (isinstance(test_case.category, str) and "conversational" in test_case.category.lower())
+            )
+
+            if is_conversational:
+                if _is_followup_question(test_case.question):
+                    if current_conversation_id is None:
+                        conv_resp = client.post("/api/v1/conversations", json={})
+                        current_conversation_id = conv_resp.json()["id"]
+                        current_turn_number = 1
+                    else:
+                        current_turn_number += 1
                 else:
-                    current_turn_number += 1
+                    conv_resp = client.post("/api/v1/conversations", json={})
+                    current_conversation_id = conv_resp.json()["id"]
+                    current_turn_number = 1
             else:
-                conversation = conversation_service.start_conversation()
-                current_conversation_id = conversation.id
-                current_turn_number = 1
-        else:
-            current_conversation_id = None
-            current_turn_number = 0
+                current_conversation_id = None
+                current_turn_number = 0
 
-        try:
-            # Execute hybrid query through chat service
-            request = ChatRequest(
-                query=test_case.question,
-                k=5,
-                include_sources=True,
-                conversation_id=current_conversation_id,
-                turn_number=current_turn_number if current_conversation_id else 1
-            )
+            try:
+                # Build API request payload
+                payload = {
+                    "query": test_case.question,
+                    "k": 5,
+                    "include_sources": True,
+                    "conversation_id": current_conversation_id,
+                    "turn_number": current_turn_number if current_conversation_id else 1,
+                }
 
-            response = chat_service.chat(request)
+                # Execute via API with retry for rate limits
+                http_response = None
+                last_error = None
+                for attempt in range(MAX_RETRIES + 1):
+                    http_response = client.post("/api/v1/chat", json=payload)
 
-            # Determine which component was used
-            has_sql_data = any(
-                kw in response.answer.lower()
-                for kw in ["pts", "reb", "ast", "points", "rebounds", "assists", "ppg", "rpg"]
-            )
-            has_vector_context = len(response.sources) > 0 if response.sources else False
+                    if http_response.status_code == 200:
+                        break
 
-            if has_sql_data and has_vector_context:
-                routing = "both"
-            elif has_sql_data:
-                routing = "sql"
-            elif has_vector_context:
-                routing = "vector"
-            else:
-                routing = "unknown"
+                    # Retry on rate limit (429) or server error containing "429"
+                    is_rate_limit = (
+                        http_response.status_code == 429
+                        or (http_response.status_code == 500 and "429" in http_response.text)
+                    )
+                    if is_rate_limit and attempt < MAX_RETRIES:
+                        wait = RETRY_BACKOFF_SECONDS * (attempt + 1)
+                        logger.warning(f"  Rate limit hit, retry {attempt + 1}/{MAX_RETRIES} after {wait}s...")
+                        time.sleep(wait)
+                    else:
+                        last_error = f"API error {http_response.status_code}: {http_response.text[:300]}"
+                        break
 
-            routing_stats[routing] += 1
+                if http_response is None or http_response.status_code != 200:
+                    raise RuntimeError(last_error or "No response from API")
 
-            results.append({
-                "question": test_case.question,
-                "category": category,
-                "response": response.answer,
-                "routing": routing,
-                "sources_count": len(response.sources) if response.sources else 0,
-                "processing_time_ms": response.processing_time_ms,
-                "success": True
-            })
+                # Parse API response into ChatResponse model
+                response = ChatResponse.model_validate(http_response.json())
 
-            logger.info(f"  [PASS] Routing: {routing.upper()} | "
-                       f"Sources: {len(response.sources) if response.sources else 0} | "
-                       f"Time: {response.processing_time_ms}ms")
+                # Store interaction for conversation context (enables follow-up pronoun resolution)
+                if current_conversation_id:
+                    interaction = ChatInteractionCreate(
+                        query=test_case.question,
+                        response=response.answer,
+                        sources=[s.source for s in response.sources] if response.sources else [],
+                        processing_time_ms=int(response.processing_time_ms) if response.processing_time_ms else None,
+                        conversation_id=current_conversation_id,
+                        turn_number=current_turn_number,
+                    )
+                    chat_service.feedback_repository.save_interaction(interaction)
 
-        except Exception as e:
-            logger.error(f"  [FAIL] Error: {e}")
-            results.append({
-                "question": test_case.question,
-                "category": category,
-                "error": str(e),
-                "success": False
-            })
+                # Determine which component was used
+                has_sql_data = any(
+                    kw in response.answer.lower()
+                    for kw in ["pts", "reb", "ast", "points", "rebounds", "assists", "ppg", "rpg"]
+                )
+                has_vector_context = len(response.sources) > 0 if response.sources else False
+
+                if has_sql_data and has_vector_context:
+                    routing = "both"
+                elif has_sql_data:
+                    routing = "sql"
+                elif has_vector_context:
+                    routing = "vector"
+                else:
+                    routing = "unknown"
+
+                routing_stats[routing] += 1
+
+                results.append({
+                    "question": test_case.question,
+                    "category": category,
+                    "response": response.answer,
+                    "routing": routing,
+                    "sources_count": len(response.sources) if response.sources else 0,
+                    "processing_time_ms": response.processing_time_ms,
+                    "success": True
+                })
+
+                logger.info(f"  [PASS] Routing: {routing.upper()} | "
+                           f"Sources: {len(response.sources) if response.sources else 0} | "
+                           f"Time: {response.processing_time_ms}ms")
+
+            except Exception as e:
+                logger.error(f"  [FAIL] Error: {e}")
+                results.append({
+                    "question": test_case.question,
+                    "category": category,
+                    "error": str(e),
+                    "success": False
+                })
 
     # Print summary
     print("\n" + "="*80)
@@ -198,6 +249,7 @@ def run_hybrid_evaluation():
 
     output_data = {
         "timestamp": datetime.now().isoformat(),
+        "mode": "api",
         "total_cases": len(hybrid_cases),
         "successful": sum(1 for r in results if r['success']),
         "failed": sum(1 for r in results if not r['success']),
@@ -213,6 +265,14 @@ def run_hybrid_evaluation():
 
 
 if __name__ == "__main__":
+    # Fix Windows charmap encoding (Jokić etc.)
+    if sys.platform == "win32":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
+    # Prevent FAISS/OpenMP DLL conflict crash on Windows
+    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

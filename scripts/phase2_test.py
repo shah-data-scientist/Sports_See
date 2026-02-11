@@ -23,7 +23,7 @@ def test_database():
         with db.get_session() as session:
             counts = db.count_records(session)
 
-        print(f"[OK] Database accessible: database/nba_stats.db")
+        print(f"[OK] Database accessible: data/sql/nba_stats.db")
         print(f"  - Teams: {counts['teams']}")
         print(f"  - Players: {counts['players']}")
         print(f"  - Stats: {counts['player_stats']}")

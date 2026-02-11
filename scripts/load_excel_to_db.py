@@ -2,7 +2,7 @@
 FILE: load_excel_to_db.py
 STATUS: Active
 RESPONSIBILITY: Excel to database ingestion pipeline with Pydantic validation
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
@@ -191,8 +191,86 @@ def load_players_to_db(db: NBADatabase, df: pd.DataFrame) -> dict[str, int]:
     return player_ids
 
 
+def detect_duplicates(df: pd.DataFrame) -> list[str]:
+    """Detect duplicate player entries in the DataFrame.
+
+    Args:
+        df: DataFrame with player statistics
+
+    Returns:
+        List of warning messages for duplicates found
+    """
+    warnings = []
+    dup_players = df[df.duplicated(subset=["Player"], keep=False)]
+    if not dup_players.empty:
+        dup_names = dup_players["Player"].unique()
+        for name in dup_names:
+            count = len(df[df["Player"] == name])
+            warnings.append(f"Duplicate player entry: '{name}' appears {count} times")
+    return warnings
+
+
+def validate_cross_table_consistency(df: pd.DataFrame) -> list[str]:
+    """Run cross-table consistency checks on the DataFrame.
+
+    Checks:
+    - GP == W + L (each game is a win or loss)
+    - REB == OREB + DREB (rebound components)
+    - FGM <= FGA, FTM <= FTA, 3PM <= 3PA (shots made <= attempted)
+
+    Args:
+        df: DataFrame with player statistics
+
+    Returns:
+        List of warning messages for inconsistencies found
+    """
+    warnings = []
+
+    for idx, row in df.iterrows():
+        player = str(row.get("Player", f"Row {idx}"))
+
+        # Games consistency: GP == W + L
+        try:
+            gp = int(row.get("GP", 0))
+            w = int(row.get("W", 0))
+            l_val = int(row.get("L", 0))
+            if gp != w + l_val:
+                warnings.append(f"Games mismatch for '{player}': GP={gp} != W({w}) + L({l_val})")
+        except (ValueError, TypeError):
+            pass
+
+        # Rebound consistency: REB == OREB + DREB
+        try:
+            reb = int(row.get("REB", 0))
+            oreb = int(row.get("OREB", 0))
+            dreb = int(row.get("DREB", 0))
+            if abs(reb - (oreb + dreb)) > 1:
+                warnings.append(f"Rebound mismatch for '{player}': REB={reb} != OREB({oreb}) + DREB({dreb})")
+        except (ValueError, TypeError):
+            pass
+
+        # Shooting consistency
+        try:
+            fgm = int(row.get("FGM", 0))
+            fga = int(row.get("FGA", 0))
+            if fgm > fga:
+                warnings.append(f"Shooting error for '{player}': FGM({fgm}) > FGA({fga})")
+        except (ValueError, TypeError):
+            pass
+
+        try:
+            ftm = int(row.get("FTM", 0))
+            fta = int(row.get("FTA", 0))
+            if ftm > fta:
+                warnings.append(f"Free throw error for '{player}': FTM({ftm}) > FTA({fta})")
+        except (ValueError, TypeError):
+            pass
+
+    return warnings
+
+
 def load_stats_to_db(db: NBADatabase, df: pd.DataFrame, player_ids: dict[str, int]) -> int:
-    """Load player statistics into database.
+    """Load player statistics into database with duplicate detection.
 
     Args:
         db: NBA database instance
@@ -204,13 +282,38 @@ def load_stats_to_db(db: NBADatabase, df: pd.DataFrame, player_ids: dict[str, in
     """
     logger.info("Loading player statistics into database...")
 
+    # Pre-flight: detect duplicates and consistency issues
+    dup_warnings = detect_duplicates(df)
+    for w in dup_warnings:
+        logger.warning(f"[DUPLICATE] {w}")
+
+    consistency_warnings = validate_cross_table_consistency(df)
+    for w in consistency_warnings:
+        logger.warning(f"[CONSISTENCY] {w}")
+
+    if dup_warnings or consistency_warnings:
+        logger.info(
+            f"Data quality check: {len(dup_warnings)} duplicates, "
+            f"{len(consistency_warnings)} consistency issues"
+        )
+
+    # Track which players already have stats to prevent duplicate inserts
+    seen_players: set[str] = set()
+
     with db.get_session() as session:
         success_count = 0
+        skip_count = 0
         error_count = 0
 
         for idx, row in df.iterrows():
             try:
                 player_name = str(row["Player"]).strip()
+
+                # Duplicate stats guard: skip if already inserted this run
+                if player_name in seen_players:
+                    logger.debug(f"Skipping duplicate stats for '{player_name}' (already loaded)")
+                    skip_count += 1
+                    continue
 
                 # Get player ID
                 player_id = player_ids.get(player_name)
@@ -236,6 +339,7 @@ def load_stats_to_db(db: NBADatabase, df: pd.DataFrame, player_ids: dict[str, in
 
                 # Insert into database
                 db.add_player_stats(session, player_id, stats_dict)
+                seen_players.add(player_name)
 
                 success_count += 1
 
@@ -255,7 +359,10 @@ def load_stats_to_db(db: NBADatabase, df: pd.DataFrame, player_ids: dict[str, in
         # Final commit
         session.commit()
 
-        logger.info(f"Loaded {success_count} stats records ({error_count} errors)")
+        logger.info(
+            f"Loaded {success_count} stats records "
+            f"({skip_count} duplicates skipped, {error_count} errors)"
+        )
 
     return success_count
 
@@ -323,14 +430,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--excel",
         type=str,
-        default="inputs/regular NBA.xlsx",
-        help="Path to Excel file (default: inputs/regular NBA.xlsx)",
+        default="data/inputs/regular NBA.xlsx",
+        help="Path to Excel file (default: data/inputs/regular NBA.xlsx)",
     )
     parser.add_argument(
         "--db",
         type=str,
         default=None,
-        help="Path to SQLite database (default: database/nba_stats.db)",
+        help="Path to SQLite database (default: data/sql/nba_stats.db)",
     )
     parser.add_argument(
         "--drop",

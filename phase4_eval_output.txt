@@ -1,153 +1,0 @@
-2026-02-07 18:18:35,905 - INFO - __main__ - Initializing ChatService with SQL enabled (Phase 4 improvements)...
-2026-02-07 18:18:35,905 - INFO - src.repositories.vector_store - Loading FAISS index from vector_db\faiss_index.idx
-2026-02-07 18:18:35,905 - INFO - src.repositories.vector_store - Loading chunks from vector_db\document_chunks.pkl
-2026-02-07 18:18:35,916 - INFO - src.repositories.vector_store - Loaded index with 302 vectors and 302 chunks
-2026-02-07 18:18:35,916 - INFO - __main__ - Generating evaluation samples with hybrid RAG...
-C:\Users\shahu\Documents\OneDrive\OPEN CLASSROOMS\PROJET 10\Sports_See\scripts\evaluate_phase4.py:363: LogfireNotConfiguredWarning: No logs or spans will be created until `logfire.configure()` has been called. Set the environment variable LOGFIRE_IGNORE_NO_CONFIG=1 or add ignore_no_config=true in pyproject.toml to suppress this warning.
-  samples = generate_samples(chat_service)
-2026-02-07 18:18:40,150 - INFO - __main__ - Using Gemini for sample generation
-2026-02-07 18:18:42,059 - INFO - __main__ - Checkpoint loaded: 47 samples
-2026-02-07 18:18:42,068 - INFO - __main__ - All 47 samples already generated
-2026-02-07 18:18:42,068 - INFO - __main__ - Running RAGAS evaluation...
-C:\Users\shahu\.venvs\sports-see-6edxFlmh-py3.11\Lib\site-packages\instructor\providers\gemini\client.py:5: FutureWarning: 
-
-All support for the `google.generativeai` package has ended. It will no longer be receiving 
-updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
-See README for more details:
-
-https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
-
-  import google.generativeai as genai  # type: ignore[import-not-found]
-2026-02-07 18:18:59,128 - INFO - __main__ - Using Gemini as RAGAS evaluator LLM
-2026-02-07 18:18:59,177 - INFO - __main__ - Using Mistral embeddings for RAGAS evaluator
-2026-02-07 18:19:00,992 - INFO - __main__ - Running RAGAS evaluation with 47 samples...
-Evaluating:   0%|          | 0/188 [00:00<?, ?it/s]2026-02-07 18:19:03,285 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:03,627 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:03,631 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:04,049 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:04,507 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:04,524 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:04,524 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-Evaluating:   1%|          | 1/188 [00:02<08:46,  2.82s/it]Evaluating:   3%|2         | 5/188 [00:03<01:42,  1.79it/s]Evaluating:   4%|3         | 7/188 [00:03<01:13,  2.47it/s]2026-02-07 18:19:06,315 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:06,812 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:   4%|4         | 8/188 [00:05<01:48,  1.65it/s]2026-02-07 18:19:07,151 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:07,538 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:08,108 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:08,415 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:09,782 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:10,191 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:   5%|4         | 9/188 [00:08<03:43,  1.25s/it]2026-02-07 18:19:10,907 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:11,223 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:   7%|7         | 14/188 [00:09<01:44,  1.67it/s]Evaluating:   9%|9         | 17/188 [00:10<01:17,  2.20it/s]2026-02-07 18:19:12,385 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:12,665 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:13,119 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:13,234 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-Evaluating:  10%|9         | 18/188 [00:11<01:41,  1.68it/s]Evaluating:  12%|#2        | 23/188 [00:11<00:55,  2.96it/s]2026-02-07 18:19:14,443 - WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._achat_with_retry.<locals>._achat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
-2026-02-07 18:19:14,832 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:16,947 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  13%|#2        | 24/188 [00:15<01:56,  1.41it/s]2026-02-07 18:19:17,868 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:18,377 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  14%|#3        | 26/188 [00:16<01:55,  1.40it/s]2026-02-07 18:19:18,723 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:19,020 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  16%|#5        | 30/188 [00:17<01:15,  2.10it/s]2026-02-07 18:19:19,670 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:20,176 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  18%|#8        | 34/188 [00:18<01:02,  2.47it/s]2026-02-07 18:19:20,517 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:20,813 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  19%|#8        | 35/188 [00:19<01:06,  2.31it/s]2026-02-07 18:19:22,107 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:22,407 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  22%|##1       | 41/188 [00:20<00:51,  2.87it/s]Evaluating:  24%|##3       | 45/188 [00:21<00:41,  3.46it/s]2026-02-07 18:19:23,790 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:24,071 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  24%|##4       | 46/188 [00:22<00:51,  2.76it/s]Evaluating:  27%|##7       | 51/188 [00:23<00:38,  3.57it/s]2026-02-07 18:19:25,783 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:26,110 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  28%|##7       | 52/188 [00:24<00:51,  2.64it/s]2026-02-07 18:19:26,442 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:26,777 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  28%|##8       | 53/188 [00:25<00:56,  2.40it/s]Evaluating:  31%|###1      | 59/188 [00:25<00:29,  4.35it/s]2026-02-07 18:19:28,198 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:28,515 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  32%|###1      | 60/188 [00:26<00:45,  2.81it/s]2026-02-07 18:19:28,932 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:29,227 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  32%|###2      | 61/188 [00:27<00:51,  2.47it/s]Evaluating:  35%|###5      | 66/188 [00:28<00:37,  3.23it/s]2026-02-07 18:19:30,629 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:30,970 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  36%|###5      | 67/188 [00:29<00:43,  2.79it/s]2026-02-07 18:19:31,552 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:31,900 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  37%|###7      | 70/188 [00:30<00:39,  2.95it/s]Evaluating:  39%|###9      | 74/188 [00:30<00:27,  4.12it/s]Evaluating:  40%|###9      | 75/188 [00:30<00:27,  4.17it/s]Evaluating:  40%|####      | 76/188 [00:31<00:30,  3.69it/s]2026-02-07 18:19:33,349 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:33,629 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  41%|####      | 77/188 [00:31<00:38,  2.92it/s]2026-02-07 18:19:33,988 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:34,359 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  41%|####1     | 78/188 [00:32<00:45,  2.41it/s]Evaluating:  45%|####4     | 84/188 [00:32<00:19,  5.41it/s]2026-02-07 18:19:35,661 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:35,999 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  45%|####5     | 85/188 [00:34<00:41,  2.48it/s]2026-02-07 18:19:36,919 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:37,222 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  46%|####6     | 87/188 [00:35<00:39,  2.55it/s]Evaluating:  49%|####8     | 92/188 [00:35<00:21,  4.38it/s]2026-02-07 18:19:38,450 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:38,861 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  49%|####9     | 93/188 [00:37<00:34,  2.74it/s]2026-02-07 18:19:39,204 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:39,575 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  50%|#####     | 94/188 [00:37<00:39,  2.40it/s]Evaluating:  53%|#####2    | 99/188 [00:38<00:19,  4.65it/s]Evaluating:  54%|#####3    | 101/188 [00:38<00:23,  3.68it/s]2026-02-07 18:19:41,040 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:41,423 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:41,783 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:42,651 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  55%|#####4    | 103/188 [00:40<00:38,  2.21it/s]2026-02-07 18:19:43,872 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:44,268 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  57%|#####6    | 107/188 [00:42<00:35,  2.30it/s]2026-02-07 18:19:44,702 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:19:45,180 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  57%|#####7    | 108/188 [00:43<00:39,  2.02it/s]2026-02-07 18:19:46,369 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 429 Too Many Requests"
-2026-02-07 18:20:17,197 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:17,712 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  61%|######    | 114/188 [01:16<03:47,  3.08s/it]2026-02-07 18:20:18,872 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:19,340 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  64%|######4   | 121/188 [01:17<01:57,  1.75s/it]2026-02-07 18:20:19,674 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:19,982 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  65%|######4   | 122/188 [01:18<01:49,  1.65s/it]2026-02-07 18:20:21,301 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:21,598 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  69%|######8   | 129/188 [01:19<00:58,  1.01it/s]2026-02-07 18:20:21,941 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:22,281 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  69%|######9   | 130/188 [01:20<00:55,  1.04it/s]Evaluating:  72%|#######1  | 135/188 [01:21<00:34,  1.54it/s]2026-02-07 18:20:23,554 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:24,122 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  72%|#######2  | 136/188 [01:22<00:36,  1.43it/s]2026-02-07 18:20:24,532 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:24,844 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  73%|#######2  | 137/188 [01:23<00:35,  1.43it/s]2026-02-07 18:20:26,066 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:26,529 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  76%|#######5  | 142/188 [01:24<00:24,  1.89it/s]Evaluating:  78%|#######7  | 146/188 [01:25<00:15,  2.64it/s]Evaluating:  78%|#######8  | 147/188 [01:25<00:14,  2.86it/s]2026-02-07 18:20:27,888 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:28,221 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  79%|#######8  | 148/188 [01:26<00:18,  2.15it/s]2026-02-07 18:20:28,633 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:28,950 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  80%|########  | 151/188 [01:27<00:14,  2.61it/s]Evaluating:  82%|########1 | 154/188 [01:28<00:11,  2.92it/s]2026-02-07 18:20:30,119 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:30,445 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  82%|########2 | 155/188 [01:28<00:12,  2.54it/s]2026-02-07 18:20:31,132 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:31,440 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  85%|########5 | 160/188 [01:29<00:08,  3.38it/s]2026-02-07 18:20:32,216 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:32,577 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  86%|########6 | 162/188 [01:31<00:10,  2.47it/s]Evaluating:  88%|########8 | 166/188 [01:31<00:06,  3.39it/s]2026-02-07 18:20:34,391 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:34,751 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  89%|########8 | 167/188 [01:33<00:08,  2.43it/s]2026-02-07 18:20:35,993 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:36,418 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  89%|########9 | 168/188 [01:35<00:13,  1.53it/s]Evaluating:  92%|#########2| 173/188 [01:35<00:05,  2.54it/s]Evaluating:  93%|#########2| 174/188 [01:36<00:05,  2.60it/s]2026-02-07 18:20:38,202 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-2026-02-07 18:20:38,548 - INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
-Evaluating:  93%|#########3| 175/188 [01:37<00:06,  2.02it/s]Evaluating:  96%|#########5| 180/188 [01:38<00:02,  2.83it/s]Evaluating:  97%|#########7| 183/188 [01:41<00:02,  1.92it/s]Evaluating:  98%|#########7| 184/188 [01:41<00:02,  1.80it/s]Evaluating:  98%|#########8| 185/188 [01:42<00:01,  2.00it/s]Evaluating:  99%|#########8| 186/188 [02:40<00:22, 11.05s/it]2026-02-07 18:22:20,897 - ERROR - ragas.executor - Exception raised in Job[53]: TimeoutError()
-Evaluating:  99%|#########9| 187/188 [03:19<00:16, 16.71s/it]Evaluating: 100%|##########| 188/188 [03:42<00:00, 18.18s/it]Evaluating: 100%|##########| 188/188 [03:42<00:00,  1.18s/it]
-2026-02-07 18:22:45,269 - INFO - __main__ - Phase 4 report saved to evaluation_results\ragas_phase4.json
-2026-02-07 18:22:45,272 - INFO - __main__ - Checkpoint removed
-
-================================================================================
-  PHASE 4 EVALUATION REPORT  |  Model: gemini-2.0-flash-lite
-  Samples: 47  |  Improvements: Prompt + Classification + Fallback
-================================================================================
-
-  OVERALL SCORES
-  ------------------------------------------------------------
-  Metric                         Score
-  Faithfulness                   0.475
-  Answer Relevancy               0.082
-  Context Precision              0.746
-  Context Recall                 0.617
-
-  SCORES BY CATEGORY
-  ----------------------------------------------------------------------------
-  Category   Count   Faithful  Relevancy  Precision     Recall
-  ----------------------------------------------------------------------------
-  simple        12      0.347      0.246      0.760      0.667
-  complex       12      0.612      0.000      0.649      0.458
-  noisy         11      0.369      0.074      0.711      0.773
-  conversational    12      0.564      0.000      0.863      0.583
-  ----------------------------------------------------------------------------
-================================================================================
-

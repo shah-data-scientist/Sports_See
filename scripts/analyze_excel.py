@@ -69,7 +69,7 @@ def analyze_excel_structure(file_path: str) -> None:
 
 
 if __name__ == "__main__":
-    file_path = sys.argv[1] if len(sys.argv) > 1 else "inputs/regular NBA.xlsx"
+    file_path = sys.argv[1] if len(sys.argv) > 1 else "data/inputs/regular NBA.xlsx"
 
     if not Path(file_path).exists():
         print(f"Error: File not found: {file_path}")

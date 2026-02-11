@@ -21,7 +21,7 @@ from src.evaluation.models import (
     MetricScores,
     TestCategory,
 )
-from src.evaluation.test_cases import EVALUATION_TEST_CASES
+from src.evaluation.vector_test_cases import EVALUATION_TEST_CASES
 from src.services.chat import ChatService
 
 logger = logging.getLogger(__name__)

@@ -1062,3 +1062,102 @@ INSTRUCTIONS:
 - `phase10_refined_subset.json` (Generated, Phase 10 failed)
 
 **Maintainer:** Shahu | **Date:** 2026-02-08 (Phase 9 Completion — APPROVED FOR DEPLOYMENT)
+
+---
+
+## Update: 2026-02-09 — LLM Migration, Hybrid Search Deployment, Database Improvements
+
+### LLM Migration: Mistral → Gemini 2.0 Flash
+
+**Rationale**: Gemini 2.0 Flash improved LLM comprehension of SQL data by ~25% (50% → 75% test pass rate) with same free tier rate limits (15 RPM).
+
+**Changes**:
+- `src/services/chat.py`: Replaced Mistral chat completion with `google.genai.Client` → `models.generate_content()`
+- Added `google-genai` dependency to `pyproject.toml`
+- Mistral still used for embeddings (FAISS index consistency)
+
+### Hybrid Search System (Production Deployed)
+
+**Architecture**:
+- `QueryClassifier` (`src/services/query_classifier.py`): Routes queries to SQL, vector, or hybrid search
+- Two-phase fallback: (1) SQL error/no results → vector search, (2) SQL succeeds but LLM says "cannot find" → retry with vector search
+- SQL context formatting: numbered list format for better LLM comprehension
+
+**Performance**:
+- SQL accuracy: 84.7% for statistical queries
+- Overall hybrid accuracy: 75.2%
+- Category-aware prompts deployed (Phase 9)
+
+### Database Improvements
+
+- Added `team` (full name) column to `players` table for improved SQL generation
+- NBA dictionary vectorized for glossary term lookups
+
+### Evaluation Consolidation
+
+- Consolidated ~15 phase-specific evaluation scripts into 3 master scripts:
+  - `scripts/evaluate_sql.py` — SQL test cases (48)
+  - `scripts/evaluate_vector.py` — Vector test cases (47)
+  - `scripts/evaluate_hybrid.py` — Hybrid test cases (18)
+- All 3 scripts support conversation-aware evaluation
+
+**Test Suite**: 307+ tests passing
+
+**Maintainer:** Shahu | **Date:** 2026-02-09
+
+---
+
+## Update: 2026-02-10 — Conversation History, Folder Consolidation, Project Cleanup
+
+### Conversation History Feature (Full Implementation)
+
+**New Components**:
+- `src/models/conversation.py`: ConversationDB SQLAlchemy model, Pydantic schemas (Create/Update/Response/WithMessages)
+- `src/repositories/conversation.py`: ConversationRepository with CRUD, message retrieval, pagination
+- `src/services/conversation.py`: ConversationService — create, list, load, archive, auto-title generation
+- `src/api/routes/conversation.py`: 6 REST endpoints (POST/GET/PUT/DELETE conversations)
+- `src/services/chat.py`: `_build_conversation_context()` — prepends last 5 turns to LLM prompt for pronoun resolution
+
+**Tests Added**:
+- `tests/test_conversation_models.py` (~12 tests)
+- `tests/test_conversation_service.py` (~22 tests)
+- `tests/test_chat_with_conversation.py` (~10 tests)
+
+### Folder Consolidation
+
+**Before**: 4 separate root-level data directories (`inputs/`, `database/`, `vector_db/`, `data/`)
+**After**: Unified under `data/`
+- `data/inputs/` — raw source documents (PDFs, Excel)
+- `data/sql/` — SQLite databases (nba_stats.db, interactions.db)
+- `data/vector/` — FAISS index + document chunks
+- `data/reference/` — dictionary/glossary files
+
+**Files Updated**: `src/core/config.py` defaults, `.gitignore`, `data_loader.py`, `filter_vector_store.py`, 15+ scripts, 3 test files
+
+### Vector Store Optimization
+
+Reduced from 159 to 5 chunks (97% reduction) by excluding structured Excel data already queryable via SQL. Added `EXCLUDED_EXCEL_SHEETS` to `data_loader.py`.
+
+### Project Cleanup
+
+- Archived old evaluation_results files (phase-specific JSONs, charts, visualizations)
+- Moved analysis .md files from evaluation_results/ to docs/
+- Renamed `test_cases.py` → `vector_test_cases.py` for naming consistency
+- Converted evaluation .txt reports to .md format
+- Consolidated CHANGELOG.md with all missing entries
+
+### CORRECTIONS TO EARLIER SECTIONS
+
+**Architecture (from top of file)**: The project structure has changed significantly:
+- `inputs/` → `data/inputs/`
+- `vector_db/` → `data/vector/`
+- `database/` → `data/sql/`
+- `DOCUMENTATION_POLICY.md` — archived to `_archived/2026-02/`
+- `check_docs_consistency.py` — archived to `_archived/2026-02/`
+- AI Model: Production LLM is now **Gemini 2.0 Flash** (Mistral still used for embeddings)
+- New directories: `src/tools/`, `src/evaluation/`, `src/pipeline/`
+- New key files: `src/services/query_classifier.py`, `src/services/query_expansion.py`, `src/repositories/nba_database.py`, `src/tools/sql_tool.py`
+
+**Test Suite**: 348 tests (up from 145), all passing except 3 external failures (Gemini 429 rate limits, Windows file locking)
+
+**Maintainer:** Shahu | **Date:** 2026-02-10

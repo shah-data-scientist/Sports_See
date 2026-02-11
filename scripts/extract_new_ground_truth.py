@@ -12,7 +12,7 @@ if sys.platform == "win32":
     import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-conn = sqlite3.connect('database/nba_stats.db')
+conn = sqlite3.connect('data/sql/nba_stats.db')
 conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 
