@@ -115,22 +115,44 @@ docs/_build/
 docs/.doctrees/
 site/
 
-# Root-level test/debug files
+# Test/Debug/Analysis files (all locations)
+# Root level (temporary files)
 /test_*.py
+/_test_*.py
 /check_*.py
 /debug_*.py
+/_*.py
+/_*.txt
+/_*.md
+# In scripts/ subdirectory (underscore prefix = temporary/internal)
+scripts/_*.py
+scripts/test_*.py
+scripts/check_*.py
+scripts/debug_*.py
+scripts/retry_*.py
+scripts/fix_*.py
+scripts/merge_*.py
+scripts/run_*_sample_*.py
+scripts/global_policy/
+# In tests/ subdirectory (except test_*.py which are valid tests)
+tests/_*.py
+tests/debug_*.py
 
 # Archived directories
 _archived/
-_archived_scripts/
+_archived_*/
+*_archived/
 scripts/_working/
 tests/_archived/
-*_archived/
 
-# Evaluation test/subset files (intermediate results)
+# Evaluation artifacts (timestamped results, checkpoints, subsets)
+evaluation_results/*_20*.json
+evaluation_results/*_phase*.json
+evaluation_checkpoint*.json
+*_checkpoint.json
 *_subset_results.json
 *_test_subset.json
-evaluation_checkpoint*.json
+phase*.json
 
 # OS
 Thumbs.db

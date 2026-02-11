@@ -200,6 +200,7 @@ class ChatService:
         api_key: str | None = None,
         model: str | None = None,
         enable_sql: bool = True,
+        enable_vector_fallback: bool = True,
         conversation_history_limit: int = 5,
     ):
         """Initialize chat service.
@@ -211,12 +212,14 @@ class ChatService:
             api_key: Google API key (default from settings)
             model: Chat model name (default from settings)
             enable_sql: Enable SQL tool for statistical queries (default: True)
+            enable_vector_fallback: Enable fallback to vector search when SQL fails (default: True)
             conversation_history_limit: Number of previous turns to include in context (default: 5)
         """
         self._api_key = api_key or settings.google_api_key
         self._model = model or "gemini-2.0-flash"  # Upgraded from flash-lite for better comprehension
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
+        self._enable_vector_fallback = enable_vector_fallback
         self._conversation_history_limit = conversation_history_limit
 
         # Dependencies (lazy initialization)
@@ -616,6 +619,7 @@ class ChatService:
         sql_success = False  # Track SQL success
         sql_context = ""
         vector_context = ""
+        generated_sql = None  # Track generated SQL for Phase 2 analysis
 
         # Statistical query → SQL tool
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
@@ -623,6 +627,11 @@ class ChatService:
                 try:
                     logger.info(f"Routing to SQL tool (query_type: {query_type.value})")
                     sql_result = self.sql_tool.query(query)
+
+                    # Capture generated SQL for evaluation/analysis
+                    if sql_result["sql"]:
+                        generated_sql = sql_result["sql"]
+                        logger.debug(f"Generated SQL: {generated_sql}")
 
                     if sql_result["error"]:
                         logger.warning(f"SQL query failed: {sql_result['error']} - falling back to vector search")
@@ -641,12 +650,12 @@ class ChatService:
                     sql_failed = True
 
         # Contextual/Hybrid query → Vector search
-        # Also fallback to vector if SQL failed for STATISTICAL queries
+        # Also fallback to vector if SQL failed for STATISTICAL queries (when fallback enabled)
         # OR always add vector search for HYBRID queries
         should_use_vector = (
             query_type == QueryType.CONTEXTUAL or
             query_type == QueryType.HYBRID or
-            (query_type == QueryType.STATISTICAL and sql_failed)
+            (query_type == QueryType.STATISTICAL and sql_failed and self._enable_vector_fallback)
         )
 
         if should_use_vector:
@@ -749,4 +758,5 @@ class ChatService:
             model=self._model,
             conversation_id=request.conversation_id,
             turn_number=request.turn_number,
+            generated_sql=generated_sql,
         )

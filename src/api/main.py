@@ -2,9 +2,13 @@
 FILE: main.py
 STATUS: Active
 RESPONSIBILITY: FastAPI application factory with middleware, CORS, and exception handlers
-LAST MAJOR UPDATE: 2026-02-06
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
+
+# CRITICAL: Set before any imports to prevent FAISS + torch OpenMP conflict
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 import logging
 import time
@@ -37,7 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     logger.info("Starting up application...")
 
-    # Initialize chat service
+    # Initialize chat service (enable_vector_fallback defaults to True)
     service = ChatService()
     set_chat_service(service)
 
