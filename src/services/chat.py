@@ -280,7 +280,7 @@ class ChatService:
             conversation_history_limit: Number of previous turns to include in context (default: 5)
         """
         self._api_key = api_key or settings.google_api_key
-        self._model = model or "gemini-2.0-flash"  # Upgraded from flash-lite for better comprehension
+        self._model = model or "gemini-1.5-pro"  # Upgraded to Pro for better reasoning on complex analysis
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
         self._enable_vector_fallback = enable_vector_fallback
