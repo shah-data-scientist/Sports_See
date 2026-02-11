@@ -1,12 +1,13 @@
 """
-FILE: test_conversation_service.py
+FILE: test_conversation.py
 STATUS: Active
 RESPONSIBILITY: Tests for ConversationService business logic
-LAST MAJOR UPDATE: 2026-02-09
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -81,7 +82,9 @@ class TestConversationService:
     def test_list_conversations(self, service):
         """Test listing conversations."""
         conv1 = service.start_conversation(title="First")
+        time.sleep(0.01)
         conv2 = service.start_conversation(title="Second")
+        time.sleep(0.01)
         conv3 = service.start_conversation(title="Third")
 
         conversations = service.list_conversations()

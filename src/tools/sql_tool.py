@@ -2,12 +2,13 @@
 FILE: sql_tool.py
 STATUS: Active
 RESPONSIBILITY: LangChain SQL agent for querying NBA statistics database
-LAST MAJOR UPDATE: 2026-02-10
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
 import logging
 import sqlite3
+import time
 from pathlib import Path
 
 from langchain_community.utilities import SQLDatabase
@@ -18,6 +19,49 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _retry_on_rate_limit(func, max_retries: int = 3, initial_delay: float = 2.0):
+    """Retry a function with exponential backoff on rate limit errors.
+
+    Args:
+        func: Callable to retry
+        max_retries: Maximum retry attempts
+        initial_delay: Initial delay in seconds
+
+    Returns:
+        Result from successful function call
+
+    Raises:
+        Exception: If all retries exhausted or non-rate-limit error
+    """
+    delay = initial_delay
+
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except Exception as e:
+            error_str = str(e)
+            is_rate_limit = "429" in error_str or "RESOURCE_EXHAUSTED" in error_str.upper()
+
+            if not is_rate_limit:
+                # Not a rate limit error, raise immediately
+                raise
+
+            if attempt >= max_retries:
+                logger.error("SQL generation rate limit after %d retries", max_retries)
+                raise
+
+            # Wait with exponential backoff
+            wait_time = min(delay, 30.0)
+            logger.warning(
+                "SQL generation rate limit (attempt %d/%d), retrying in %.1fs",
+                attempt + 1,
+                max_retries + 1,
+                wait_time
+            )
+            time.sleep(wait_time)
+            delay *= 2
 
 
 def _load_dictionary_from_db(db_path: str) -> list[dict[str, str | None]]:
@@ -229,6 +273,11 @@ IMPORTANT RULES:
 8. For "per game" stats (PPG, RPG, APG), ALWAYS divide by gp: ROUND(CAST(ps.column AS FLOAT) / ps.gp, 1)
 9. For percentage-based rankings (fg_pct, ts_pct, efg_pct, ft_pct, three_pct), add WHERE ps.gp >= 20 to exclude low-sample players with inflated stats
 10. ALL percentage columns (fg_pct, three_pct, ft_pct, efg_pct, ts_pct, usg_pct, etc.) are stored as 0-100 scale (e.g., 45.2 means 45.2%, NOT 0.452). Use thresholds like ts_pct > 60 (not 0.6)
+11. For ranking queries asking about "top players" or superlatives, ALWAYS use appropriate LIMIT:
+    - Superlatives ("most", "highest", "best") without plural → LIMIT 1
+    - "top N" with specific number → LIMIT N
+    - "top players" without number → LIMIT 5 (reasonable default)
+    - Comparison of multiple players → LIMIT 5-10 for manageable results
 
 EXAMPLES:""",
             suffix="\n\nNow generate a SIMPLE, DIRECT SQL query for this question.\nUser question: {input}\nSQL query:",
@@ -254,8 +303,10 @@ EXAMPLES:""",
         """
         logger.info(f"Generating SQL for question: {question}")
 
-        # Generate SQL using LLM
-        response = self.sql_chain.invoke({"input": question})
+        # Generate SQL using LLM with retry logic for rate limits
+        response = _retry_on_rate_limit(
+            lambda: self.sql_chain.invoke({"input": question})
+        )
 
         # Extract SQL from response
         sql = response.content.strip()

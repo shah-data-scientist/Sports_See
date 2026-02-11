@@ -462,16 +462,10 @@ class RedditThreadChunker:
 
         # Step 4: Extract comments from AFTER first Partager (skip post area)
         # The zone between Partager and first Répondre contains ad noise,
-        # so we skip to after the first Répondre to get clean comments.
+        # but extract_comments is robust enough to find the first valid username.
         partager_pos = cleaned_text.find("Partager")
         if partager_pos >= 0:
-            after_partager = cleaned_text[partager_pos + len("Partager"):]
-            # Skip first segment (ad block + first contaminated comment)
-            first_repondre = re.search(r"R[éeè]?pondre\b", after_partager, re.IGNORECASE)
-            if first_repondre:
-                comment_text = after_partager[first_repondre.end():]
-            else:
-                comment_text = after_partager
+            comment_text = cleaned_text[partager_pos + len("Partager"):]
         else:
             comment_text = cleaned_text
         comments = self.extract_comments(comment_text)

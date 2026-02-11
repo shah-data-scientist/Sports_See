@@ -370,46 +370,64 @@ class TestMetadataBoost:
             text="Reddit discussion.",
             metadata={
                 "type": "reddit_thread",
-                "avg_comment_upvotes": 50,
+                "comment_upvotes": 50,
+                "min_comment_upvotes_in_post": 0,
+                "max_comment_upvotes_in_post": 100,
                 "post_upvotes": 100,
-                "has_nba_official": 0,
+                "min_post_upvotes_global": 0,
+                "max_post_upvotes_global": 200,
+                "is_nba_official": 0,
             },
         )
         boost = VectorStoreRepository._compute_metadata_boost(chunk)
-        # Comment: min(50/100, 2.0) = 0.5
-        # Post: min(100/250, 2.0) = 0.4
-        # Total: 0.9
-        assert boost == pytest.approx(0.9, abs=0.01)
+        # Comment: 2.0 * (50-0)/(100-0) = 1.0
+        # Post: 1.0 * (100-0)/(200-0) = 0.5
+        # Total: 1.5
+        assert boost == pytest.approx(1.5, abs=0.01)
 
-    def test_nba_official_boost_4_percent(self):
-        """NBA official accounts add 4% boost."""
+    def test_nba_official_boost_2_percent(self):
+        """NBA official accounts add 2% boost."""
         chunk = DocumentChunk(
             id="reddit_official",
             text="NBA official comment.",
             metadata={
                 "type": "reddit_thread",
-                "avg_comment_upvotes": 0,
+                "comment_upvotes": 0,
+                "min_comment_upvotes_in_post": 0,
+                "max_comment_upvotes_in_post": 0,
                 "post_upvotes": 0,
-                "has_nba_official": 1,
+                "min_post_upvotes_global": 0,
+                "max_post_upvotes_global": 0,
+                "is_nba_official": 1,
             },
         )
         boost = VectorStoreRepository._compute_metadata_boost(chunk)
-        assert boost == pytest.approx(4.0)
+        # Official: +2.0
+        # Others: 0.0
+        assert boost == pytest.approx(2.0)
 
-    def test_boost_components_capped(self):
-        """Each component is capped: comments 2%, post 2%, official 4% = max 8%."""
+    def test_boost_components_max_5_percent(self):
+        """Each component adds up: comments 2% + post 1% + official 2% = max 5%."""
         chunk = DocumentChunk(
             id="reddit_max",
             text="Max boost Reddit chunk.",
             metadata={
                 "type": "reddit_thread",
-                "avg_comment_upvotes": 999,  # capped at 2.0
-                "post_upvotes": 9999,  # capped at 2.0
-                "has_nba_official": 1,  # +4.0
+                "comment_upvotes": 100,
+                "min_comment_upvotes_in_post": 0,
+                "max_comment_upvotes_in_post": 100,
+                "post_upvotes": 100,
+                "min_post_upvotes_global": 0,
+                "max_post_upvotes_global": 100,
+                "is_nba_official": 1,
             },
         )
         boost = VectorStoreRepository._compute_metadata_boost(chunk)
-        assert boost == pytest.approx(8.0)
+        # Comment: 2.0 * 1.0 = 2.0
+        # Post: 1.0 * 1.0 = 1.0
+        # Official: 2.0
+        # Total: 5.0
+        assert boost == pytest.approx(5.0)
 
     def test_search_applies_boost_and_reranks(self, tmp_path):
         """Search re-ranks results based on metadata boost."""
@@ -430,9 +448,13 @@ class TestMetadataBoost:
             metadata={
                 "source": "reddit.pdf",
                 "type": "reddit_thread",
-                "avg_comment_upvotes": 200,
-                "post_upvotes": 500,
-                "has_nba_official": 1,
+                "comment_upvotes": 100,
+                "min_comment_upvotes_in_post": 0,
+                "max_comment_upvotes_in_post": 100,
+                "post_upvotes": 100,
+                "min_post_upvotes_global": 0,
+                "max_post_upvotes_global": 100,
+                "is_nba_official": 1,
             },
         )
 
@@ -450,11 +472,24 @@ class TestMetadataBoost:
         results = repo.search(query, k=2)
         chunks_returned = [c.id for c, _ in results]
 
-        # Reddit chunk should be re-ranked higher due to +8% boost
-        # Standard raw ~99%, Reddit raw ~90% + 8% boost = ~98%
-        # Standard still higher, but Reddit should be boosted closer
-        # (exact values depend on normalization)
+        # Reddit chunk should be re-ranked higher due to +5% boost (was 8%)
+        # Standard raw ~99%
+        # Reddit raw ~90% + 5% boost = ~95%
+        # NOTE: 95% < 99%, so standard might still win if 5% isn't enough.
+        # Let's adjust embeddings closer to flip rank or adjust k.
+        # If std=0.95, reddit=0.92 + 0.05 = 0.97 > 0.95.
+        
+        # Let's assume the previous test logic relied on +8%.
+        # If we have +5%, we need the gap to be smaller than 5%.
+        # std=0.99, reddit=0.95 is 4% gap. 0.95+0.05 = 1.00 > 0.99.
+        # So it should still work with 0.90 if we account for normalization.
+        
+        # Verify results
         assert len(results) == 2
-        # Verify boost was applied: Reddit score should be higher than raw
-        reddit_score = next(s for c, s in results if c.id == "reddit_1")
-        assert reddit_score > 90  # Raw ~90%, boosted should be higher
+        # We don't assert reddit is first here as logic changed slightly,
+        # but we verify boosting happened.
+        
+        reddit_result = next((c, s) for c, s in results if c.id == "reddit_1")
+        # Ensure score is boosted ( > raw score)
+        # Raw score for 0.90/1.0 cosine is approx 0.9.
+        assert reddit_result[1] > 90.0

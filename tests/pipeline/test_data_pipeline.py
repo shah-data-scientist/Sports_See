@@ -1,8 +1,8 @@
 """
-FILE: test_pipeline.py
+FILE: test_data_pipeline.py
 STATUS: Active
-RESPONSIBILITY: Tests for data preparation pipeline logic with mocked services
-LAST MAJOR UPDATE: 2026-02-06
+RESPONSIBILITY: Tests for data preparation pipeline logic with mocked services (includes integration tests)
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
@@ -254,3 +254,135 @@ class TestDataPipelineRun:
 
             assert result.documents_loaded == 0
             assert "No documents found" in result.errors
+
+
+# Integration Tests (formerly test_data_pipeline_integration.py)
+
+
+class TestDataPipelineLoad:
+    """Integration tests for DataPipeline load stage."""
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    @patch("src.pipeline.data_pipeline.load_and_parse_files")
+    def test_load_stage_returns_documents(self, mock_load, mock_embed, mock_vs):
+        """Test load stage returns parsed documents."""
+        mock_load.return_value = [
+            {"page_content": "Some NBA content here", "metadata": {"source": "test.pdf"}},
+        ]
+
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        input_data = LoadStageInput(input_dir="test_inputs")
+        result = pipeline.load(input_data)
+
+        assert result.document_count == 1
+        assert len(result.documents) == 1
+        assert result.documents[0].page_content == "Some NBA content here"
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    @patch("src.pipeline.data_pipeline.load_and_parse_files")
+    def test_load_stage_skips_empty_docs(self, mock_load, mock_embed, mock_vs):
+        """Test load stage skips empty documents."""
+        mock_load.return_value = [
+            {"page_content": "", "metadata": {}},
+            {"page_content": "   ", "metadata": {}},
+            {"page_content": "Valid content here", "metadata": {}},
+        ]
+
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        input_data = LoadStageInput(input_dir="test_inputs")
+        result = pipeline.load(input_data)
+
+        assert result.document_count == 1
+
+
+class TestDataPipelineClean:
+    """Integration tests for DataPipeline clean stage."""
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    def test_clean_removes_short_documents(self, mock_embed, mock_vs):
+        """Test clean stage removes short documents."""
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        docs = [
+            RawDocument(page_content="short", metadata={}),
+            RawDocument(page_content="This is a long enough document to pass filtering.", metadata={}),
+        ]
+        result = pipeline.clean(docs)
+
+        assert len(result.documents) == 1
+        assert result.removed_count == 1
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    def test_clean_computes_total_chars(self, mock_embed, mock_vs):
+        """Test clean stage computes total character count."""
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        docs = [
+            RawDocument(page_content="A" * 100, metadata={}),
+            RawDocument(page_content="B" * 200, metadata={}),
+        ]
+        result = pipeline.clean(docs)
+
+        assert result.total_chars == 300
+
+
+class TestDataPipelineAnalyzeContent:
+    """Integration tests for content analysis."""
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    def test_player_stats_detection(self, mock_embed, mock_vs):
+        """Test detection of player stats content."""
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        text = "LeBron James scored 25 PTS with 10 AST and 8 REB in the game."
+        result = pipeline._analyze_chunk_content(text)
+        assert result == "player_stats"
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    def test_discussion_detection(self, mock_embed, mock_vs):
+        """Test detection of discussion content."""
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        text = "The evolution of modern basketball has been truly remarkable in many ways."
+        result = pipeline._analyze_chunk_content(text)
+        assert result == "discussion"
+
+
+class TestDataPipelineFilterLowQuality:
+    """Integration tests for quality filtering."""
+
+    @patch("src.pipeline.data_pipeline.VectorStoreRepository")
+    @patch("src.pipeline.data_pipeline.EmbeddingService")
+    def test_filters_high_nan_chunks(self, mock_embed, mock_vs):
+        """Test filtering of chunks with high NaN density."""
+        pipeline = DataPipeline(
+            embedding_service=mock_embed.return_value,
+            vector_store=mock_vs.return_value,
+        )
+        chunks = [
+            ChunkData(id="good", text="A" * 200, metadata={}),
+            ChunkData(id="bad", text="NaN " * 100, metadata={}),
+        ]
+        filtered = pipeline._filter_low_quality_chunks(chunks)
+        assert len(filtered) == 1
+        assert filtered[0].id == "good"

@@ -114,6 +114,22 @@ class ChatRequest(BaseModel):
         return v
 
 
+class Visualization(BaseModel):
+    """Visualization data for statistical queries.
+
+    Attributes:
+        pattern: Detected visualization pattern (top_n, comparison, etc.)
+        viz_type: Type of visualization (horizontal_bar, radar, scatter, etc.)
+        plot_json: Plotly figure as JSON string (for programmatic use)
+        plot_html: Plotly figure as HTML (for direct embedding)
+    """
+
+    pattern: str = Field(description="Detected query pattern")
+    viz_type: str = Field(description="Type of visualization")
+    plot_json: str = Field(description="Plotly figure as JSON")
+    plot_html: str = Field(description="Plotly figure as HTML")
+
+
 class ChatResponse(BaseModel):
     """Response from the chat endpoint.
 
@@ -124,6 +140,8 @@ class ChatResponse(BaseModel):
         processing_time_ms: Processing time in milliseconds
         conversation_id: Conversation ID
         turn_number: Turn number in conversation
+        generated_sql: Generated SQL query (if applicable)
+        visualization: Optional visualization for statistical queries
     """
 
     answer: str = Field(description="AI-generated response")
@@ -148,6 +166,14 @@ class ChatResponse(BaseModel):
     turn_number: int = Field(
         default=1,
         description="Turn number in conversation",
+    )
+    generated_sql: str | None = Field(
+        default=None,
+        description="Generated SQL query (if SQL tool was used)",
+    )
+    visualization: Visualization | None = Field(
+        default=None,
+        description="Visualization data for statistical queries",
     )
 
     model_config = {"json_schema_extra": {"example": {

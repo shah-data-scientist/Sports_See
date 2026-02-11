@@ -11,7 +11,7 @@ import logging
 from fastapi import APIRouter, Depends, Query
 
 from src.api.dependencies import get_chat_service
-from src.models.chat import ChatRequest, ChatResponse, SearchResult
+from src.models.chat import ChatRequest, ChatResponse, SearchResult, Visualization
 from src.services.chat import ChatService
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,6 @@ router = APIRouter()
 
 @router.post(
     "/chat",
-    response_model=ChatResponse,
     summary="Chat with RAG",
     description="Send a question and get an AI-powered answer based on the knowledge base. "
     "Supports conversation context by optionally providing conversation_id and turn_number "

@@ -1,8 +1,8 @@
 """
-FILE: test_evaluation.py
+FILE: test_models.py
 STATUS: Active
 RESPONSIBILITY: Tests for RAGAS evaluation module with mocked API calls
-LAST MAJOR UPDATE: 2026-02-06
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -19,7 +19,7 @@ from src.evaluation.models import (
     MetricScores,
     TestCategory,
 )
-from src.evaluation.vector_test_cases import EVALUATION_TEST_CASES
+from src.evaluation.test_cases.vector_test_cases import EVALUATION_TEST_CASES
 
 
 class TestEvaluationModels:
@@ -120,7 +120,7 @@ class TestTestCases:
         assert len(conv) >= 10
 
     def test_statistics_function(self):
-        from src.evaluation.vector_test_cases import get_test_case_statistics
+        from src.evaluation.test_cases.vector_test_cases import get_test_case_statistics
 
         stats = get_test_case_statistics()
         assert stats["total"] == len(EVALUATION_TEST_CASES)
@@ -130,11 +130,12 @@ class TestTestCases:
 
 
 class TestGenerateSamples:
-    @patch("src.evaluation.evaluate_ragas._build_generation_client", return_value=None)
-    @patch("src.evaluation.evaluate_ragas._load_checkpoint")
-    @patch("src.evaluation.evaluate_ragas._save_checkpoint")
-    def test_generate_samples(self, mock_save_checkpoint, mock_load_checkpoint, mock_build_client):
-        from src.evaluation.evaluate_ragas import generate_samples
+    @patch("src.evaluation.runners.evaluate_ragas.time.sleep")
+    @patch("src.evaluation.runners.evaluate_ragas._build_generation_client", return_value=None)
+    @patch("src.evaluation.runners.evaluate_ragas._load_checkpoint")
+    @patch("src.evaluation.runners.evaluate_ragas._save_checkpoint")
+    def test_generate_samples(self, mock_save_checkpoint, mock_load_checkpoint, mock_build_client, mock_sleep):
+        from src.evaluation.runners.evaluate_ragas import generate_samples
 
         # Mock checkpoint to return empty list (no cached samples)
         mock_load_checkpoint.return_value = []
@@ -157,7 +158,7 @@ class TestGenerateSamples:
 
 class TestBuildReport:
     def test_build_report(self):
-        from src.evaluation.evaluate_ragas import _build_report
+        from src.evaluation.runners.evaluate_ragas import _build_report
 
         mock_result = MagicMock()
         mock_result.to_pandas.return_value = pd.DataFrame(
@@ -210,7 +211,7 @@ class TestBuildReport:
 
 class TestPrintComparisonTable:
     def test_print_table_runs(self, capsys):
-        from src.evaluation.evaluate_ragas import print_comparison_table
+        from src.evaluation.runners.evaluate_ragas import print_comparison_table
 
         report = EvaluationReport(
             overall_scores=MetricScores(

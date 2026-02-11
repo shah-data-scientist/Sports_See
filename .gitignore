@@ -81,8 +81,8 @@ inputs/
 vector_db/
 database/
 
-# Model files (large)
-models/
+# Model files (large) — root-level only
+/models/
 *.pth
 *.pt
 *.h5

@@ -2,12 +2,13 @@
 FILE: chat.py
 STATUS: Active
 RESPONSIBILITY: Hybrid RAG pipeline (SQL + Vector Search) orchestration service
-LAST MAJOR UPDATE: 2026-02-08
+LAST MAJOR UPDATE: 2026-02-11
 MAINTAINER: Shahu
 """
 
 import logging
 import time
+from typing import Callable, TypeVar
 
 from google import genai
 from google.genai.errors import ClientError
@@ -16,15 +17,78 @@ from src.core.config import settings
 from src.core.exceptions import IndexNotFoundError, LLMError
 from src.core.observability import logfire
 from src.core.security import sanitize_query, validate_search_params
-from src.models.chat import ChatRequest, ChatResponse, SearchResult
+from src.models.chat import ChatRequest, ChatResponse, SearchResult, Visualization
 from src.repositories.feedback import FeedbackRepository
 from src.repositories.vector_store import VectorStoreRepository
 from src.services.embedding import EmbeddingService
 from src.services.query_classifier import QueryClassifier, QueryType
 from src.services.query_expansion import QueryExpander
+from src.services.visualization_service import VisualizationService
 from src.tools.sql_tool import NBAGSQLTool
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+
+
+def retry_with_exponential_backoff(
+    func: Callable[[], T],
+    max_retries: int = 3,
+    initial_delay: float = 2.0,
+    max_delay: float = 30.0,
+) -> T:
+    """Retry a function with exponential backoff on rate limit errors.
+
+    Args:
+        func: Function to retry
+        max_retries: Maximum number of retry attempts
+        initial_delay: Initial delay in seconds (doubles each retry)
+        max_delay: Maximum delay in seconds
+
+    Returns:
+        Result from successful function call
+
+    Raises:
+        LLMError: If all retries exhausted or non-rate-limit error occurs
+    """
+    delay = initial_delay
+
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except ClientError as e:
+            # Check if this is a rate limit error (429)
+            error_str = str(e)
+            is_rate_limit = "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+
+            if not is_rate_limit:
+                # Not a rate limit error, raise immediately
+                logger.error("Non-rate-limit Gemini API error: %s", e)
+                raise LLMError(f"LLM API error: {e}") from e
+
+            if attempt >= max_retries:
+                # Exhausted all retries
+                logger.error(
+                    "Rate limit error after %d retries: %s",
+                    max_retries,
+                    e
+                )
+                raise LLMError(
+                    f"Rate limit exceeded after {max_retries} retries. "
+                    "Please try again in a few moments."
+                ) from e
+
+            # Wait with exponential backoff
+            wait_time = min(delay, max_delay)
+            logger.warning(
+                "Rate limit hit (attempt %d/%d), retrying in %.1fs: %s",
+                attempt + 1,
+                max_retries + 1,
+                wait_time,
+                error_str[:100]
+            )
+            time.sleep(wait_time)
+            delay *= 2
 
 
 # System prompt templates
@@ -230,6 +294,7 @@ class ChatService:
         self._sql_tool: NBAGSQLTool | None = None
         self._query_classifier: QueryClassifier | None = None
         self._query_expander: QueryExpander | None = None
+        self._visualization_service: VisualizationService | None = None
 
     @property
     def vector_store(self) -> VectorStoreRepository:
@@ -287,6 +352,13 @@ class ChatService:
         if self._query_expander is None:
             self._query_expander = QueryExpander()
         return self._query_expander
+
+    @property
+    def visualization_service(self) -> VisualizationService:
+        """Get visualization service (lazy initialization)."""
+        if self._visualization_service is None:
+            self._visualization_service = VisualizationService()
+        return self._visualization_service
 
     @property
     def feedback_repository(self) -> FeedbackRepository:
@@ -495,26 +567,26 @@ class ChatService:
         try:
             logger.info("Calling Gemini LLM with model %s", self._model)
 
-            response = self.client.models.generate_content(
-                model=self._model,
-                contents=prompt,
-                config={
-                    "temperature": self._temperature,
-                    "top_p": 0.95,
-                    "top_k": 40,
-                    "max_output_tokens": 2048,
-                },
-            )
+            # Wrap API call with retry logic for rate limit handling
+            def _call_llm():
+                return self.client.models.generate_content(
+                    model=self._model,
+                    contents=prompt,
+                    config={
+                        "temperature": self._temperature,
+                        "top_p": 0.95,
+                        "top_k": 40,
+                        "max_output_tokens": 2048,
+                    },
+                )
+
+            response = retry_with_exponential_backoff(_call_llm)
 
             if response.text:
                 return response.text
 
             logger.warning("Gemini returned no text")
             return "I could not generate a response."
-
-        except ClientError as e:
-            logger.error("Gemini API error: %s", e)
-            raise LLMError(f"LLM API error: {e}") from e
 
         except Exception as e:
             logger.error("LLM call failed: %s", e)
@@ -554,26 +626,26 @@ class ChatService:
         try:
             logger.info("Calling Gemini LLM with model %s (hybrid query)", self._model)
 
-            response = self.client.models.generate_content(
-                model=self._model,
-                contents=prompt,
-                config={
-                    "temperature": self._temperature,
-                    "top_p": 0.95,
-                    "top_k": 40,
-                    "max_output_tokens": 2048,
-                },
-            )
+            # Wrap API call with retry logic for rate limit handling
+            def _call_llm():
+                return self.client.models.generate_content(
+                    model=self._model,
+                    contents=prompt,
+                    config={
+                        "temperature": self._temperature,
+                        "top_p": 0.95,
+                        "top_k": 40,
+                        "max_output_tokens": 2048,
+                    },
+                )
+
+            response = retry_with_exponential_backoff(_call_llm)
 
             if response.text:
                 return response.text
 
             logger.warning("Gemini returned no text")
             return "I could not generate a response."
-
-        except ClientError as e:
-            logger.error("Gemini API error: %s", e)
-            raise LLMError(f"LLM API error: {e}") from e
 
         except Exception as e:
             logger.error("LLM call failed: %s", e)
@@ -620,6 +692,7 @@ class ChatService:
         sql_context = ""
         vector_context = ""
         generated_sql = None  # Track generated SQL for Phase 2 analysis
+        sql_result_data = None  # Track SQL results for visualization
 
         # Statistical query → SQL tool
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
@@ -644,6 +717,8 @@ class ChatService:
                         sql_context = self._format_sql_results(sql_result["results"])
                         logger.info(f"SQL query returned {len(sql_result['results'])} rows")
                         sql_success = True
+                        # Store SQL results for visualization
+                        sql_result_data = sql_result["results"]
 
                 except Exception as e:
                     logger.error(f"SQL tool error: {e} - falling back to vector search")
@@ -750,6 +825,36 @@ class ChatService:
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
 
+        # Generate visualization for statistical queries with SQL results
+        visualization = None
+        if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
+            if sql_success and sql_result_data:
+                try:
+                    logger.info("Generating visualization for SQL results")
+                    viz_data = self.visualization_service.generate_visualization(
+                        query=query,
+                        sql_result=sql_result_data
+                    )
+                    visualization = Visualization(
+                        pattern=viz_data["pattern"],
+                        viz_type=viz_data["viz_type"],
+                        plot_json=viz_data["plot_json"],
+                        plot_html=viz_data["plot_html"],
+                    )
+                    logger.info(f"Visualization generated: {viz_data['viz_type']} ({viz_data['pattern']})")
+                except Exception as e:
+                    # Don't fail the whole request if visualization fails
+                    logger.warning(f"Visualization generation failed: {e}")
+            else:
+                # Log why visualization was skipped
+                if not sql_success:
+                    logger.info(
+                        "Visualization skipped: SQL query failed, used vector fallback. "
+                        "Visualizations require structured data from SQL results."
+                    )
+                elif not sql_result_data:
+                    logger.info("Visualization skipped: SQL query returned no results")
+
         return ChatResponse(
             answer=answer,
             sources=search_results if request.include_sources else [],
@@ -759,4 +864,5 @@ class ChatService:
             conversation_id=request.conversation_id,
             turn_number=request.turn_number,
             generated_sql=generated_sql,
+            visualization=visualization,
         )

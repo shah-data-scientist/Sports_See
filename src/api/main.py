@@ -32,6 +32,13 @@ from src.services.chat import ChatService
 
 logger = logging.getLogger(__name__)
 
+# Configure logging to ensure application logs are visible
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s - %(name)s - %(message)s',
+    force=True  # Override any existing configuration
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:

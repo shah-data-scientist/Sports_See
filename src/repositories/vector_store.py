@@ -297,8 +297,8 @@ class VectorStoreRepository:
                 temp_index = faiss.IndexFlatIP(filtered_vectors.shape[1])
                 temp_index.add(filtered_vectors)
 
-                # Search more if filtering by min_score
-                search_k = k * 3 if min_score is not None else k
+                # ALWAYS retrieve more candidates to allow metadata boost to work
+                search_k = max(k * 3, 15)  # At least 15 candidates for re-ranking
                 search_k = min(search_k, len(filtered_indices))
                 scores, indices = temp_index.search(query_embedding, search_k)
 
@@ -307,7 +307,8 @@ class VectorStoreRepository:
                 scores = scores[0]
             else:
                 # Normal search without metadata filtering
-                search_k = k * 3 if min_score is not None else k
+                # ALWAYS retrieve more candidates to allow metadata boost to work
+                search_k = max(k * 3, 15)  # At least 15 candidates for re-ranking
                 scores, indices = self._index.search(query_embedding, search_k)
                 original_indices = indices[0]
                 scores = scores[0]
