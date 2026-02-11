@@ -1,456 +1,568 @@
 # Sports_See - NBA RAG Assistant
 
-An intelligent NBA statistics assistant powered by Mistral AI and FAISS vector search. Get accurate, context-aware answers about NBA teams, players, and statistics using Retrieval-Augmented Generation (RAG).
+An intelligent NBA statistics assistant powered by **Hybrid RAG** (SQL + Vector Search), **Mistral AI**, and **Google Gemini**. Get accurate, context-aware answers about NBA teams, players, and statistics through intelligent query routing and automatic visualization generation.
 
-## Features
+**Version**: 2.0 | **Last Updated**: 2026-02-11
 
-- 🔍 **Semantic Search**: FAISS-powered vector similarity search
-- 🤖 **AI-Powered Responses**: Mistral AI for embeddings and chat completion
-- 📄 **Multi-Format Support**: PDF, Word, TXT, CSV, Excel with OCR for scanned documents
-- 💬 **Interactive Chat**: Streamlit-based conversational interface
-- 🗨️ **Conversation History**: Multi-turn conversations with context retention and pronoun resolution
-- 👍 **Feedback Collection**: Thumbs up/down with optional comments for continuous improvement
-- ⚙️ **Customizable**: Configurable models, chunk sizes, and search parameters
+---
 
-## Quick Start
+## 🎯 Key Features
+
+- 🔍 **Hybrid RAG Pipeline**: Intelligent routing between SQL (structured data), Vector Search (documents), and Hybrid (combined)
+- 📊 **Automatic Visualizations**: Plotly charts generated for statistical queries
+- 🗣️ **Conversation-Aware**: Multi-turn conversations with context retention
+- 🗄️ **SQL Query Generation**: Natural language to SQL with 48-field NBA database (569 players)
+- 📄 **Multi-Format Support**: PDF (OCR), Word, TXT, CSV, Excel
+- ⚡ **Rate Limit Resilience**: Automatic retry with exponential backoff
+- 👍 **Feedback Collection**: Thumbs up/down with comments
+- 🎨 **Streamlit UI**: Clean, responsive interface
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- [Poetry](https://python-poetry.org/) (dependency manager)
-- Mistral API key from [console.mistral.ai](https://console.mistral.ai/)
+- **Python 3.11+** and **Poetry** ([install](https://python-poetry.org/docs/#installation))
+- **API Keys**: [Gemini](https://makersuite.google.com/app/apikey) + [Mistral](https://console.mistral.ai/)
 
 ### Installation
 
 ```bash
-# 1. Clone repository
+# Clone and install
 git clone <repository-url>
 cd Sports_See
-
-# 2. Install Poetry (if not already installed)
-# Windows (PowerShell)
-(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-
-# macOS/Linux
-curl -sSL https://install.python-poetry.org | python3 -
-
-# 3. Install dependencies
 poetry install
 
-# 4. Configure environment
-# Create .env file and add your Mistral API key:
-# MISTRAL_API_KEY=your_api_key_here
+# Configure environment
+cp .env.example .env
+# Edit .env and add:
+# GOOGLE_API_KEY=your_gemini_key
+# MISTRAL_API_KEY=your_mistral_key
+
+# Build vector index and load NBA data (first time only)
+poetry run python scripts/rebuild_vector_index.py  # ~2 minutes
+poetry run python scripts/load_excel_to_db.py
 ```
 
-### Usage
+### Run Application
 
+**Streamlit UI** (Recommended):
 ```bash
-# 1. Place your documents in inputs/ directory
-mkdir -p inputs
-# Add your PDF, DOCX, TXT, CSV, or XLSX files
-
-# 2. Build vector index
-poetry run python src/indexer.py
-
-# 3. Launch chat application
-poetry run streamlit run src/chat_app.py
+poetry run streamlit run src/ui/app.py
+# Open http://localhost:8501
 ```
 
-Open browser to [http://localhost:8501](http://localhost:8501)
-
-## Conversation History
-
-The chatbot now supports **multi-turn conversations** with full context retention, enabling natural follow-up questions with pronoun resolution.
-
-### Features
-
-- **Context Retention**: System remembers previous exchanges (last 5 turns)
-- **Pronoun Resolution**: Resolves "he", "his", "they" based on conversation history
-- **Persistent Sessions**: Conversations survive browser refresh
-- **Session Management**: Create, load, archive conversations via sidebar
-
-### Example Usage
-
-```
-User: "Who has the most points in NBA history?"
-Bot: "LeBron James has the most points with 40,474."
-
-User: "What about his assists?"  ← "his" resolves to LeBron James
-Bot: "LeBron James has 10,420 assists in his career."
-
-User: "How many rebounds did he get?"  ← "he" still refers to LeBron
-Bot: "LeBron James recorded 10,550 rebounds."
+**FastAPI Server**:
+```bash
+poetry run uvicorn src.api.main:app --reload --port 8002
+# API docs: http://localhost:8002/docs
 ```
 
-### UI Controls
+---
 
-In the **sidebar**, you'll find:
-- **🆕 New Conversation** - Start fresh conversation
-- **Conversation Selector** - Load from last 20 conversations
-- **📂 Load** - Retrieve full conversation history
-- **🗄️ Archive** - Archive current conversation
+## 💡 Usage Examples
 
-### API Usage
+**Statistical Queries** (SQL + Visualization):
+```
+👤 "Who are the top 5 scorers?"
+🤖 [Horizontal bar chart with player names and points]
 
+👤 "Compare Jokić and Embiid stats"
+🤖 [Radar chart comparing multiple categories]
+```
+
+**Conversational Queries**:
+```
+👤 "Who scored the most points this season?"
+🤖 "Shai Gilgeous-Alexander with 2,485 points."
+
+👤 "What about his assists?"  ← Resolves "his" to Shai
+🤖 "He had 497 assists this season."
+```
+
+**Contextual Queries** (Vector Search):
+```
+👤 "What is the Lakers team culture like?"
+🤖 [Searches documents and provides context-based answer with sources]
+```
+
+**API Usage**:
 ```python
-# Chat with conversation context
-POST /api/v1/chat
-{
-    "query": "What about his assists?",
-    "conversation_id": "uuid-here",  # Optional
-    "turn_number": 2,
-    "k": 5,
-    "include_sources": true
-}
+import requests
+
+response = requests.post(
+    "http://localhost:8002/api/v1/chat",
+    json={
+        "query": "Who are the top 3 scorers?",
+        "conversation_id": "optional-uuid",  # For multi-turn
+        "include_sources": True
+    }
+)
+
+data = response.json()
+print(data["answer"])
+print(data["visualization"])  # Plotly chart JSON if generated
 ```
 
-See [CONVERSATION_HISTORY_FEATURE.md](CONVERSATION_HISTORY_FEATURE.md) for complete documentation.
+---
 
-## Project Structure
+## 🏗️ Architecture
+
+### Hybrid RAG Pipeline
 
 ```
-Sports_See/
-├── src/                      # Source code
-│   ├── chat_app.py          # Streamlit chat interface
-│   ├── indexer.py           # Document indexing script
-│   └── utils/               # Utility modules
-│       ├── config.py        # Configuration
-│       ├── data_loader.py   # Document parsing
-│       └── vector_store.py  # FAISS vector store
-├── tests/                   # Test suite
-├── docs/                    # Documentation
-│   ├── API.md              # API reference
-│   ├── SETUP.md            # Detailed setup guide
-│   └── ARCHITECTURE.md     # System architecture
-├── inputs/                  # Source documents (place files here)
-├── vector_db/              # FAISS index & chunks (auto-generated)
-├── notebooks/              # Jupyter notebooks
-├── pyproject.toml          # Poetry configuration
-├── PROJECT_MEMORY.md       # Project overview & requirements
-└── README.md               # This file
+User Query
+    ↓
+Query Classifier (Pattern Detection)
+    ↓
+┌─────────────────┬─────────────────┬──────────────────┐
+│ STATISTICAL     │ CONTEXTUAL      │ HYBRID           │
+│ (SQL + LLM)     │ (Vector + LLM)  │ (SQL + Vector)   │
+└─────────────────┴─────────────────┴──────────────────┘
+    ↓                   ↓                    ↓
+SQL Generation      Embedding Gen       Both Paths
+    ↓                   ↓                    ↓
+DB Execution        FAISS Search        Merged Context
+    ↓                   ↓                    ↓
+Retry on Fail →   Context Building    ← Fallback Chain
+    ↓                   ↓                    ↓
+┌───────────────────────────────────────────────────────┐
+│         Gemini LLM (with retry logic)                 │
+└───────────────────────────────────────────────────────┘
+    ↓
+Visualization Generation (if SQL + statistical)
+    ↓
+Response to User
 ```
 
-## Supported Document Formats
+### Query Routing
 
-| Format | Extension | OCR Support |
-|--------|-----------|-------------|
-| PDF    | .pdf      | ✓ (EasyOCR) |
-| Word   | .docx     | ✗           |
-| Text   | .txt      | ✗           |
-| CSV    | .csv      | ✗           |
-| Excel  | .xlsx, .xls | ✗         |
+| Type | Example | Routing | Visualization |
+|------|---------|---------|---------------|
+| **STATISTICAL** | "Top 5 scorers" | SQL → LLM | ✅ Yes |
+| **CONTEXTUAL** | "Lakers culture?" | Vector → LLM | ❌ No |
+| **HYBRID** | "Best defenders and why?" | SQL + Vector → LLM | ✅ Yes |
 
-## Configuration
+### Data Structure
 
-Edit [src/utils/config.py](src/utils/config.py) or set environment variables:
-
-```python
-# AI Models
-EMBEDDING_MODEL = "mistral-embed"
-MODEL_NAME = "mistral-small-latest"  # or mistral-large-latest
-
-# Chunking
-CHUNK_SIZE = 1500        # characters
-CHUNK_OVERLAP = 150      # characters
-
-# Search
-SEARCH_K = 5             # number of results
+```
+data/
+├── inputs/          # Source documents (PDFs, Excel)
+├── sql/            # SQLite databases
+│   ├── nba_stats.db        # 569 players, 48 stat columns
+│   └── interactions.db     # Chat history + feedback
+├── vector/         # FAISS index
+│   ├── faiss_index.pkl     # Vector embeddings
+│   └── document_store.pkl  # Document chunks (5 Reddit posts)
+└── reference/      # Dictionary/glossary files
 ```
 
-Environment variables (in `.env`):
+---
 
-```bash
-MISTRAL_API_KEY=your_api_key_here
-MODEL_NAME=mistral-large-latest  # optional override
-SEARCH_K=10                      # optional override
+## 🧪 Testing
+
+### Test Suite (688 Tests)
+
 ```
-
-## Development
-
-### Setup Development Environment
-
-```bash
-# Install with dev dependencies
-poetry install
-
-# Run tests
-poetry run pytest
-
-# Code quality checks
-poetry run ruff check .
-poetry run black .
-poetry run mypy src/
-
-# Documentation consistency
-poetry run python check_docs_consistency.py
+tests/
+├── core/           # Config, security, exceptions
+├── models/         # Pydantic validation
+├── services/       # Business logic
+├── repositories/   # Data access
+├── evaluation/     # Evaluation test suite
+├── pipeline/       # ETL pipeline tests
+├── integration/    # Component interactions
+├── e2e/            # Full workflows
+└── ui/             # Browser automation (Playwright)
 ```
 
 ### Running Tests
 
 ```bash
+# Fast unit tests (~20 seconds)
+poetry run pytest tests/core/ tests/models/ -v
+
+# Integration + E2E (~5-10 minutes)
+poetry run pytest tests/integration/ tests/e2e/ -v
+
+# UI tests (~30-40 minutes, requires Streamlit running)
+poetry run streamlit run src/ui/app.py  # Terminal 1
+poetry run pytest tests/ui/ -v          # Terminal 2
+
 # All tests with coverage
-poetry run pytest --cov=src tests/
+poetry run pytest tests/ --cov=src --cov-report=html
+```
 
-# Specific test file
-poetry run pytest tests/test_vector_store.py
+### Test Categories
 
-# With verbose output
-poetry run pytest -v
+| Category | Count | Speed | LLM Required |
+|----------|-------|-------|--------------|
+| **Unit** | 500+ | Fast (~30s) | ❌ |
+| **Integration** | 20+ | Medium (~2-5min) | ⚠️ Some |
+| **E2E** | 10+ | Medium (~5-10s) | ✅ |
+| **UI** | 65+ | Slow (~30-40min) | ✅ |
+| **Evaluation** | 100+ | Very Slow (~1-2hr) | ✅ |
+
+**UI Test Coverage**:
+- Basic UI (title, input, sidebar, settings)
+- Loading states and processing time
+- Feedback system (thumbs up/down with comments)
+- Conversation management (new, clear, load, archive)
+- Visualizations (bar charts, radar charts, interactive features)
+- Error handling (rate limits, network errors, edge cases)
+- Security (SQL injection, XSS prevention)
+- Accessibility (keyboard navigation, screen readers)
+
+---
+
+## 📊 Evaluation System
+
+### Dataset Status (205 Total Test Cases)
+
+| Dataset | Count | Ground Truth Verification | Categories |
+|---------|-------|--------------------------|------------|
+| **SQL** | **80** | 80/80 (100%) via DB | Simple(13), Comparison(7), Aggregation(11), Complex(14), Conversational(25), Noisy(7), Adversarial(3) |
+| **Hybrid** | **50** | 50/50 (100%) via DB | Tier1-4(18), Player Profile(4), Team Comparison(4), Young Talent(3), Historical(3), Contrast(3), Conversational(6), Noisy(3), Defensive/Advanced(3), Team Culture(3) |
+| **Vector** | **75** | Descriptive (RAGAS) | Simple(20), Complex(18), Noisy(25), Conversational(12) |
+
+### Ground Truth Establishment
+
+Each dataset uses a different ground truth methodology:
+
+- **SQL (80 cases)**: Direct database verification. Each test case includes `expected_sql` executed against `data/sql/nba_stats.db`, with exact results stored in `ground_truth_data`. Verified automatically by `verify_all_sql_ground_truth.py`.
+- **Hybrid (50 cases)**: Database verification + descriptive analysis. SQL component verified against DB; contextual component written manually based on Reddit document content. Verified by `verify_all_hybrid_ground_truth.py`.
+- **Vector (75 cases)**: LLM-assisted descriptive expectations. Ground truth describes expected retrieval behavior (source documents, similarity ranges, key content) rather than exact values. Validated during evaluation via RAGAS metrics.
+
+### Running Evaluations
+
+```bash
+# SQL Evaluation (80 test cases)
+poetry run python -m src.evaluation.runners.run_sql_evaluation
+
+# Vector Evaluation (75 test cases with RAGAS metrics)
+poetry run python -m src.evaluation.runners.run_vector_evaluation
+
+# Hybrid Evaluation (50 test cases)
+poetry run python -m src.evaluation.runners.run_hybrid_evaluation
+```
+
+### Ground Truth Verification
+
+```bash
+# Verify SQL ground truth against database (expected: 80/80)
+poetry run python src/evaluation/verification/verify_all_sql_ground_truth.py
+
+# Verify Hybrid ground truth against database (expected: 50/50)
+poetry run python src/evaluation/verification/verify_all_hybrid_ground_truth.py
+```
+
+### Evaluation Metrics
+
+**SQL Evaluation**:
+- Ground truth verified: 80/80 (100%)
+- Classification accuracy target: 97%+
+- Retry logic handles 429 rate limit errors
+
+**Vector Evaluation (RAGAS)**:
+- Faithfulness, Answer Relevancy, Context Precision, Context Recall
+- Ground truth: descriptive expectations per test case
+
+**Hybrid Evaluation**:
+- SQL + Vector fallback testing
+- Player profiles, team comparisons, conversational threads
+- Ground truth verified: 50/50 (100%)
+
+---
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+src/
+├── api/                # FastAPI (routes, dependencies)
+├── core/               # Config, exceptions, security, observability
+├── models/             # Pydantic models (chat, conversation, feedback, nba)
+├── services/           # Business logic (chat, conversation, embedding, query, visualization)
+├── repositories/       # Data access (conversation, feedback, nba, vector)
+├── tools/              # SQL generation tool (LangChain agent)
+├── ui/                 # Streamlit interface
+├── pipeline/           # Data processing (ETL, chunking)
+├── evaluation/         # Evaluation system
+│   ├── runners/        # SQL, Vector, Hybrid evaluation scripts
+│   ├── analysis/       # Quality analysis modules
+│   ├── test_cases/     # Test case definitions
+│   └── verification/   # Ground truth verification
+└── utils/              # Data loader utilities
+```
+
+### Configuration
+
+**Environment Variables** (`.env`):
+```bash
+# Required
+GOOGLE_API_KEY=your_gemini_key
+MISTRAL_API_KEY=your_mistral_key
+
+# Optional (defaults provided)
+CHAT_MODEL=gemini-2.0-flash
+EMBEDDING_MODEL=mistral-embed
+TEMPERATURE=0.1
+SEARCH_K=5
+```
+
+**Config File** ([src/core/config.py](src/core/config.py)):
+```python
+class Settings(BaseSettings):
+    chat_model: str = "gemini-2.0-flash"
+    embedding_model: str = "mistral-embed"
+    chunk_size: int = 1500
+    chunk_overlap: int = 150
+    search_k: int = 5
+    data_dir: Path = Path("data")
+```
+
+### Development Workflow
+
+```bash
+# Setup
+poetry install
+poetry shell
+
+# Code quality
+poetry run ruff check .       # Linting
+poetry run black .            # Formatting
+poetry run mypy src/          # Type checking
+
+# Database operations
+poetry run python scripts/load_excel_to_db.py       # Load NBA data
+poetry run python scripts/rebuild_vector_index.py   # Rebuild index
+
+# Run evaluations
+poetry run python -m src.evaluation.runners.run_sql_evaluation
+poetry run python -m src.evaluation.runners.run_vector_evaluation
+poetry run python -m src.evaluation.runners.run_hybrid_evaluation
 ```
 
 ### Code Style
 
-This project follows:
-- **Functional programming** paradigm (prefer functions over classes)
-- **Python 3.10+ type hints** (`list[str]` not `List[str]`)
-- **Google-style docstrings**
-- **Black** formatting (100 char line length)
-- **Ruff** linting
-- **pytest** for testing
-
-## How It Works
-
-### RAG Pipeline
-
-```
-User Query
-    ↓
-Embedding Generation (Mistral API)
-    ↓
-Vector Search (FAISS)
-    ↓
-Context Retrieval (Top-K chunks)
-    ↓
-Prompt Construction
-    ↓
-LLM Response (Mistral API)
-    ↓
-Display to User
-```
-
-### Indexing Pipeline
-
-```
-Documents (inputs/)
-    ↓
-Text Extraction (PyPDF2, python-docx, pandas)
-    ↓
-Reddit Detection (optional)
-    ↓
-Chunking (Reddit-aware OR RecursiveCharacterTextSplitter)
-    ↓
-Embedding Generation (Mistral API)
-    ↓
-FAISS Index Creation
-    ↓
-Persistence (vector_db/)
-```
-
-## Reddit-Specific Chunking Strategy
-
-For Reddit discussion threads (e.g., r/nba posts), the system uses **thread-aware chunking** to preserve conversational context and filter noise.
-
-### Why Thread-Aware Chunking?
-
-Reddit threads are **discussions**, not standalone documents. Breaking them arbitrarily loses context:
-
-❌ **Without thread-aware chunking:**
-- Comments separated from original post → no context
-- Advertisements polluting vector database → poor retrieval
-- Random 1500-char splits → mid-comment breaks
-- User asks "What did people think about Randle?" → retrieves isolated comments without knowing which post
-
-✅ **With thread-aware chunking:**
-- Post + top 5 comments grouped together → full context
-- Ads filtered out → cleaner data
-- Semantic units preserved → better retrieval
-- Comments sorted by upvotes → quality prioritization
-
-### Reddit Chunking Algorithm
-
-```python
-# Automatic detection
-if is_reddit_content(text):
-    # 1. Filter advertisements
-    cleaned = remove_ads(text)  # "Sponsoris(e)", promotional URLs, UI noise
-
-    # 2. Extract post metadata
-    post = extract_post(cleaned)  # title, author, upvotes
-
-    # 3. Parse comments
-    comments = extract_comments(cleaned)  # text, author, upvotes
-
-    # 4. Sort by quality
-    top_comments = sort_by_upvotes(comments)[:5]
-
-    # 5. Create semantic chunk
-    chunk = f"""
-    === REDDIT POST ===
-    Title: {post.title}
-    Author: u/{post.author}
-    Upvotes: {post.upvotes}
-
-    === TOP COMMENTS (5) ===
-    [1] u/{comment1.author} ({upvotes} upvotes): {comment1.text}
-    [2] u/{comment2.author} ({upvotes} upvotes): {comment2.text}
-    ...
-    """
-```
-
-### Advertisement Filtering
-
-Removes noise patterns commonly found in Reddit PDFs:
-
-- **Sponsored content**: "Sponsoris(e)", "Sponsored", advertiser names
-- **Promotional CTAs**: "En savoir plus", "Learn more" + URLs
-- **Reddit UI elements**: "Rejoindre la conversation", "Trier par", "Rechercher des commentaires"
-- **OCR artifacts**: Misspelled UI text from image-based PDFs
-
-### NBA Official Content Weighting
-
-Comments from official NBA accounts (`u/NBA`, `u/Lakers`, `u/Celtics`, etc.) are tagged with `[NBA OFFICIAL]` metadata for potential future weighting in retrieval.
-
-### Example Transformation
-
-**Before (arbitrary 1500-char split):**
-```
-...xometry_europe Sponsoris(e) "Si seulement je l'avais su plus tôt"
-En savoir plus pages.xometry.eu NotWD Ant's been a machine as
-expected; but Randle's genuinely beating the beyblade allegations...
-[cuts off mid-comment]
-```
-
-**After (thread-aware chunk):**
-```
-=== REDDIT POST ===
-Title: Who are teams in the playoffs that have impressed you?
-Author: u/MannerSuperb
-Upvotes: 31 | Total Comments: 236
-
-=== TOP COMMENTS (5) ===
-[1] u/NotWD (186 upvotes): Ant's been a machine as expected; but Randle's
-genuinely beating the beyblade allegations and it's so nice to see
-
-[2] u/MG_MN (55 upvotes): Randle has been a revelation. His bully ball
-has worked perfectly on offense...
-
-[3] u/IGbaby245 (32 upvotes): Randle knows he can out muscle most guys...
-```
-
-### Fallback to Standard Chunking
-
-Non-Reddit documents (Word, CSV, text PDFs) use standard `RecursiveCharacterTextSplitter` with 1500-char chunks and 150-char overlap.
-
-### Detection Criteria
-
-Text is classified as Reddit content if it contains **at least 2 of:**
-- `r/nba` or `r/[subreddit]` patterns
-- "Répondre" / "Rpondre" (Reply button, French)
-- "Partager" (Share button, French)
-- "upvotes?" patterns
-- "commentaires?" (Comments, French)
-
-### Configuration
-
-Adjust in [src/pipeline/reddit_chunker.py](src/pipeline/reddit_chunker.py):
-
-```python
-RedditThreadChunker(
-    max_comments_per_chunk=5  # Top N comments to include
-)
-```
-
-## Documentation
-
-- [API Reference](docs/API.md) - Detailed API documentation
-- [Setup Guide](docs/SETUP.md) - Comprehensive setup instructions
-- [Architecture](docs/ARCHITECTURE.md) - System design and decisions
-- [Project Memory](PROJECT_MEMORY.md) - Project overview and requirements
-- [Documentation Policy](DOCUMENTATION_POLICY.md) - Documentation standards
-
-## Troubleshooting
-
-### Import Errors
-
-```bash
-# Ensure using Poetry environment
-poetry shell
-
-# Or prefix commands with poetry run
-poetry run python src/indexer.py
-```
-
-### API Key Not Found
-
-Check `.env` file exists and contains valid key:
-
-```bash
-# Verify file exists (Windows)
-dir .env
-
-# Check format
-type .env
-```
-
-### OCR Not Working
-
-Install OCR dependencies:
-
-```bash
-poetry add easyocr
-```
-
-### Out of Memory
-
-Reduce batch size in `src/utils/config.py`:
-
-```python
-EMBEDDING_BATCH_SIZE = 16  # reduce from 32
-```
-
-## Contributing
-
-1. Read [DOCUMENTATION_POLICY.md](DOCUMENTATION_POLICY.md)
-2. Create feature branch
-3. Write tests for new features
-4. Ensure all tests pass
-5. Update documentation
-6. Submit pull request
-
-## Technology Stack
-
-**Core:**
-- Python 3.11+
-- Poetry (dependency management)
-- Streamlit 1.44.1 (web UI)
-
-**AI/ML:**
-- Mistral AI 0.4.2 (embeddings + chat)
-- FAISS-CPU 1.10.0 (vector search)
-- LangChain 0.3.23 (text splitting)
-
-**Document Processing:**
-- PyPDF2, PyMuPDF (PDF)
-- EasyOCR (OCR)
-- python-docx (Word)
-- pandas (CSV/Excel)
-
-**Development:**
-- pytest (testing)
-- ruff (linting)
-- black (formatting)
-- mypy (type checking)
-
-## License
-
-[Your License Here]
-
-## Contact
-
-**Maintainer:** Shahu
-
-For issues and questions, please use the GitHub issue tracker.
+- **Type Hints**: Python 3.10+ style (`list[str]`)
+- **Docstrings**: Google style (Args, Returns, Raises)
+- **Line Length**: 100 characters (Black)
+- **File Headers**: 5-field header required
+- **Import Order**: stdlib → third-party → local
 
 ---
 
-**Powered by Mistral AI & FAISS | Data-driven NBA Insights**
+## 🔧 Production Features
+
+### Rate Limit Handling
+
+**Exponential Backoff Retry** (implemented 2026-02-11):
+- Max 3 retries with 2s → 4s → 8s delays
+- Applied to Gemini LLM calls and SQL generation
+- **Impact**: 95% success for simple queries, 70-80% for multi-query conversations
+
+### Automatic Visualizations
+
+**Top N Queries** → Horizontal Bar Chart:
+```python
+"Who are the top 5 scorers?"  # Returns Plotly horizontal bar chart
+```
+
+**Comparison Queries** → Radar Chart:
+```python
+"Compare Jokić and Embiid stats"  # Returns radar chart
+```
+
+**Smart Fallback**:
+- Visualizations require successful SQL results
+- SQL fails → falls back to vector search → no visualization
+- Enhanced logging explains skipped visualizations
+
+### Security
+
+- Input validation (XSS, SQL injection prevention)
+- Path traversal blocking
+- URL validation (protocol, localhost, private IPs)
+- Sensitive data masking in logs
+- Graceful error handling with user-friendly messages
+
+### Observability
+
+**Logfire Integration** ([src/core/observability.py](src/core/observability.py)):
+- Request latency tracking
+- Query classification accuracy
+- SQL execution success rate
+- Visualization generation rate
+- Feedback statistics (positive/negative ratio)
+
+---
+
+## 🐛 Troubleshooting
+
+### Rate Limit Errors (429)
+**Symptom**: "RESOURCE_EXHAUSTED" errors
+**Solution**:
+- Gemini free tier: 15 RPM (requests per minute)
+- Wait 5-10 minutes between heavy usage
+- Automatic retry built-in (2s → 4s → 8s)
+- Consider paid tier: $0.001/request, 360 RPM
+
+### Import Errors
+**Symptom**: `ModuleNotFoundError`
+**Solution**: Always use `poetry run python script.py` or `poetry shell`
+
+### Vector Index Not Found
+**Symptom**: "Index not found" warning
+**Solution**: `poetry run python scripts/rebuild_vector_index.py`
+
+### SQL Database Empty
+**Symptom**: "No players found"
+**Solution**:
+```bash
+poetry run python scripts/load_excel_to_db.py
+poetry run python scripts/verify_sql_database.py
+```
+
+### Visualizations Not Generated
+**Causes**:
+1. SQL query failed (check logs for retry attempts)
+2. Rate limit hit → falls back to vector search
+3. Query misclassified as contextual
+
+**Check logs**:
+```bash
+INFO - Visualization skipped: SQL query failed, used vector fallback
+INFO - Generating visualization for SQL results
+```
+
+### UI Tests Fail
+**Solution**:
+- Ensure Streamlit is running first
+- Wait 10-15 minutes for rate limits to reset
+- Run with proper delays between tests
+
+---
+
+## 🚢 Deployment
+
+### Production Checklist
+
+**Environment**:
+- [ ] API keys configured
+- [ ] Database files persisted (`data/sql/`)
+- [ ] Vector index built (`data/vector/`)
+- [ ] Logging configured (Logfire/file-based)
+
+**Dependencies**:
+- [ ] `poetry install --no-dev`
+- [ ] Python 3.11+
+- [ ] 2GB+ memory
+
+**Security**:
+- [ ] Rate limiting configured
+- [ ] HTTPS enabled
+- [ ] CORS configured
+- [ ] Sensitive data not logged
+
+**Monitoring**:
+- [ ] Health check: `/health`
+- [ ] Error tracking (Sentry)
+- [ ] Performance monitoring (Logfire)
+- [ ] Feedback collection working
+
+### Docker Example
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY . /app
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev
+EXPOSE 8002
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8002"]
+```
+
+---
+
+## 📚 Documentation
+
+### Documentation Structure
+
+```
+docs/
+├── ARCHITECTURE.md       # System architecture and data flow
+├── API.md               # REST API reference
+└── EVALUATION_GUIDE.md  # Evaluation system documentation
+```
+
+### Key Files
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history
+- **[PROJECT_MEMORY.md](PROJECT_MEMORY.md)** - Project overview and lessons learned
+
+### Evaluation Reports
+Generated in `evaluation_results/`:
+- `sql_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
+- `vector_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
+- `hybrid_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
+
+---
+
+## 🔄 Recent Updates (2026-02-11)
+
+**Production Changes**:
+- ✅ Exponential backoff retry logic (3 attempts, 2s→4s→8s)
+- ✅ Enhanced visualization logging
+- ✅ Improved error messages
+
+**Testing Improvements**:
+- ✅ 65+ UI tests (Playwright)
+- ✅ Test reorganization (unit/integration/e2e/ui/evaluation)
+- ✅ 688 total tests with comprehensive coverage
+
+**Documentation**:
+- ✅ Single consolidated README
+- ✅ Complete testing and evaluation guides
+- ✅ Production troubleshooting documentation
+
+---
+
+## 👥 Contributing
+
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Write tests (maintain 90%+ coverage)
+3. Ensure all tests pass: `poetry run pytest tests/`
+4. Update documentation (README, docstrings, CHANGELOG)
+5. Commit with clear messages
+6. Create Pull Request
+
+**Code Review Checklist**:
+- [ ] Tests added and passing
+- [ ] Type hints and docstrings complete
+- [ ] CHANGELOG updated
+- [ ] No security vulnerabilities
+
+---
+
+## 📞 Support
+
+**Maintainer**: Shahu
+**Issues**: GitHub issue tracker
+**Documentation**: This README + PROJECT_MEMORY.md
+
+---
+
+## 🙏 Acknowledgments
+
+**Technology Stack**: Google Gemini 2.0 Flash, Mistral AI, FAISS, FastAPI, Streamlit, SQLite, Pytest, Playwright, RAGAS
+
+**Special Thanks**: OpenClassrooms, Mistral AI, Google, Meta
+
+---
+
+**Powered by Hybrid RAG (SQL + Vector Search) | Mistral AI & Google Gemini**
+
+**Version 2.0** | Last Updated: 2026-02-11 | Maintainer: Shahu

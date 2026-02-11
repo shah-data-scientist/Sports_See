@@ -7,6 +7,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Test Suite Reorganization** (2026-02-11): Restructured tests into clear categories for better organization ([tests/](tests/))
+  - **New Structure**: tests/core/, tests/models/, tests/services/, tests/repositories/, tests/integration/, tests/e2e/, tests/ui/
+  - **247+ Tests**: Organized by type (unit: 182, integration: 16, e2e: 8, ui: 65+)
+  - **Documentation**: Comprehensive tests/README.md removed after consolidation into root README
+  - **Preserved History**: Used git mv to maintain file history during reorganization
+- **Exponential Backoff Retry Logic**: Automatic retry handling for Gemini API rate limits (429 errors) across all API calls ([src/services/chat.py](src/services/chat.py), [src/tools/sql_tool.py](src/tools/sql_tool.py))
+  - **Retry Configuration**: Max 3 retries with exponential backoff (2s → 4s → 8s delays), up to 14s total
+  - **Smart Error Detection**: Detects 429/RESOURCE_EXHAUSTED specifically, fails fast on other errors
+  - **User-Friendly Messages**: Clear error messages after exhausting retries
+  - **Production Impact**: ~95% success rate for simple queries, ~70-80% for multi-query conversations
+  - **Applied Everywhere**: ChatService.generate_response(), generate_response_hybrid(), SQLTool.generate_sql()
+  - **Enhanced Logging**: Clear logs of retry attempts with wait times
+  - **Documentation**: [ui_test_screenshots/PRODUCTION_CHANGES_2026-02-11.md](ui_test_screenshots/PRODUCTION_CHANGES_2026-02-11.md)
+- **Comprehensive UI Test Suite**: 65+ Playwright tests covering all Streamlit features ([tests/ui/](tests/ui/))
+  - **3 Test Files**: Visualization (8 tests), Comprehensive (31 tests), Error Handling (26 tests)
+  - **11 Test Categories**: Basic functionality, feedback system, conversation management, visualizations, input validation, security, error handling, state management, accessibility, responsive design, performance
+  - **Security Validation**: SQL injection and XSS attempt tests
+  - **Accessibility Testing**: Keyboard navigation and screen reader compatibility
+  - **Responsive Design**: Mobile (375x667) and tablet (768x1024) viewport tests
+  - **Performance Benchmarks**: Page load < 10s, message rendering < 3s
+  - **Rate Limit Protection**: 5s cooldown between tests, 20s between consecutive queries
+  - **Screenshot Automation**: Captures on failure and key success states
+  - **Comprehensive Documentation**: [tests/ui/README_UI_TESTS.md](tests/ui/README_UI_TESTS.md) with troubleshooting guide, best practices, CI/CD recommendations
+  - **Quick Reference**: [ui_test_screenshots/COMPREHENSIVE_TEST_SUITE_SUMMARY.md](ui_test_screenshots/COMPREHENSIVE_TEST_SUITE_SUMMARY.md)
+  - **Execution Time**: ~30-40 minutes for full suite (with rate limit delays)
+- **Improved Visualization Logging**: Enhanced logging when visualization generation is skipped ([src/services/chat.py](src/services/chat.py))
+  - Distinguishes between SQL failure (vector fallback) vs no results
+  - Better observability for debugging visualization issues
+- **Consolidated Vector Evaluation System**: Production-ready evaluation with API-only processing, checkpointing, and RAGAS metrics ([src/evaluation/run_vector_evaluation.py](src/evaluation/run_vector_evaluation.py))
+  - **API-Only Processing**: Uses TestClient for HTTP API testing without direct service calls - validates full production stack
+  - **Auto-Checkpointing**: Saves progress after EACH query with atomic writes - resumes from checkpoint on failure/rate limits
+  - **RAGAS Metrics Integration**: Faithfulness, Answer Relevancy, Context Precision, Context Recall
+  - **Routing Verification**: Tracks SQL/vector/hybrid classification accuracy, detects misclassifications
+  - **Conversation Support**: Manages conversation IDs for follow-up questions, stores interactions for context
+  - **74 Pure Vector Test Cases**: All test cases from vector_test_cases.py (SIMPLE, COMPLEX, NOISY, CONVERSATIONAL - all vector-appropriate)
+  - **5 Analysis Functions**: Comprehensive quality analysis in `vector_quality_analysis.py` (RAGAS, source quality, response patterns, retrieval performance, category performance)
+  - **2-File Output**: JSON (raw data) + MD (comprehensive report with routing analysis and automated insights)
+  - **43 Tests**: Full test coverage - 25 for analysis functions, 18 for runner (checkpointing, retry logic, report generation)
+  - **97.36% Code Coverage**: Analysis module extensively tested
+  - **Complete Documentation**: README_VECTOR.md with usage guide, metrics reference, architecture diagrams, troubleshooting
+  - **Archived Legacy**: Moved `scripts/evaluate_vector.py` to `_archived/2026-02/scripts/` after integration
+- **Consolidated SQL Evaluation System**: Production-ready evaluation with comprehensive quality metrics ([src/evaluation/run_sql_evaluation.py](src/evaluation/run_sql_evaluation.py))
+  - **Response Quality Analysis**: Error taxonomy (LLM declined, syntax errors), fallback patterns, response metrics
+  - **Query Quality Analysis**: SQL structure (JOINs, aggregations), complexity distribution, column selection patterns
+  - **Single Comprehensive Report**: Eliminates separate Phase 1/Phase 2 reports, generates exactly 2 files (JSON + MD)
+  - **Consolidated Analysis Module**: All 6 analysis functions in `sql_quality_analysis.py` without phase terminology
+  - **Full Test Coverage**: 7 tests for evaluation runner, validates report structure and metrics
+  - **Documentation**: Complete README.md with usage guide, metrics reference, troubleshooting
+- **generated_sql Field**: Added optional `generated_sql` field to ChatResponse for SQL query capture ([src/models/chat.py](src/models/chat.py))
+  - Modified ChatService to capture SQL from SQLTool and pass to response ([src/services/chat.py](src/services/chat.py))
+  - 7 tests for model changes validating serialization and deserialization ([tests/models/test_chat_generated_sql.py](tests/models/test_chat_generated_sql.py))
 - **Conversation History System**: Full conversation persistence with session management ([src/models/conversation.py](src/models/conversation.py), [src/repositories/conversation.py](src/repositories/conversation.py), [src/services/conversation.py](src/services/conversation.py))
 - **Conversation API**: CRUD endpoints for conversations ([src/api/routes/conversation.py](src/api/routes/conversation.py))
 - **Conversation UI**: Sidebar conversation management in Streamlit — new conversation, load, archive ([src/ui/app.py](src/ui/app.py))
@@ -19,7 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Hybrid Search**: Two-phase fallback — SQL first, vector search if SQL fails or returns "cannot find" ([src/services/chat.py](src/services/chat.py))
 - **Category-Aware Prompts**: Phase 9 prompt optimization — different prompts for SIMPLE, COMPLEX, NOISY, CONVERSATIONAL queries ([src/services/chat.py](src/services/chat.py))
 - **Evaluation Test Suites**: 3 separate test case files — SQL (48 cases), Vector (47 cases), Hybrid (18 cases) ([src/evaluation/sql_test_cases.py](src/evaluation/sql_test_cases.py), [src/evaluation/vector_test_cases.py](src/evaluation/vector_test_cases.py), [src/evaluation/hybrid_test_cases.py](src/evaluation/hybrid_test_cases.py))
-- **3 Master Evaluation Scripts**: SQL, Vector, and Hybrid evaluation with conversation support ([scripts/evaluate_sql.py](scripts/evaluate_sql.py), [scripts/evaluate_vector.py](scripts/evaluate_vector.py), [scripts/evaluate_hybrid.py](scripts/evaluate_hybrid.py))
+- **3 Master Evaluation Scripts**: SQL, Vector (consolidated in run_vector_evaluation.py), and Hybrid evaluation with conversation support ([scripts/evaluate_sql.py](scripts/evaluate_sql.py), [src/evaluation/run_vector_evaluation.py](src/evaluation/run_vector_evaluation.py), [scripts/evaluate_hybrid.py](scripts/evaluate_hybrid.py))
 - **E2E Tests**: End-to-end tests for vector, SQL, hybrid flows, and error handling ([tests/test_e2e.py](tests/test_e2e.py))
 - **Conversation Tests**: Model validation, service lifecycle, and chat integration tests ([tests/test_conversation_models.py](tests/test_conversation_models.py), [tests/test_conversation_service.py](tests/test_conversation_service.py), [tests/test_chat_with_conversation.py](tests/test_chat_with_conversation.py))
 - **Classification Tests**: Evaluation routing and misclassification detection ([tests/test_classification_evaluation.py](tests/test_classification_evaluation.py))
@@ -39,6 +90,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **File documentation headers**: All .py files now have 5-field headers
 
 ### Changed
+- **README Consolidation** (2026-02-11): Merged 8 README files into single comprehensive root README.md ([README.md](README.md))
+  - **Before**: 843 lines with duplicate content across multiple README files
+  - **After**: ~500 lines (40% reduction) with no duplicates, rationalized content
+  - **Merged Files**: tests/README.md, tests/ui/README_UI_TESTS.md, tests/e2e/README.md, tests/integration/README.md, src/evaluation/README.md, src/evaluation/README_VECTOR.md
+  - **Improvements**: Removed redundancies, consolidated overlapping sections, streamlined structure
+  - **Impact**: Single source of truth for all project documentation
+- **Root Directory Cleanup** (2026-02-11): Organized root folder per GLOBAL_POLICY.md standards
+  - **Archived**: 10 documentation files moved to _archived/2026-02/root_docs/ (update reports, completion docs)
+  - **Moved**: streamlit_viz_example.py relocated to scripts/
+  - **Removed**: requirements.txt (project uses Poetry), test_results.txt (untracked temp file)
+  - **Result**: Root now contains only README.md, PROJECT_MEMORY.md, CHANGELOG.md
 - **LLM Migration**: Switched from Mistral AI to Gemini 2.0 Flash for response generation — 25% improvement in data comprehension ([src/services/chat.py](src/services/chat.py))
 - **System Prompt**: English-only context headers replacing mixed French/English — fixes "cannot find information" false negatives ([src/services/chat.py](src/services/chat.py))
 - **SQL Context Formatting**: Numbered list format for LLM comprehension — single results use bullet points, limited to top 20 results ([src/services/chat.py](src/services/chat.py))
@@ -53,6 +115,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **.gitignore**: Updated for consolidated data/ directory structure
 
 ### Fixed
+- **Missing File Headers** (2026-02-11): Added 5-field headers to evaluation verification scripts ([src/evaluation/verify_all_hybrid_ground_truth.py](src/evaluation/verify_all_hybrid_ground_truth.py), [src/evaluation/verify_all_sql_ground_truth.py](src/evaluation/verify_all_sql_ground_truth.py))
+  - **Compliance**: Now follows GLOBAL_POLICY.md file documentation standards
+  - **Headers**: FILE, STATUS, RESPONSIBILITY, LAST MAJOR UPDATE, MAINTAINER
 - **French vs English context headers**: Mixed language headers caused LLM to respond "cannot find information" even when data was present
 - **FAISS + torch AVX2 crash**: Lazy-load easyocr only when OCR is needed to avoid process crash on Windows
 - **Windows SQLite file locking**: Added `repo.close()` for proper SQLAlchemy engine disposal in tests
@@ -60,6 +125,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Windows charmap encoding**: Added `encoding="utf-8"` to all `Path.write_text()` calls
 
 ### Removed
+- **Merged README Files** (2026-02-11): Deleted 6 README files after consolidation into root README.md
+  - tests/README.md
+  - tests/ui/README_UI_TESTS.md
+  - tests/e2e/README.md
+  - tests/integration/README.md
+  - src/evaluation/README.md
+  - src/evaluation/README_VECTOR.md
+- **Root Documentation Files** (2026-02-11): Archived 10 documentation files from root to _archived/2026-02/root_docs/
+  - Update reports: _API_EVALUATION_UPDATE.md, _FAISS_CRASH_ANALYSIS.md, _FAISS_FIX_COMPLETE.md, _FINAL_EVALUATION_CONFIG.md, _ONE_TO_ONE_TEST_MAPPING_COMPLETE.md, _SQL_EVALUATION_FIXES.md
+  - Process docs: CLEANUP_INSTRUCTIONS.md, EVALUATION_SCRIPTS_INVENTORY.md, HYBRID_EVALUATION_REFACTOR_COMPLETE.md, VISUALIZATION_INTEGRATION_COMPLETE.md
+  - **Reason**: Root directory cleanup per GLOBAL_POLICY.md (only README.md, PROJECT_MEMORY.md, CHANGELOG.md)
+- **requirements.txt** (2026-02-11): Archived to _archived/2026-02/root_docs/ (project uses Poetry exclusively)
 - **DOCUMENTATION_POLICY.md**: Archived to `_archived/2026-02/` (superseded by GLOBAL_POLICY.md)
 - **check_docs_consistency.py**: Archived to `_archived/2026-02/` (replaced by enforcement scripts)
 - **Redundant evaluation scripts**: Consolidated ~15 phase-specific scripts into 3 master scripts

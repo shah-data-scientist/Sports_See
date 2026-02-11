@@ -116,14 +116,14 @@ docs/.doctrees/
 site/
 
 # Test/Debug/Analysis files (all locations)
-# Root level (temporary files)
+# Root level (temporary files only - patterns with leading / are root-anchored)
 /test_*.py
 /_test_*.py
 /check_*.py
 /debug_*.py
-/_*.py
-/_*.txt
-/_*.md
+/_[a-z]*.py
+/_[a-z]*.txt
+/_[a-z]*.md
 # In scripts/ subdirectory (underscore prefix = temporary/internal)
 scripts/_*.py
 scripts/test_*.py
@@ -134,8 +134,8 @@ scripts/fix_*.py
 scripts/merge_*.py
 scripts/run_*_sample_*.py
 scripts/global_policy/
-# In tests/ subdirectory (except test_*.py which are valid tests)
-tests/_*.py
+# In tests/ subdirectory (only match files with single underscore prefix, not __init__.py)
+tests/_[a-z]*.py
 tests/debug_*.py
 
 # Archived directories

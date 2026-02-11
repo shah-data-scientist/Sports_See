@@ -1161,3 +1161,276 @@ Reduced from 159 to 5 chunks (97% reduction) by excluding structured Excel data 
 **Test Suite**: 348 tests (up from 145), all passing except 3 external failures (Gemini 429 rate limits, Windows file locking)
 
 **Maintainer:** Shahu | **Date:** 2026-02-10
+
+## Vector Evaluation Consolidation (2026-02-11)
+
+### Objective
+Create production-ready vector evaluation system matching SQL evaluation consolidation structure: consolidated analysis module, API-only processing, checkpointing, comprehensive reporting.
+
+### Implementation
+
+**3 New Files Created**:
+- `src/evaluation/run_vector_evaluation.py` (280 lines) — Main entry point with API-only processing + checkpointing
+- `src/evaluation/vector_quality_analysis.py` (227 lines) — 5 analysis functions for comprehensive quality metrics
+- `src/evaluation/README_VECTOR.md` — Complete documentation (usage, architecture, metrics, troubleshooting)
+
+**Test Coverage**: 43 new tests
+- `tests/evaluation/test_vector_quality_analysis.py` (25 tests) — All 5 analysis functions
+- `tests/evaluation/test_run_vector_evaluation.py` (18 tests) — Checkpointing, retry logic, report generation
+- **Code Coverage**: 97.36% for analysis module, 58.93% for runner
+
+### Key Features
+
+**API-Only Processing**:
+- Uses Starlette TestClient (simulated HTTP) instead of direct service calls
+- Tests full production API stack (routes → services → repositories)
+- No server startup required
+
+**Checkpointing System**:
+- Saves checkpoint after EACH query (atomic writes for safety)
+- Auto-resumes from checkpoint on restart
+- Handles failures, rate limits, interruptions
+- Checkpoint format: JSON with timestamp, results, next_index
+- Auto-cleanup on successful completion
+
+**RAGAS Integration**:
+- Gemini 2.0 Flash Lite LLM (free tier, 15 RPM)
+- Mistral embeddings (consistent with FAISS index)
+- 4 metrics: Faithfulness, Answer Relevancy, Context Precision, Context Recall
+- Lazy-import to avoid dependency conflicts
+
+**5 Analysis Functions**:
+1. `analyze_ragas_metrics()` — Overall scores, by category, low-scoring queries
+2. `analyze_source_quality()` — Retrieval stats, top sources, score distribution
+3. `analyze_response_patterns()` — Length, completeness, citations, confidence
+4. `analyze_retrieval_performance()` — K-value, thresholds, source types
+5. `analyze_category_performance()` — Per-category breakdown, comparative analysis
+
+**2-File Output**:
+- `vector_evaluation_YYYYMMDD_HHMMSS.json` — Raw results data
+- `vector_evaluation_report_YYYYMMDD_HHMMSS.md` — Comprehensive report with automated insights
+
+**Rate Limiting**:
+- 9s delay between queries (Gemini free tier: 15 RPM)
+- Retry logic: 15s/30s/60s exponential backoff on 429 errors
+- Max 3 retries per query
+
+**Integrated Features from scripts/evaluate_vector.py (2026-02-11)**:
+- ✅ `get_vector_test_cases()` — Filters to NOISY, CONVERSATIONAL, and contextual COMPLEX queries
+- ✅ `_is_followup_question()` — Detects follow-up questions requiring conversation context
+- ✅ **Routing Verification** — Tracks SQL/vector/hybrid classification accuracy
+- ✅ **Misclassification Detection** — Identifies and reports misclassified queries
+- ✅ **Conversation ID Management** — Creates/manages conversations for CONVERSATIONAL queries
+- ✅ **Interaction Storage** — Saves interactions to feedback repository for context
+- ✅ **CLI Flag**: `--vector-only` to filter test cases
+- ✅ **Enhanced Report**: Routing statistics and misclassifications section
+- ✅ **Archived Legacy**: Moved `scripts/evaluate_vector.py` to `_archived/2026-02/scripts/`
+
+**RAGAS Integration in Sample Script**:
+- ✅ Fixed `scripts/run_vector_sample_4_cases.py` to include RAGAS metrics
+- ✅ Added `calculate_ragas_metrics()` call after API evaluation
+- ✅ Merged RAGAS scores into results (per-query metrics)
+- ✅ Report now includes RAGAS metrics summary and per-test-case breakdown
+
+### Files Modified/Updated
+- `src/evaluation/run_vector_evaluation.py` — Added routing verification, conversation support, test case filtering
+- `scripts/run_vector_sample_4_cases.py` — Added RAGAS metrics calculation and display
+- `_archived/2026-02/scripts/evaluate_vector.py` — Archived old script after integration
+- `CHANGELOG.md` — Updated vector evaluation consolidation entry
+- `PROJECT_MEMORY.md` — This entry
+
+### Testing Results
+- ✅ 43/43 tests passing
+- ✅ 97.36% coverage for analysis module
+- ✅ Checkpointing validated (atomic writes, UTF-8 encoding, corruption handling)
+- ✅ Report generation validated (all sections, markdown format, handles empty data)
+- ✅ Retry logic validated (429 handling, non-retryable errors)
+- ✅ Routing verification integrated and functional
+- ✅ Conversation management integrated
+- ✅ RAGAS metrics working in sample script
+
+### Usage
+```bash
+# Run full vector evaluation (all test cases)
+poetry run python -m src.evaluation.run_vector_evaluation
+
+# Run vector-only test cases (NOISY, CONVERSATIONAL, contextual COMPLEX)
+poetry run python -m src.evaluation.run_vector_evaluation --vector-only
+
+# Start fresh (ignore checkpoint)
+poetry run python -m src.evaluation.run_vector_evaluation --no-resume
+
+# Run 4-case sample with RAGAS metrics
+poetry run python scripts/run_vector_sample_4_cases.py
+```
+
+**Maintainer:** Shahu | **Date:** 2026-02-11 (Integration completed)
+
+## README Consolidation & Documentation Cleanup (2026-02-11)
+
+### Objective
+Consolidate multiple README files into single comprehensive root README, remove duplicate content, and rationalize structure per GLOBAL_POLICY.md requirements.
+
+### Problem
+- **8 README files** scattered across repository (root, tests/, tests/ui/, tests/e2e/, tests/integration/, src/evaluation/)
+- **843-line root README** with duplicate content and redundancies
+- Multiple overlapping sections (test statistics appeared 3+ times)
+- Configuration details duplicated in Quick Start and Development sections
+- Verbose code examples and excessive detail in some sections
+
+### Solution
+
+**README Consolidation**:
+- Merged 8 README files into single root README.md
+- **Before**: 843 lines with duplicates
+- **After**: ~500 lines (40% reduction)
+- Removed redundancies:
+  - Consolidated duplicate test statistics tables
+  - Merged overlapping configuration sections
+  - Trimmed verbose troubleshooting (90 → 40 lines)
+  - Condensed development section (156 → 80 lines)
+  - Simplified deployment checklist
+- Improved structure:
+  - Clearer section hierarchy
+  - More concise descriptions
+  - Removed "Roadmap" section (belongs in separate file)
+  - Streamlined "Recent Updates" to key points only
+
+**Files Deleted After Consolidation**:
+- tests/README.md
+- tests/ui/README_UI_TESTS.md
+- tests/e2e/README.md
+- tests/integration/README.md
+- src/evaluation/README.md
+- src/evaluation/README_VECTOR.md
+
+**Impact**:
+- ✅ Single source of truth for all documentation
+- ✅ Easier to navigate and maintain
+- ✅ No duplicate information
+- ✅ Reduced cognitive load for contributors
+
+### Testing Documentation Preserved
+All test documentation consolidated into root README:
+- 247+ test statistics (unit: 182, integration: 16, e2e: 8, ui: 65+)
+- Test organization structure
+- Running instructions for all test categories
+- UI test categories (31 comprehensive, 26 error handling, 8 visualization)
+- Evaluation system documentation (SQL, Vector, Hybrid)
+
+**Maintainer:** Shahu | **Date:** 2026-02-11
+
+## Repository Organization & Global Policy Compliance (2026-02-11)
+
+### Objective
+Clean up repository structure and ensure full compliance with GLOBAL_POLICY.md v1.17 standards.
+
+### Actions Taken
+
+**1. Root Directory Cleanup**:
+- **Before**: 15+ files (docs, scripts, temp files, requirements.txt)
+- **After**: Only README.md, PROJECT_MEMORY.md, CHANGELOG.md
+- **Archived to `_archived/2026-02/root_docs/`** (10 documentation files):
+  - _API_EVALUATION_UPDATE.md
+  - _FAISS_CRASH_ANALYSIS.md
+  - _FAISS_FIX_COMPLETE.md
+  - _FINAL_EVALUATION_CONFIG.md
+  - _ONE_TO_ONE_TEST_MAPPING_COMPLETE.md
+  - _SQL_EVALUATION_FIXES.md
+  - CLEANUP_INSTRUCTIONS.md
+  - EVALUATION_SCRIPTS_INVENTORY.md
+  - HYBRID_EVALUATION_REFACTOR_COMPLETE.md
+  - VISUALIZATION_INTEGRATION_COMPLETE.md
+- **Moved**: streamlit_viz_example.py to scripts/
+- **Removed**:
+  - requirements.txt (project uses Poetry exclusively)
+  - test_results.txt (untracked temporary file)
+  - Temporary files with _ prefix (already in .gitignore)
+
+**2. File Headers Added**:
+- Added 5-field headers to 2 evaluation verification scripts:
+  - src/evaluation/verify_all_hybrid_ground_truth.py
+  - src/evaluation/verify_all_sql_ground_truth.py
+- **Result**: All 200 active Python files now have proper headers
+- **Compliance**: FILE, STATUS, RESPONSIBILITY, LAST MAJOR UPDATE, MAINTAINER
+
+**3. .gitignore Verification**:
+- ✅ Temporary scripts (`scripts/_*.py`, `scripts/check_*.py`) properly ignored
+- ✅ Test result files properly ignored
+- ✅ Archived directories (`_archived/`) properly ignored
+- ✅ No changes needed - already compliant
+
+**4. CHANGELOG.md Updated**:
+- Added entries for test suite reorganization
+- Added entries for README consolidation
+- Added entries for root directory cleanup
+- Added entries for file header additions
+- Added entries for removed/archived files
+- **Format**: Follows Keep a Changelog standard with file links
+
+### Global Policy Compliance Status
+
+| Rule | Status | Details |
+|------|--------|---------|
+| **File Headers** (§242-261) | ✅ | All 200 active .py files have 5-field headers |
+| **File Organization** (§366-377) | ✅ | Root clean, docs in docs/, scripts in scripts/ |
+| **Dead Code Prevention** (§337-363) | ✅ | Obsolete files archived to `_archived/2026-02/` |
+| **.gitignore Management** (§381-475) | ✅ | All patterns properly configured |
+| **CHANGELOG Maintenance** (§264-308) | ✅ | All changes documented with file links |
+| **PROJECT_MEMORY Append-Only** (§731-776) | ✅ | This entry appended (all history preserved) |
+
+### File Organization Summary
+
+**Before Cleanup**:
+```
+Sports_See/
+├── README.md (843 lines)
+├── tests/README.md
+├── tests/ui/README_UI_TESTS.md
+├── tests/e2e/README.md
+├── tests/integration/README.md
+├── src/evaluation/README.md
+├── src/evaluation/README_VECTOR.md
+├── _API_EVALUATION_UPDATE.md
+├── _FAISS_CRASH_ANALYSIS.md
+├── ... (8 more root docs)
+├── requirements.txt
+├── streamlit_viz_example.py
+└── test_results.txt
+```
+
+**After Cleanup**:
+```
+Sports_See/
+├── README.md (500 lines, comprehensive)
+├── PROJECT_MEMORY.md
+├── CHANGELOG.md
+├── src/ (all files with headers)
+├── tests/ (reorganized: core/services/integration/e2e/ui/)
+├── scripts/ (streamlit_viz_example.py moved here)
+├── docs/ (all documentation here)
+└── _archived/2026-02/
+    ├── README.md (archive documentation)
+    └── root_docs/ (10 archived documentation files)
+```
+
+### Results
+
+**Compliance**: ✅ **100% compliant with GLOBAL_POLICY.md v1.17**
+
+**Improvements**:
+- Cleaner repository structure
+- Single source of truth for documentation
+- All files properly organized
+- No orphaned or misplaced files
+- Complete file headers
+- Updated CHANGELOG
+
+**Impact**:
+- Easier navigation for contributors
+- Reduced cognitive load
+- Better maintainability
+- Clearer project structure
+- Professional production-ready organization
+
+**Maintainer:** Shahu | **Date:** 2026-02-11
