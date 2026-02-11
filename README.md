@@ -490,24 +490,39 @@ CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8002"]
 
 ## 📚 Documentation
 
+### Technical Documentation Index
+
+**Architecture & Implementation**:
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System design, component overview, Clean Architecture patterns, data flow
+- **[docs/API.md](docs/API.md)** — REST API endpoints, authentication, request/response formats, examples
+
+**Testing & Quality Assurance**:
+- **[docs/EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md)** — How to run evaluations, interpret results, quality metrics
+- **[docs/EVALUATION_GROUND_TRUTH.md](docs/EVALUATION_GROUND_TRUTH.md)** — Test case methodology, ground truth establishment techniques
+
+**Project Context**:
+- **[CHANGELOG.md](CHANGELOG.md)** — Version history and recent updates
+- **[PROJECT_MEMORY.md](PROJECT_MEMORY.md)** — Project overview, lessons learned, architectural decisions
+- **[docs/README.md](docs/README.md)** — Complete documentation index and navigation
+
 ### Documentation Structure
 
 ```
 docs/
-├── ARCHITECTURE.md       # System architecture and data flow
-├── API.md               # REST API reference
-└── EVALUATION_GUIDE.md  # Evaluation system documentation
+├── README.md                    # Documentation index and navigation
+├── ARCHITECTURE.md              # System design and component overview
+├── API.md                       # REST API reference
+├── EVALUATION_GUIDE.md          # Evaluation system and testing guide
+├── EVALUATION_GROUND_TRUTH.md   # Test methodology and ground truth techniques
+└── DOCUMENTATION_STATUS.md      # Documentation organization status
 ```
 
-### Key Files
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history
-- **[PROJECT_MEMORY.md](PROJECT_MEMORY.md)** - Project overview and lessons learned
-
 ### Evaluation Reports
-Generated in `evaluation_results/`:
-- `sql_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
-- `vector_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
-- `hybrid_evaluation_report_YYYYMMDD_HHMMSS.md` + `.json`
+
+Sample reports in `evaluation_results/` (summary reports only; timestamped JSON excluded):
+- `sql_sample_evaluation_report_20260212_023912.md` — SQL evaluation results
+- `vector_sample_evaluation_report_20260212_025121.md` — Vector search evaluation results
+- `hybrid_sample_evaluation_report_20260212_024528.md` — Hybrid evaluation results
 
 ---
 
