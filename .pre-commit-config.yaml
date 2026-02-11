@@ -1,6 +1,15 @@
 repos:
   - repo: local
     hooks:
+      # BLOCKING: Clean working directory check (MUST BE FIRST)
+      - id: check-clean-working-directory
+        name: Check Clean Working Directory
+        entry: poetry run python scripts/global_policy/check_clean_working_directory.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: true
+
       # BLOCKING: Documentation headers + comment hygiene
       - id: validate-changed-files
         name: Validate Changed Files (Headers + Comments)
@@ -24,6 +33,15 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      # BLOCKING: Coverage thresholds per module tier
+      - id: check-coverage-thresholds
+        name: Check Coverage Thresholds (Tier Hierarchy)
+        entry: poetry run python scripts/global_policy/check_coverage_thresholds.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: true
 
       # WARNING ONLY: Orphaned files
       - id: check-orphaned-files
