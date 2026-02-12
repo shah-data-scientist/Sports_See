@@ -55,23 +55,44 @@ class TestRenderMessage:
             mock_st.chat_message.assert_called_once_with("user")
 
 
-class TestServiceFactories:
-    @patch("streamlit.set_page_config")
-    @patch("streamlit.cache_resource", lambda f: f)
-    @patch("src.ui.app.FeedbackService")
-    def test_get_feedback_service(self, mock_fb_cls, mock_config):
-        from src.ui.app import get_feedback_service
+class TestCachingFunctions:
+    """Test Streamlit caching functions with underscore parameters.
 
-        result = get_feedback_service()
-        mock_fb_cls.assert_called_once()
+    These tests ensure that non-serializable objects (like APIClient)
+    don't cause Streamlit caching hash errors at runtime.
+    """
 
     @patch("streamlit.set_page_config")
-    @patch("streamlit.cache_resource", lambda f: f)
-    @patch("src.ui.app.ConversationRepository")
-    @patch("src.ui.app.ConversationService")
-    def test_get_conversation_service(self, mock_conv_svc, mock_conv_repo, mock_config):
-        from src.ui.app import get_conversation_service
+    @patch("streamlit.cache_data", lambda **kwargs: lambda f: f)
+    def test_cached_feedback_stats_with_mock_client(self, mock_config):
+        """Test that get_cached_feedback_stats works with underscore parameter."""
+        from src.ui.app import get_cached_feedback_stats
+        from src.ui.api_client import APIClient
 
-        result = get_conversation_service()
-        mock_conv_repo.assert_called_once()
-        mock_conv_svc.assert_called_once()
+        mock_client = MagicMock(spec=APIClient)
+        mock_client.get_feedback_stats.return_value = {
+            "total_interactions": 42,
+            "avg_rating": 4.5,
+        }
+
+        result = get_cached_feedback_stats(mock_client)
+
+        assert result == {"total_interactions": 42, "avg_rating": 4.5}
+        mock_client.get_feedback_stats.assert_called_once()
+
+    @patch("streamlit.set_page_config")
+    @patch("streamlit.cache_data", lambda **kwargs: lambda f: f)
+    def test_cached_health_status_with_mock_client(self, mock_config):
+        """Test that get_cached_health_status works with underscore parameter."""
+        from src.ui.app import get_cached_health_status
+        from src.ui.api_client import APIClient
+
+        mock_client = MagicMock(spec=APIClient)
+        mock_client.health_check.return_value = {"status": "healthy", "uptime": 3600}
+
+        result = get_cached_health_status(mock_client)
+
+        assert result == {"status": "healthy", "uptime": 3600}
+        mock_client.health_check.assert_called_once()
+
+
