@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports_See Complete System Mind Map - All Steps & Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #764ba2;
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        .mindmap-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            height: fit-content;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .subsection {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .subsection-title {
+            color: #764ba2;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .subsection-title:hover {
+            color: #667eea;
+        }
+
+        .toggle-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+
+        .subsection.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .step-list {
+            display: none;
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+
+        .subsection.collapsed .step-list {
+            display: none;
+        }
+
+        .subsection:not(.collapsed) .step-list {
+            display: block;
+        }
+
+        .step {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .step:hover {
+            background: #f0f4ff;
+            border-left-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .step-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .step-description {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+
+        .step-analysis {
+            background: white;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 4px;
+            border-left: 2px solid #ffc107;
+        }
+
+        .step-analysis strong {
+            color: #764ba2;
+        }
+
+        .decision-point {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .decision-point .step-number {
+            background: #ffc107;
+        }
+
+        .data-check {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .data-check .step-number {
+            background: #4caf50;
+        }
+
+        .quality-metric {
+            background: #f3e5f5;
+            border-left-color: #9c27b0;
+        }
+
+        .quality-metric .step-number {
+            background: #9c27b0;
+        }
+
+        .detail-panel {
+            display: none;
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .step.active .detail-panel {
+            display: block;
+        }
+
+        .detail-header {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .detail-item {
+            color: #555;
+            font-size: 11px;
+            margin-bottom: 6px;
+            padding-left: 12px;
+            position: relative;
+        }
+
+        .detail-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .sidebar-item {
+            background: #f9f9f9;
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #555;
+            border-left: 3px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-item:hover {
+            background: #f0f4ff;
+            border-left-color: #764ba2;
+        }
+
+        .legend {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .legend-title {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            margin-bottom: 4px;
+            color: #666;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border-left: 3px solid;
+        }
+
+        .color-process {
+            border-left-color: #667eea;
+            background: #e8eaf6;
+        }
+
+        .color-decision {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .color-check {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .color-quality {
+            border-left-color: #9c27b0;
+            background: #f3e5f5;
+        }
+
+        .metrics-display {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .metric-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #764ba2;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+            }
+        }
+
+        .footer {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .view-btn {
+            padding: 8px 14px;
+            background: #f0f4ff;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ Sports_See Complete System Mind Map</h1>
+            <p>
+                Interactive visualization of every step, analysis, decision point, and quality check
+                in the Sports_See RAG system - from data ingestion through query processing to response generation.
+            </p>
+            <div class="nav-buttons">
+                <button class="nav-btn active" onclick="showView('overview')">Overview</button>
+                <button class="nav-btn" onclick="showView('data-pipeline')">📊 Data Pipeline</button>
+                <button class="nav-btn" onclick="showView('rag-pipeline')">🔍 RAG Query Pipeline</button>
+                <button class="nav-btn" onclick="showView('analysis')">📈 All Analyses</button>
+                <button class="nav-btn" onclick="showView('decisions')">🎯 Decision Points</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="mindmap-container" id="mindmapContainer">
+                <!-- OVERVIEW TAB -->
+                <div id="overview-tab" class="view-tab active">
+                    <div class="section">
+                        <div class="section-title">🏗️ System Architecture Overview</div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Phase 1: Data Preparation (Once during Setup)
+                            </div>
+                            <div class="step-list">
+                                <div class="step data-check">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">📥 Load Source Documents</div>
+                                    <div class="step-description">Read PDFs and Excel files from data/inputs/</div>
+                                    <div class="step-analysis"><strong>File Analysis:</strong> Format detection, encoding validation, file size checks</div>
+                                </div>
+                                <div class="step data-check">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">🔄 Extract & Preprocess Content</div>
+                                    <div class="step-description">OCR for PDFs, parse Excel sheets, clean text</div>
+                                    <div class="step-analysis"><strong>Content Quality:</strong> Text coherence, character encoding, metadata extraction</div>
+                                </div>
+                                <div class="step data-check">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">✂️ Chunk Documents</div>
+                                    <div class="step-description">Split into semantic chunks using RedditThreadChunker (domain-aware)</div>
+                                    <div class="step-analysis"><strong>Chunking Metrics:</strong> Chunk size, overlap, semantic coherence, structure preservation</div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">⭐ Phase 3 Step 1: Document Quality Assessment</div>
+                                    <div class="step-description">Score document quality (text coherence, metadata, Reddit authority)</div>
+                                    <div class="step-analysis"><strong>Quality Scoring:</strong> Coherence score, metadata completeness, source authority (0-1 scale)</div>
+                                </div>
+                                <div class="step data-check">
+                                    <div class="step-number">5</div>
+                                    <div class="step-name">🔢 Vectorize & Index (FAISS)</div>
+                                    <div class="step-description">Convert chunks to embeddings using Mistral, build FAISS index</div>
+                                    <div class="step-analysis"><strong>Vector Metrics:</strong> Embedding dimension (1024D), index type, similarity distribution</div>
+                                </div>
+                                <div class="step data-check">
+                                    <div class="step-number">6</div>
+                                    <div class="step-name">💾 Store SQL Database</div>
+                                    <div class="step-description">Import NBA stats and reference data into SQLite</div>
+                                    <div class="step-analysis"><strong>Database Validation:</strong> Record counts, schema integrity, index efficiency</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Phase 2: Query Processing (Per User Query)
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">📨 Receive Query from UI</div>
+                                    <div class="step-description">User enters question in Streamlit interface</div>
+                                    <div class="step-analysis"><strong>Input Validation:</strong> Length check, character validation, encoding verification</div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">💬 Check Conversation Context</div>
+                                    <div class="step-description">Load previous messages if follow-up query detected</div>
+                                    <div class="step-analysis"><strong>Context Analysis:</strong> Follow-up indicators (pronouns, references), context window size</div>
+                                </div>
+                                <div class="step decision-point">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🎯 Query Classification</div>
+                                    <div class="step-description">Classify query type: SQL, Contextual, or Hybrid with confidence scoring</div>
+                                    <div class="step-analysis">
+                                        <strong>Classification Signals:</strong>
+                                        <br/>• Pattern matching (definitional, stats, glossary)
+                                        <br/>• LLM classification with confidence
+                                        <br/>• Threshold routing (≥80%→SQL, ≥75%→Contextual, 50-70%→Hybrid, &lt;50%→fallback)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Phase 3: Optimizations & Enhancements
+                            </div>
+                            <div class="step-list">
+                                <div class="step quality-metric">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">🏆 Step 1: Quality Filtering</div>
+                                    <div class="step-description">Filter low-quality documents at query time based on scores</div>
+                                    <div class="step-analysis"><strong>Filter Logic:</strong> Coherence ≥0.7, metadata score ≥0.6, authority threshold applied</div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">📊 Step 2: Recall-Aware K Selection</div>
+                                    <div class="step-description">Adaptive K value based on query complexity and category</div>
+                                    <div class="step-analysis"><strong>K Calculation:</strong> Base K + complexity bonus, category-specific adjustments (3-20 range)</div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🔄 Step 3: Category-Aware Query Expansion</div>
+                                    <div class="step-description">Smart expansion for contextual/complex queries</div>
+                                    <div class="step-analysis"><strong>Expansion Strategy:</strong> Synonym addition, entity extraction, relationship expansion</div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">📝 Step 4: Complex Query Context Formatting</div>
+                                    <div class="step-description">Structured formatting for LLM comprehension</div>
+                                    <div class="step-analysis"><strong>Format Rules:</strong> Numbered list (SQL data), bullet format (single), result count headers, 20-result limit</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATA PIPELINE TAB -->
+                <div id="data-pipeline-tab" class="view-tab hidden">
+                    <div class="section">
+                        <div class="section-title">📊 Data Pipeline - From Raw Documents to Indexes</div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Step 1: Document Loading & Format Detection
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Read PDFs (easyOCR)</div>
+                                    <div class="step-description">Extract text from sports PDFs with optical character recognition</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Page count detection
+                                        <br/>• OCR confidence scores
+                                        <br/>• French accent preservation
+                                        <br/>• Text region extraction (80 regions/page typical)
+                                        <br/>• Unicode character validation
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/data/data_loader.py</div>
+                                        <div class="detail-item">Lazy-loaded to avoid FAISS+torch AVX2 crash</div>
+                                        <div class="detail-item">Output: List of text strings per PDF</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Parse Excel Sheets</div>
+                                    <div class="step-description">Read NBA statistics and reference data from Excel</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Column type detection (numeric, categorical, date)
+                                        <br/>• Missing value analysis
+                                        <br/>• Duplicate row detection
+                                        <br/>• Sheet structure validation
+                                        <br/>• Filter: Exclude structured data (use SQL instead, not vector)
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/data/data_loader.py (EXCLUDED_EXCEL_SHEETS)</div>
+                                        <div class="detail-item">Reduced vectorization: 159 → 5 chunks (97% reduction)</div>
+                                        <div class="detail-item">Output: Dictionary of DataFrames</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Text Cleaning & Normalization</div>
+                                    <div class="step-description">Remove noise, normalize encoding, format text</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Remove HTML/XML tags
+                                        <br/>• Normalize whitespace
+                                        <br/>• Handle special characters (é, ç, etc)
+                                        <br/>• Remove control characters
+                                        <br/>• Validate UTF-8 encoding
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/data/pipeline.py</div>
+                                        <div class="detail-item">Uses Path.write_text(encoding="utf-8") for Windows compat</div>
+                                        <div class="detail-item">Output: Clean, normalized text</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Step 2: Chunking Strategy
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Domain-Aware Chunking (RedditThreadChunker)</div>
+                                    <div class="step-description">Split documents at semantic boundaries, not random positions</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Thread/comment boundary detection
+                                        <br/>• Author/timestamp preservation
+                                        <br/>• Metadata extraction (Reddit karma, replies)
+                                        <br/>• Chunk coherence scoring
+                                        <br/>• Context relevance measurement
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/data/pipeline.py (RedditThreadChunker class)</div>
+                                        <div class="detail-item">Why: Preserves Reddit discussion context vs generic chunking</div>
+                                        <div class="detail-item">Output: List of Chunk objects with metadata</div>
+                                    </div>
+                                </div>
+
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">📊 Phase 3 Step 1: Document Quality Assessment</div>
+                                    <div class="step-description">Score each chunk for coherence and metadata quality</div>
+                                    <div class="step-analysis">
+                                        <strong>Quality Metrics (0-1 scale):</strong>
+                                        <br/>• Text Coherence: Sentence structure quality
+                                        <br/>• Metadata Completeness: Author, timestamp, source present
+                                        <br/>• Reddit Authority: Karma score normalization
+                                        <br/>• Combined Score: Used for filtering at query time
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/repositories/vector_store.py (_assess_document_quality)</div>
+                                        <div class="detail-item">Applied at: Query time (not ingestion) for flexibility</div>
+                                        <div class="detail-item">Output: scores stored with chunks</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Chunk Size & Overlap Optimization</div>
+                                    <div class="step-description">Configure chunk size and overlap percentage</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Optimal chunk size: ~500-1500 tokens
+                                        <br/>• Overlap percentage: 10-20% for context
+                                        <br/>• Token count per chunk
+                                        <br/>• Overlap relevance validation
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/core/config.py</div>
+                                        <div class="detail-item">Configured for Reddit discussions: favor context over brevity</div>
+                                        <div class="detail-item">Output: Final chunks ready for vectorization</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Step 3: Vectorization & Indexing
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Generate Embeddings (Mistral)</div>
+                                    <div class="step-description">Convert text chunks to 1024-D vectors</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Embedding model: mistral-embed (1024 dimensions)
+                                        <br/>• Vector normalization check
+                                        <br/>• Embedding quality validation
+                                        <br/>• Token count verification (≤512 token limit)
+                                        <br/>• Batch processing efficiency
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/repositories/vector_store.py</div>
+                                        <div class="detail-item">Lazy-import ragas to avoid pyarrow compatibility crash</div>
+                                        <div class="detail-item">Output: Vector array (N_chunks × 1024)</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Build FAISS Index</div>
+                                    <div class="step-description">Create searchable vector index with L2 distance metric</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Index type: Flat (exact search)
+                                        <br/>• Metric: L2 Euclidean distance
+                                        <br/>• Index size: Total vector memory
+                                        <br/>• Search speed benchmarks
+                                        <br/>• Index health validation
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/repositories/vector_store.py</div>
+                                        <div class="detail-item">Serialized to data/vector/faiss_index.bin</div>
+                                        <div class="detail-item">Output: Searchable FAISS index</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Metadata Storage (Pickle)</div>
+                                    <div class="step-description">Store chunk text and metadata separately</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Chunk text preservation
+                                        <br/>• Metadata dictionary validation
+                                        <br/>• Source attribution tracking
+                                        <br/>• Quality scores storage
+                                        <br/>• File integrity verification
+                                    </div>
+                                    <div class="detail-panel">
+                                        <div class="detail-header">📌 Implementation Details</div>
+                                        <div class="detail-item">File: src/repositories/vector_store.py</div>
+                                        <div class="detail-item">Serialized to data/vector/chunks_metadata.pkl</div>
+                                        <div class="detail-item">Output: Indexable chunk metadata</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Step 4: SQL Database Population
+                            </div>
+                            <div class="step-list">
+                                <div class="step data-check">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Schema Validation</div>
+                                    <div class="step-description">Verify database schema matches expected structure</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Table existence: players, player_stats, teams, seasons
+                                        <br/>• Column name validation
+                                        <br/>• Data type verification
+                                        <br/>• Constraint validation (PRIMARY KEY, FOREIGN KEY)
+                                    </div>
+                                </div>
+
+                                <div class="step data-check">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Data Integrity Checks</div>
+                                    <div class="step-description">Validate data quality before insertion</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Record count per table
+                                        <br/>• Null value analysis
+                                        <br/>• Duplicate detection
+                                        <br/>• Date range validation
+                                        <br/>• Numeric range checks (e.g., scores 0-150)
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Index Creation</div>
+                                    <div class="step-description">Create database indexes for query performance</div>
+                                    <div class="step-analysis">
+                                        <strong>Analysis Performed:</strong>
+                                        <br/>• Index on player names (for quick lookup)
+                                        <br/>• Index on seasons (for time-based queries)
+                                        <br/>• Index on statistics columns (scoring, rebounds)
+                                        <br/>• Query plan analysis
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RAG PIPELINE TAB -->
+                <div id="rag-pipeline-tab" class="view-tab hidden">
+                    <div class="section">
+                        <div class="section-title">🔍 RAG Query Pipeline - Per User Query</div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 1: Query Reception & Validation
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">📨 Receive from Streamlit UI</div>
+                                    <div class="step-description">User submits question via text input</div>
+                                    <div class="step-analysis">
+                                        <strong>Validation Checks:</strong>
+                                        <br/>• Length: 5-1000 characters
+                                        <br/>• Character validation (ASCII + accented chars)
+                                        <br/>• Encoding detection (UTF-8 verified)
+                                        <br/>• Null/empty check
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">💬 Load Conversation Context</div>
+                                    <div class="step-description">Retrieve previous messages if follow-up query</div>
+                                    <div class="step-analysis">
+                                        <strong>Context Detection:</strong>
+                                        <br/>• Follow-up indicators: pronouns (he/she/they), references
+                                        <br/>• Context window size (last N messages)
+                                        <br/>• Conversation ID validation
+                                        <br/>• Message ordering verification
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 2: Query Classification (Decision Point)
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">🎯 Pattern-Based Preliminary Classification</div>
+                                    <div class="step-description">Quick pattern matching for obvious query types</div>
+                                    <div class="step-analysis">
+                                        <strong>Patterns Detected:</strong>
+                                        <br/>• Definitional: "What is", "Define", "Explain"
+                                        <br/>• Glossary: "Meaning of", "What does", "Abbreviation"
+                                        <br/>• Statistical: "How many", "Top", "Average", "Most"
+                                        <br/>• Confidence: 0-1 for each classification
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">🧠 LLM-Based Classification</div>
+                                    <div class="step-description">Use Gemini to classify query type with confidence</div>
+                                    <div class="step-analysis">
+                                        <strong>Classification Output:</strong>
+                                        <br/>• Type: SQL_ONLY, CONTEXTUAL, HYBRID, or UNCERTAIN
+                                        <br/>• Confidence: 0.0-1.0 score
+                                        <br/>• Reasoning: Why this classification
+                                        <br/>• Alternative interpretations (top 2)
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🚦 Routing Decision Logic</div>
+                                    <div class="step-description">Apply confidence thresholds to decide routing</div>
+                                    <div class="step-analysis">
+                                        <strong>Routing Thresholds:</strong>
+                                        <br/>• SQL_ONLY: confidence ≥ 0.80 → Generate SQL
+                                        <br/>• CONTEXTUAL: confidence 0.75-0.79 → Vector search
+                                        <br/>• HYBRID: confidence 0.50-0.74 → Both SQL + Vector
+                                        <br/>• UNCERTAIN: confidence &lt; 0.50 → Vector search + fallback
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 3: Query Enhancement (Phase 3)
+                            </div>
+                            <div class="step-list">
+                                <div class="step quality-metric">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">📝 Estimate Recall Requirement</div>
+                                    <div class="step-description">Determine how many sources needed for comprehensive answer</div>
+                                    <div class="step-analysis">
+                                        <strong>Recall Analysis:</strong>
+                                        <br/>• Query complexity: simple/moderate/complex/very_complex
+                                        <br/>• Category type: statistical/contextual/comparative
+                                        <br/>• Base K value: 5 (default)
+                                        <br/>• Complexity bonus: +2-5 for complex queries
+                                        <br/>• Final K: 3-20 range
+                                    </div>
+                                </div>
+
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">🔄 Category-Aware Query Expansion</div>
+                                    <div class="step-description">Expand query with synonyms and related terms</div>
+                                    <div class="step-analysis">
+                                        <strong>Expansion Strategy:</strong>
+                                        <br/>• Synonym extraction (e.g., "efficient" → "PPG/FG%")
+                                        <br/>• Entity expansion (e.g., "LeBron" → "James", "King James")
+                                        <br/>• Relationship expansion (e.g., "shooting" → "FG%, 3P%, FT%")
+                                        <br/>• Category-specific rules by query type
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">✂️ Document Quality Filtering</div>
+                                    <div class="step-description">Filter documents below quality threshold</div>
+                                    <div class="step-analysis">
+                                        <strong>Filtering Rules:</strong>
+                                        <br/>• Min coherence score: 0.70
+                                        <br/>• Min metadata score: 0.60
+                                        <br/>• Authority threshold applied (Reddit karma)
+                                        <br/>• Maintain at least K results after filtering
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 4: SQL Branch (if SQL_ONLY or Hybrid)
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">🔧 SQL Generation with LLM</div>
+                                    <div class="step-description">Generate SQL query from natural language</div>
+                                    <div class="step-analysis">
+                                        <strong>Generation Analysis:</strong>
+                                        <br/>• Generated SQL text capture
+                                        <br/>• Syntax validation (SQLPARSE)
+                                        <br/>• Query complexity assessment (JOINs, aggregations)
+                                        <br/>• Table/column reference validation
+                                        <br/>• Security check (injection prevention)
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">⚙️ Execute SQL & Analyze Results</div>
+                                    <div class="step-description">Run query and capture results for analysis</div>
+                                    <div class="step-analysis">
+                                        <strong>Result Analysis:</strong>
+                                        <br/>• Execution time measurement
+                                        <br/>• Result row count
+                                        <br/>• Data shape validation
+                                        <br/>• Result formatting: numbered list for LLM
+                                        <br/>• Top 20 results limit
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🔄 Fallback Logic</div>
+                                    <div class="step-description">Fallback to vector search if SQL fails or returns empty</div>
+                                    <div class="step-analysis">
+                                        <strong>Fallback Triggers:</strong>
+                                        <br/>• SQL Syntax Error → Vector search
+                                        <br/>• SQL Execution Error → Vector search
+                                        <br/>• Empty Results (0 rows) → Vector search
+                                        <br/>• Retry count: max 1 fallback attempt
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">📊 Format for LLM Comprehension</div>
+                                    <div class="step-description">Prepare SQL results in format LLM understands best</div>
+                                    <div class="step-analysis">
+                                        <strong>Formatting Rules:</strong>
+                                        <br/>• Header: "Found N matching records:"
+                                        <br/>• Format: Numbered list "1. name: X, pts: Y"
+                                        <br/>• Context: Include result count
+                                        <br/>• Limit: Top 20 results to avoid context overflow
+                                        <br/>• Language: Always English (no mixed headers)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 5: Vector Search Branch (if Contextual or Hybrid)
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">🔍 Retrieve Similar Documents</div>
+                                    <div class="step-description">Find K most similar chunks using FAISS</div>
+                                    <div class="step-analysis">
+                                        <strong>Retrieval Metrics:</strong>
+                                        <br/>• K value: 3-20 based on phase 3 estimation
+                                        <br/>• Similarity scores: 0-100%
+                                        <br/>• Score distribution analysis
+                                        <br/>• Retrieved chunk count
+                                        <br/>• Source diversity (# unique sources)
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">⚖️ Hybrid Scoring (Phase 2)</div>
+                                    <div class="step-description">Combine cosine, BM25, and metadata scores</div>
+                                    <div class="step-analysis">
+                                        <strong>Score Weights:</strong>
+                                        <br/>• Cosine Similarity: 50%
+                                        <br/>• BM25 (keyword matching): 35%
+                                        <br/>• Metadata Relevance: 15%
+                                        <br/>• Final Score: Weighted combination (0-100)
+                                    </div>
+                                </div>
+
+                                <div class="step quality-metric">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🏆 Apply Quality Filters</div>
+                                    <div class="step-description">Remove low-quality documents from results</div>
+                                    <div class="step-analysis">
+                                        <strong>Filter Thresholds:</strong>
+                                        <br/>• Coherence score ≥ 0.70
+                                        <br/>• Metadata completeness ≥ 0.60
+                                        <br/>• Min result requirement: Keep at least K results
+                                        <br/>• Preserve top sources even if below threshold
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">📋 Format Sources for Output</div>
+                                    <div class="step-description">Prepare source information for UI display</div>
+                                    <div class="step-analysis">
+                                        <strong>Source Information:</strong>
+                                        <br/>• Source name/document
+                                        <br/>• Similarity score display (%)
+                                        <br/>• Document excerpt preview
+                                        <br/>• Author/timestamp (if available)
+                                        <br/>• Link/reference (if applicable)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 6: LLM Response Generation & Synthesis
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">🧠 Synthesize Response</div>
+                                    <div class="step-description">Generate final answer using LLM (Gemini)</div>
+                                    <div class="step-analysis">
+                                        <strong>Synthesis Analysis:</strong>
+                                        <br/>• Input context: SQL results + vector sources
+                                        <br/>• System prompt: Language, style, tone
+                                        <br/>• Response length: ~500-1500 characters typical
+                                        <br/>• Citation generation: Which sources used
+                                        <br/>• Completeness assessment
+                                    </div>
+                                </div>
+
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">📝 Phase 3 Step 4: Context Formatting</div>
+                                    <div class="step-description">Structure complex query context for LLM understanding</div>
+                                    <div class="step-analysis">
+                                        <strong>Formatting for LLM:</strong>
+                                        <br/>• SQL data: Numbered list format
+                                        <br/>• Vector data: Bullet point format
+                                        <br/>• Result count header
+                                        <br/>• Language consistency (always English)
+                                        <br/>• Context window optimization
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">🤔 Response Quality Check</div>
+                                    <div class="step-description">Validate response meets quality standards</div>
+                                    <div class="step-analysis">
+                                        <strong>Quality Checks:</strong>
+                                        <br/>• Response length ≥ 50 chars (not empty)
+                                        <br/>• No "cannot find" pattern (LLM declined)
+                                        <br/>• Confidence level assessment
+                                        <br/>• Citation presence check
+                                        <br/>• Language correctness (English)
+                                    </div>
+                                </div>
+
+                                <div class="step decision-point">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">🔄 Secondary Fallback (Vector if SQL said "not found")</div>
+                                    <div class="step-description">Retry with vector search if LLM couldn't answer from SQL</div>
+                                    <div class="step-analysis">
+                                        <strong>Retry Logic:</strong>
+                                        <br/>• Pattern detection: "I cannot find" responses
+                                        <br/>• Trigger fallback: Switch to vector-only
+                                        <br/>• Retry count: Max 1 additional attempt
+                                        <br/>• Success rate tracking
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Stage 7: Output & Storage
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">📤 Format Response for UI</div>
+                                    <div class="step-description">Prepare response, sources, and metadata for display</div>
+                                    <div class="step-analysis">
+                                        <strong>Output Package:</strong>
+                                        <br/>• Response text (clean markdown)
+                                        <br/>• Source list with scores
+                                        <br/>• Processing time (ms)
+                                        <br/>• Confidence indicators
+                                        <br/>• Routing path taken (SQL/Vector/Both)
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">💾 Log Interaction</div>
+                                    <div class="step-description">Store query, response, and sources in database</div>
+                                    <div class="step-analysis">
+                                        <strong>Logged Data:</strong>
+                                        <br/>• Query text
+                                        <br/>• Response text
+                                        <br/>• Sources (up to 5)
+                                        <br/>• Processing time
+                                        <br/>• Conversation ID
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">📊 Collect Feedback</div>
+                                    <div class="step-description">Track user feedback (thumbs up/down + comments)</div>
+                                    <div class="step-analysis">
+                                        <strong>Feedback Tracking:</strong>
+                                        <br/>• Positive/negative rating
+                                        <br/>• User comments (optional)
+                                        <br/>• Response quality indicators
+                                        <br/>• Used for evaluation datasets
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">📱 Render in Streamlit UI</div>
+                                    <div class="step-description">Display response and interactive elements to user</div>
+                                    <div class="step-analysis">
+                                        <strong>UI Rendering:</strong>
+                                        <br/>• Response text with formatting
+                                        <br/>• Expandable sources panel
+                                        <br/>• Source similarity scores
+                                        <br/>• Feedback buttons
+                                        <br/>• Processing time display
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANALYSIS TAB -->
+                <div id="analysis-tab" class="view-tab hidden">
+                    <div class="section">
+                        <div class="section-title">📈 All Analyses Performed in the System</div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Data Pipeline Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step quality-metric">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Document Quality Assessment</div>
+                                    <div class="step-description">Phase 3 Step 1: Score documents at query time</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Coherence (0-1), Metadata Score (0-1), Authority (0-1)
+                                        <br/><strong>Files:</strong> src/repositories/vector_store.py
+                                        <br/><strong>Usage:</strong> Filter low-quality documents during retrieval
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Chunk Coherence Analysis</div>
+                                    <div class="step-description">Assess semantic coherence within chunks</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Sentence structure quality, semantic continuity
+                                        <br/><strong>Files:</strong> src/data/pipeline.py
+                                        <br/><strong>Usage:</strong> Identify well-formed chunks vs noisy text
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Metadata Extraction & Validation</div>
+                                    <div class="step-description">Extract and validate document metadata</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Author presence, timestamp format, source completeness
+                                        <br/><strong>Files:</strong> src/data/pipeline.py (RedditThreadChunker)
+                                        <br/><strong>Usage:</strong> Populate metadata scores for quality assessment
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">Embedding Quality Check</div>
+                                    <div class="step-description">Validate vector embeddings for consistency</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Vector dimensionality (1024D), normalization status
+                                        <br/><strong>Files:</strong> src/repositories/vector_store.py
+                                        <br/><strong>Usage:</strong> Ensure FAISS index contains valid vectors
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Query Classification Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Pattern Recognition Analysis</div>
+                                    <div class="step-description">Detect query type via keyword patterns</div>
+                                    <div class="step-analysis">
+                                        <strong>Patterns:</strong> "What is" (definitional), "How many" (statistical), etc.
+                                        <br/><strong>Metrics:</strong> Pattern match confidence (0-1)
+                                        <br/><strong>Files:</strong> src/services/query_classifier.py
+                                    </div>
+                                </div>
+                                <div class="step decision-point">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">LLM-Based Classification</div>
+                                    <div class="step-description">Use Gemini to classify query with confidence</div>
+                                    <div class="step-analysis">
+                                        <strong>Output:</strong> Type (SQL/CONTEXTUAL/HYBRID), confidence (0-1), reasoning
+                                        <br/><strong>Metrics:</strong> Classification accuracy (vs ground truth)
+                                        <br/><strong>Files:</strong> src/services/query_classifier.py
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Follow-Up Context Detection</div>
+                                    <div class="step-description">Identify follow-up queries needing context</div>
+                                    <div class="step-analysis">
+                                        <strong>Indicators:</strong> Pronouns (he/she/they), references ("him", "that")
+                                        <br/><strong>Metrics:</strong> Context window size, relevance
+                                        <br/><strong>Files:</strong> src/services/chat.py
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                SQL Generation & Execution Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">SQL Query Structure Analysis</div>
+                                    <div class="step-description">Analyze complexity of generated SQL</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> JOIN count, WHERE conditions, GROUP BY, subqueries
+                                        <br/><strong>Complexity Levels:</strong> Simple/Moderate/Complex/Very Complex
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/sql_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">SQL Syntax Validation</div>
+                                    <div class="step-description">Check SQL for syntax errors</div>
+                                    <div class="step-analysis">
+                                        <strong>Validation:</strong> SQLPARSE check, schema validation
+                                        <br/><strong>Output:</strong> Valid/Invalid status, error messages
+                                        <br/><strong>Files:</strong> src/tools/sql_tool.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Column Selection Analysis</div>
+                                    <div class="step-description">Assess whether correct columns selected</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Column count, SELECT * usage, over/under-selection
+                                        <br/><strong>Rates:</strong> % over-selected, % under-selected
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/sql_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">JOIN Correctness Analysis</div>
+                                    <div class="step-description">Verify JOINs match schema relationships</div>
+                                    <div class="step-analysis">
+                                        <strong>Checks:</strong> Correct vs Missing JOINs
+                                        <br/><strong>Example:</strong> players + player_stats requires JOIN
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/sql_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">5</div>
+                                    <div class="step-name">Query Execution Time Analysis</div>
+                                    <div class="step-description">Measure database query performance</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Execution time (ms), response row count
+                                        <br/><strong>Thresholds:</strong> Slow query detection (&gt;5s)
+                                        <br/><strong>Files:</strong> src/tools/sql_tool.py
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Vector Retrieval & Scoring Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Retrieval Performance Analysis</div>
+                                    <div class="step-description">Analyze vector search results quality</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Avg similarity score, score distribution
+                                        <br/><strong>Analysis:</strong> Gap between top/bottom scores, score thresholds
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Hybrid Scoring Analysis (Phase 2)</div>
+                                    <div class="step-description">Analyze weighted combination of 3 scoring signals</div>
+                                    <div class="step-analysis">
+                                        <strong>Weights:</strong> Cosine 50%, BM25 35%, Metadata 15%
+                                        <br/><strong>Output:</strong> Final score (0-100%), contribution analysis
+                                        <br/><strong>Files:</strong> src/repositories/vector_store.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Source Diversity Analysis</div>
+                                    <div class="step-description">Assess variety of returned sources</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Unique source count, source distribution
+                                        <br/><strong>Analysis:</strong> Over-reliance on single source?
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">Phase 3 Step 2: Recall-Aware K Selection</div>
+                                    <div class="step-description">Analyze adaptive K value selection</div>
+                                    <div class="step-analysis">
+                                        <strong>Logic:</strong> Base K (5) + complexity bonus (0-5) = final K (3-20)
+                                        <br/><strong>Metrics:</strong> K variation by category, effectiveness
+                                        <br/><strong>Files:</strong> src/services/chat.py (_estimate_recall_requirement)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                LLM Response Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Response Length Analysis</div>
+                                    <div class="step-description">Measure response completeness via length</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Avg length (chars), distribution (short/medium/long)
+                                        <br/><strong>Thresholds:</strong> Too short &lt; 50 chars (error)
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Response Completeness Analysis</div>
+                                    <div class="step-description">Assess whether answer addresses query fully</div>
+                                    <div class="step-analysis">
+                                        <strong>Checks:</strong> Complete/Incomplete/Declined categories
+                                        <br/><strong>Metrics:</strong> % complete answers, % declined
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Confidence Indicators Analysis</div>
+                                    <div class="step-description">Detect hedging language and confidence</div>
+                                    <div class="step-analysis">
+                                        <strong>Hedging:</strong> "might", "possibly", "unclear" patterns
+                                        <br/><strong>Confident:</strong> Direct statements vs uncertain language
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">Citation Quality Analysis</div>
+                                    <div class="step-description">Track whether responses cite sources</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> % with citations, avg citations/response
+                                        <br/><strong>Quality:</strong> Citations relevant to response?
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/vector_quality_analysis.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">5</div>
+                                    <div class="step-name">RAGAS Evaluation Metrics</div>
+                                    <div class="step-description">Advanced NLP-based quality measurement</div>
+                                    <div class="step-analysis">
+                                        <strong>RAGAS Metrics:</strong>
+                                        <br/>• Faithfulness: Does answer match sources?
+                                        <br/>• Answer Relevancy: Does it answer the query?
+                                        <br/>• Context Precision: Is retrieved context relevant?
+                                        <br/>• Context Recall: Did we retrieve all needed info?
+                                        <br/><strong>Files:</strong> src/evaluation/runners/evaluate_ragas.py
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Routing & Fallback Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">Routing Distribution Analysis</div>
+                                    <div class="step-description">Track which routing paths queries take</div>
+                                    <div class="step-analysis">
+                                        <strong>Routes:</strong> SQL_ONLY, VECTOR_ONLY, HYBRID, UNCERTAIN
+                                        <br/><strong>Metrics:</strong> Count and % of each route
+                                        <br/><strong>Files:</strong> src/evaluation/runners/run_hybrid_evaluation.py
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Fallback Pattern Analysis</div>
+                                    <div class="step-description">Track how often queries fall back to vector search</div>
+                                    <div class="step-analysis">
+                                        <strong>Triggers:</strong> SQL error, empty results, LLM "cannot find"
+                                        <br/><strong>Metrics:</strong> Fallback rate by category
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/sql_quality_analysis.py
+                                    </d>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Error Taxonomy Analysis</div>
+                                    <div class="step-description">Categorize errors by type for debugging</div>
+                                    <div class="step-analysis">
+                                        <strong>Categories:</strong> LLM declined, Syntax error, Empty response
+                                        <br/><strong>Analysis:</strong> Which error type is most common?
+                                        <br/><strong>Files:</strong> src/evaluation/analysis/sql_quality_analysis.py
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Performance & Efficiency Analyses
+                            </div>
+                            <div class="step-list">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">End-to-End Query Time Analysis</div>
+                                    <div class="step-description">Measure total processing time from user input to response</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> Avg time (ms), percentiles (p50/p95/p99)
+                                        <br/><strong>Breakdown:</strong> By routing type and category
+                                        <br/><strong>Files:</strong> src/evaluation/runners/*
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Latency by Routing Type</div>
+                                    <div class="step-description">Compare performance of SQL vs Vector vs Hybrid</div>
+                                    <div class="step-analysis">
+                                        <strong>Comparison:</strong> SQL fastest, Hybrid slowest (combines both)
+                                        <br/><strong>Metrics:</strong> Latency distribution per route
+                                        <br/><strong>Files:</strong> src/evaluation/runners/*
+                                    </d>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Category-Specific Performance</div>
+                                    <div class="step-description">Analyze performance by query category</div>
+                                    <div class="step-analysis">
+                                        <strong>Categories:</strong> Simple, Complex, Conversational, Noisy
+                                        <br/><strong>Metrics:</strong> Success rate, latency, quality scores by category
+                                        <br/><strong>Files:</strong> src/evaluation/runners/*
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Evaluation & Quality Metrics
+                            </div>
+                            <div class="step-list">
+                                <div class="step quality-metric">
+                                    <div class="step-number">1</div>
+                                    <div class="step-name">SQL Evaluation Metrics</div>
+                                    <div class="step-description">Comprehensive evaluation of SQL evaluation results</div>
+                                    <div class="step-analysis">
+                                        <strong>Results:</strong> 48/48 successful (100%), 97.9% classification accuracy
+                                        <br/><strong>Metrics:</strong> Query structure, complexity, correctness, column selection
+                                        <br/><strong>Files:</strong> src/evaluation/runners/run_sql_evaluation.py
+                                    </d>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">2</div>
+                                    <div class="step-name">Vector Evaluation Metrics</div>
+                                    <div class="step-description">Comprehensive evaluation of vector search quality</div>
+                                    <div class="step-analysis">
+                                        <strong>Metrics:</strong> RAGAS scores (Faithfulness, Answer Relevancy, Context)
+                                        <br/><strong>Analysis:</strong> Per-category breakdown, source quality
+                                        <br/><strong>Files:</strong> src/evaluation/runners/run_vector_evaluation.py
+                                    </d>
+                                </div>
+                                <div class="step quality-metric">
+                                    <div class="step-number">3</div>
+                                    <div class="step-name">Hybrid Evaluation Metrics</div>
+                                    <div class="step-description">Combined SQL + Vector integration quality</div>
+                                    <div class="step-analysis">
+                                        <strong>Results:</strong> 88% success on 50 test cases
+                                        <br/><strong>Metrics:</strong> Routing analysis, data integration quality
+                                        <br/><strong>Files:</strong> src/evaluation/runners/run_hybrid_evaluation.py
+                                    </d>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-name">Code Coverage Analysis</div>
+                                    <div class="step-description">Measure test coverage by module (3-tier hierarchy)</div>
+                                    <div class="step-analysis">
+                                        <strong>Tiers:</strong>
+                                        <br/>• Tier 1 (Critical): services, api, core ≥77%
+                                        <br/>• Tier 2 (Standard): pipeline, evaluation ≥24%
+                                        <br/>• Tier 3 (Best effort): ui (excluded, requires live browser)
+                                        <br/><strong>Current:</strong> 78.5% overall
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DECISIONS TAB -->
+                <div id="decisions-tab" class="view-tab hidden">
+                    <div class="section">
+                        <div class="section-title">🎯 Key Decision Points & Logic</div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 1: Query Classification Routing
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">Should query be handled by SQL, Vector, or Both?</div>
+                                    <div class="step-analysis">
+                                        <strong>Decision Logic:</strong>
+                                        <br/>1. Pattern matching → Preliminary classification (0-1 confidence)
+                                        <br/>2. LLM classification → Detailed analysis (0-1 confidence)
+                                        <br/>3. Threshold routing:
+                                        <br/>   • confidence ≥ 0.80: SQL_ONLY
+                                        <br/>   • confidence 0.75-0.79: CONTEXTUAL (Vector)
+                                        <br/>   • confidence 0.50-0.74: HYBRID (Both)
+                                        <br/>   • confidence &lt; 0.50: UNCERTAIN (Vector + fallback)
+                                        <br/><strong>Impact:</strong> Determines which data sources and processing pipeline
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 2: SQL Fallback Logic
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">Should we retry with Vector search if SQL fails?</div>
+                                    <div class="step-analysis">
+                                        <strong>Fallback Triggers:</strong>
+                                        <br/>1. SQL Syntax Error → Fallback to Vector
+                                        <br/>2. SQL Execution Error → Fallback to Vector
+                                        <br/>3. Empty Results (0 rows) → Fallback to Vector
+                                        <br/>4. LLM Response "I cannot find this" → Fallback to Vector
+                                        <br/><strong>Impact:</strong> Provides user with answer even if SQL fails
+                                        <br/><strong>Retry Limit:</strong> Max 1 fallback attempt to avoid loops
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 3: Document Quality Filtering
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">Should low-quality documents be filtered from results?</div>
+                                    <div class="step-analysis">
+                                        <strong>Quality Thresholds (Phase 3 Step 1):</strong>
+                                        <br/>• Coherence score ≥ 0.70 (text quality)
+                                        <br/>• Metadata score ≥ 0.60 (author, timestamp present)
+                                        <br/>• Authority score applied (Reddit karma)
+                                        <br/><strong>Filtering Strategy:</strong>
+                                        <br/>• Apply at query time (not ingestion) for flexibility
+                                        <br/>• Maintain minimum K results even if below threshold
+                                        <br/>• Preserve top sources for context
+                                        <br/><strong>Impact:</strong> Improves response quality by excluding noise
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 4: Adaptive K Selection
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">How many sources should we retrieve?</div>
+                                    <div class="step-analysis">
+                                        <strong>K Selection Logic (Phase 3 Step 2):</strong>
+                                        <br/>1. Assess query complexity: simple/moderate/complex/very_complex
+                                        <br/>2. Base K value: 5 (default for most queries)
+                                        <br/>3. Complexity bonus: +2-5 for complex queries
+                                        <br/>4. Category adjustments: Different for each query type
+                                        <br/>5. Final K: 3-20 range
+                                        <br/><strong>Impact:</strong> Simple queries get 3-5 sources, complex get 15-20
+                                        <br/><strong>Trade-off:</strong> More sources = better coverage but longer context
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 5: Query Expansion
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">Should query be expanded with synonyms?</div>
+                                    <div class="step-analysis">
+                                        <strong>Expansion Logic (Phase 3 Step 3):</strong>
+                                        <br/>1. Contextual/Complex queries: YES expand
+                                        <br/>2. SQL queries: NO (exact matching)
+                                        <br/>3. Expansion types:
+                                        <br/>   • Synonyms: "efficient" → "PPG/FG%"
+                                        <br/>   • Entities: "LeBron" → "James", "King James"
+                                        <br/>   • Relationships: "shooting" → "FG%, 3P%, FT%"
+                                        <br/><strong>Impact:</strong> Finds more relevant documents by synonyms
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subsection">
+                            <div class="subsection-title" onclick="toggleSubsection(this)">
+                                <span class="toggle-icon">▶</span>
+                                Decision 6: Response Quality Verification
+                            </div>
+                            <div class="step-list">
+                                <div class="step decision-point">
+                                    <div class="step-number">Decision</div>
+                                    <div class="step-name">Is the generated response acceptable quality?</div>
+                                    <div class="step-analysis">
+                                        <strong>Quality Checks:</strong>
+                                        <br/>1. Response length ≥ 50 characters (not empty)
+                                        <br/>2. No LLM decline pattern: "I cannot find this information"
+                                        <br/>3. Language correctness (English - avoid mixed language issues)
+                                        <br/>4. Citation presence (if vector search used)
+                                        <br/><strong>If Quality Check Fails:</strong>
+                                        <br/>• Trigger secondary fallback
+                                        <br/>• Switch to different routing strategy
+                                        <br/>• Retry with expanded query
+                                    </d>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">📍 Quick Navigation</div>
+                    <div class="sidebar-item" onclick="scrollToView('overview')">System Overview</div>
+                    <div class="sidebar-item" onclick="scrollToView('data-pipeline')">Data Pipeline</div>
+                    <div class="sidebar-item" onclick="scrollToView('rag-pipeline')">RAG Query Pipeline</div>
+                    <div class="sidebar-item" onclick="scrollToView('analysis')">All Analyses</div>
+                    <div class="sidebar-item" onclick="scrollToView('decisions')">Decision Points</div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-title">📊 Key Metrics</div>
+                    <div class="metrics-display">
+                        <div class="metric-row">
+                            <div class="metric-label">SQL Evaluation:</div>
+                            <div class="metric-value">48/48 ✓</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-label">SQL Accuracy:</div>
+                            <div class="metric-value">97.9%</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-label">Hybrid Success:</div>
+                            <div class="metric-value">88%</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-label">Code Coverage:</div>
+                            <div class="metric-value">78.5%</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-label">Vector Tests:</div>
+                            <div class="metric-value">47 cases</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-title">🔑 Key Files</div>
+                    <div class="sidebar-item">src/data/pipeline.py</div>
+                    <div class="sidebar-item">src/services/chat.py</div>
+                    <div class="sidebar-item">src/services/query_classifier.py</div>
+                    <div class="sidebar-item">src/tools/sql_tool.py</div>
+                    <div class="sidebar-item">src/repositories/vector_store.py</div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-title">Legend</div>
+                    <div class="legend-item">
+                        <div class="legend-color color-process"></div>
+                        <span>Process/Task</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-decision"></div>
+                        <span>Decision Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-check"></div>
+                        <span>Data Check</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-quality"></div>
+                        <span>Quality Metric</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Sports_See Complete System Documentation | Interactive Mind Map showing every step, decision point, and analysis</p>
+        <p style="margin-top: 10px; opacity: 0.7;">Click on any step to see detailed information. Use tabs to navigate between different pipeline views.</p>
+    </div>
+
+    <script>
+        function showView(viewName) {
+            // Hide all tabs
+            document.querySelectorAll('.view-tab').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Show selected tab
+            const tab = document.getElementById(`${viewName}-tab`);
+            if (tab) {
+                tab.classList.remove('hidden');
+            }
+
+            // Update active button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function toggleSubsection(element) {
+            const subsection = element.parentElement;
+            subsection.classList.toggle('collapsed');
+        }
+
+        function scrollToView(viewId) {
+            // Trigger view switch
+            const view = viewId.replace('scroll-to-', '');
+            const parts = viewId.split('-');
+            const viewName = parts.join('-');
+
+            const buttons = document.querySelectorAll('.nav-btn');
+            for (let btn of buttons) {
+                if (btn.textContent.includes(viewId.replace('-', ' '))) {
+                    btn.click();
+                    break;
+                }
+            }
+        }
+
+        // Add click handler for steps to show detail panel
+        document.querySelectorAll('.step').forEach(step => {
+            step.addEventListener('click', function(e) {
+                // Remove active from other steps
+                document.querySelectorAll('.step').forEach(s => {
+                    if (s !== this) s.classList.remove('active');
+                });
+                // Toggle active on this step
+                this.classList.toggle('active');
+            });
+        });
+
+        // Initialize with first subsection expanded
+        document.querySelectorAll('.subsection').forEach((subsection, index) => {
+            if (index > 0) {
+                subsection.classList.add('collapsed');
+            }
+        });
+    </script>
+</body>
+</html>

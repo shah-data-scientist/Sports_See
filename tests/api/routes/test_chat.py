@@ -1,8 +1,8 @@
 """
 FILE: test_chat.py
 STATUS: Active
-RESPONSIBILITY: Tests for chat API routes (POST /chat, GET /search, POST /ask)
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Tests for chat API routes (POST /chat, GET /search)
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -103,22 +103,3 @@ class TestSearchEndpoint:
         mock_service.search.assert_called_once_with(query="test", k=10, min_score=None)
 
 
-class TestAskEndpoint:
-    """Tests for POST /ask endpoint."""
-
-    def test_ask_returns_chat_response(self, client, mock_service):
-        """POST /ask wraps question into ChatRequest and returns response."""
-        with patch("src.api.routes.chat.get_chat_service", return_value=mock_service):
-            response = client.post("/ask", params={"question": "Who is the MVP?"})
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "answer" in data
-        mock_service.chat.assert_called_once()
-
-    def test_ask_empty_question_rejected(self, client, mock_service):
-        """POST /ask with empty question returns 422."""
-        with patch("src.api.routes.chat.get_chat_service", return_value=mock_service):
-            response = client.post("/ask", params={"question": ""})
-
-        assert response.status_code == 422

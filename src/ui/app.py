@@ -197,7 +197,7 @@ def render_conversation_controls(client: APIClient) -> None:
     # Load existing conversations
     try:
         conversations = client.list_conversations(
-            status="ACTIVE",
+            status="active",
             limit=20
         )
 

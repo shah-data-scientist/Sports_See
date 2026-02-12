@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports_See BPMN Diagram - Complete Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 18px;
+            background: white;
+            border: 2px solid #d0d0d0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab-button:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 15px;
+            padding: 15px;
+            min-height: 700px;
+        }
+
+        .canvas {
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        svg {
+            display: block;
+            margin: 0 auto;
+            background: white;
+        }
+
+        .info-panel {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 18px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-panel p {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .info-panel code {
+            background: #f0f4ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d73a49;
+            font-size: 11px;
+        }
+
+        .info-panel ul {
+            margin-left: 18px;
+            margin-bottom: 10px;
+        }
+
+        .info-panel li {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 4px;
+            line-height: 1.6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .legend {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-top: 2px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            border: 1px solid #ddd;
+        }
+
+        .help {
+            padding: 15px 20px;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .help strong {
+            color: #667eea;
+        }
+
+        .bpmn-shape {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .bpmn-shape:hover {
+            filter: brightness(0.95);
+            stroke-width: 3;
+        }
+
+        .bpmn-text {
+            pointer-events: none;
+            font-size: 11px;
+            font-weight: 500;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .arrow {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .fallback-arrow {
+            stroke: #EC4899;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 5,5;
+            marker-end: url(#arrowhead-pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Sports_See Complete BPMN Flow Diagram</h1>
+            <p>Interactive workflow with decision gateways, all steps, and fallback paths</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab(0)">📋 Complete Flow</button>
+            <button class="tab-button" onclick="switchTab(1)">🗄️ SQL Path Only</button>
+            <button class="tab-button" onclick="switchTab(2)">🔍 Vector Path Only</button>
+            <button class="tab-button" onclick="switchTab(3)">🔀 Hybrid Path Only</button>
+            <button class="tab-button" onclick="switchTab(4)">⚠️ Fallback Flow</button>
+        </div>
+
+        <div class="content">
+            <div class="canvas" id="canvasContainer">
+                <!-- FULL FLOW -->
+                <div class="tab-content active" id="tab-0">
+                    <svg viewBox="0 0 1200 2000" width="100%" height="100%" style="min-height: 700px;">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+                            </marker>
+                            <marker id="arrowhead-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#EC4899"/>
+                            </marker>
+                        </defs>
+
+                        <!-- Start -->
+                        <circle cx="600" cy="60" r="25" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('start')"/>
+                        <text x="600" y="60" class="bpmn-text" fill="white">Start</text>
+
+                        <!-- User Input -->
+                        <rect x="500" y="120" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('user-input')"/>
+                        <text x="600" y="150" class="bpmn-text" fill="white">👤 User Input</text>
+                        <path d="M 600 85 L 600 120" class="arrow"/>
+
+                        <!-- Check Conversation -->
+                        <polygon points="600,220 700,260 600,300 500,260" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('check-conv')"/>
+                        <text x="600" y="258" class="bpmn-text" fill="white" font-size="10">Conversation?</text>
+                        <path d="M 600 170 L 600 220" class="arrow"/>
+
+                        <!-- YES Path -->
+                        <rect x="250" y="340" width="180" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('retrieve-history')"/>
+                        <text x="340" y="370" class="bpmn-text" fill="white">📝 Retrieve History</text>
+                        <path d="M 530 280 L 380 340" class="arrow"/>
+                        <text x="450" y="305" font-size="11" font-weight="bold" fill="#059669">YES</text>
+
+                        <!-- NO Path -->
+                        <rect x="770" y="340" width="180" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('new-context')"/>
+                        <text x="860" y="370" class="bpmn-text" fill="white">✨ New Context</text>
+                        <path d="M 670 280 L 820 340" class="arrow"/>
+                        <text x="750" y="305" font-size="11" font-weight="bold" fill="#059669">NO</text>
+
+                        <!-- Merge -->
+                        <path d="M 340 390 L 600 420" class="arrow"/>
+                        <path d="M 860 390 L 600 420" class="arrow"/>
+
+                        <!-- Query Expansion -->
+                        <rect x="500" y="420" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('expansion')"/>
+                        <text x="600" y="450" class="bpmn-text" fill="white">🔍 Query Expansion</text>
+
+                        <!-- Classification -->
+                        <rect x="500" y="510" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('classify')"/>
+                        <text x="600" y="540" class="bpmn-text" fill="white">🎯 Classification</text>
+                        <path d="M 600 470 L 600 510" class="arrow"/>
+
+                        <!-- Routing Gateway -->
+                        <polygon points="600,650 700,700 600,750 500,700" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('routing')"/>
+                        <text x="600" y="698" class="bpmn-text" fill="white" font-size="10">Routing</text>
+                        <text x="600" y="710" class="bpmn-text" fill="white" font-size="10">Type?</text>
+                        <path d="M 600 560 L 600 650" class="arrow"/>
+
+                        <!-- SQL Branch -->
+                        <rect x="80" y="820" width="160" height="50" rx="5" fill="#EF4444" stroke="#DC2626" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-service')"/>
+                        <text x="160" y="850" class="bpmn-text" fill="white">🗄️ SQL Service</text>
+                        <path d="M 540 740 L 200 820" class="arrow"/>
+                        <text x="360" y="770" font-size="11" font-weight="bold" fill="#EF4444">SQL_ONLY</text>
+
+                        <!-- Vector Branch -->
+                        <rect x="380" y="820" width="160" height="50" rx="5" fill="#EC4899" stroke="#BE185D" stroke-width="2" class="bpmn-shape" onclick="showInfo('vector-service')"/>
+                        <text x="460" y="850" class="bpmn-text" fill="white">🔍 Vector Service</text>
+                        <path d="M 600 750 L 500 820" class="arrow"/>
+                        <text x="570" y="770" font-size="11" font-weight="bold" fill="#EC4899">CONTEXTUAL</text>
+
+                        <!-- Hybrid Branch -->
+                        <rect x="680" y="820" width="160" height="50" rx="5" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('hybrid-service')"/>
+                        <text x="760" y="850" class="bpmn-text" fill="white">🔀 Hybrid</text>
+                        <path d="M 660 740 L 800 820" class="arrow"/>
+                        <text x="740" y="770" font-size="11" font-weight="bold" fill="#8B5CF6">HYBRID</text>
+
+                        <!-- SQL Error Fallback -->
+                        <path d="M 200 870 L 200 1000 L 500 1000 L 500 820" class="fallback-arrow"/>
+                        <text x="240" y="930" font-size="10" font-weight="bold" fill="#EC4899">No Results?</text>
+                        <text x="240" y="945" font-size="10" font-weight="bold" fill="#EC4899">Try Vector</text>
+
+                        <!-- Parallel to LLM -->
+                        <rect x="150" y="950" width="160" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('database')"/>
+                        <text x="230" y="975" class="bpmn-text" fill="white">💾 Database/FAISS</text>
+                        <path d="M 160 870 L 230 950" class="arrow"/>
+                        <path d="M 460 870 L 400 950" class="arrow"/>
+                        <path d="M 760 870 L 560 950" class="arrow"/>
+
+                        <!-- Combine -->
+                        <path d="M 230 1000 L 600 1000" class="arrow"/>
+                        <path d="M 400 1000 L 600 1000" class="arrow"/>
+                        <path d="M 560 1000 L 600 1000" class="arrow"/>
+
+                        <!-- LLM -->
+                        <rect x="500" y="1010" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('llm')"/>
+                        <text x="600" y="1040" class="bpmn-text" fill="white">🤖 LLM Synthesis</text>
+
+                        <!-- Response -->
+                        <rect x="500" y="1110" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('format-response')"/>
+                        <text x="600" y="1140" class="bpmn-text" fill="white">📋 Format Response</text>
+                        <path d="M 600 1060 L 600 1110" class="arrow"/>
+
+                        <!-- Display -->
+                        <rect x="500" y="1210" width="200" height="50" rx="5" fill="#667eea" stroke="#5568d3" stroke-width="2" class="bpmn-shape" onclick="showInfo('display')"/>
+                        <text x="600" y="1240" class="bpmn-text" fill="white">🎨 Display UI</text>
+                        <path d="M 600 1160 L 600 1210" class="arrow"/>
+
+                        <!-- End -->
+                        <circle cx="600" cy="1320" r="25" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('end')"/>
+                        <text x="600" y="1320" class="bpmn-text" fill="white">End</text>
+                        <path d="M 600 1260 L 600 1295" class="arrow"/>
+
+                        <!-- Decision Logic Notes -->
+                        <text x="50" y="1420" font-size="12" font-weight="bold" fill="#667eea">📌 Decision Logic:</text>
+                        <text x="50" y="1440" font-size="11" fill="#666">• ≥80% confidence → SQL_ONLY</text>
+                        <text x="50" y="1460" font-size="11" fill="#666">• ≥75% confidence → CONTEXTUAL</text>
+                        <text x="50" y="1480" font-size="11" fill="#666">• 50-70% confidence → HYBRID</text>
+                        <text x="50" y="1500" font-size="11" fill="#666">• &lt;50% confidence → Try SQL first, fallback to Vector if no results</text>
+                    </svg>
+                </div>
+
+                <!-- SQL PATH ONLY -->
+                <div class="tab-content" id="tab-1">
+                    <svg viewBox="0 0 1000 1600" width="100%" height="100%" style="min-height: 700px;">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+                            </marker>
+                        </defs>
+
+                        <text x="50" y="30" font-size="14" font-weight="bold" fill="#EF4444">🗄️ SQL-Only Path</text>
+
+                        <!-- Flow -->
+                        <rect x="300" y="60" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('user-input')"/>
+                        <text x="400" y="90" class="bpmn-text" fill="white">👤 Query</text>
+
+                        <polygon points="400,160 480,190 400,220 320,190" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('classify')"/>
+                        <text x="400" y="188" class="bpmn-text" fill="white" font-size="10">Stat</text>
+                        <text x="400" y="200" class="bpmn-text" fill="white" font-size="10">Pattern?</text>
+                        <path d="M 400 110 L 400 160" class="arrow"/>
+
+                        <rect x="300" y="260" width="200" height="50" rx="5" fill="#EF4444" stroke="#DC2626" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-service')"/>
+                        <text x="400" y="290" class="bpmn-text" fill="white">🗄️ SQL Service</text>
+                        <path d="M 400 220 L 400 260" class="arrow"/>
+
+                        <rect x="300" y="350" width="200" height="50" rx="5" fill="#FFF" stroke="#EF4444" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-gen')"/>
+                        <text x="400" y="380" class="bpmn-text" fill="#EF4444">Generate SQL</text>
+                        <path d="M 400 310 L 400 350" class="arrow"/>
+
+                        <polygon points="400,450 480,480 400,510 320,480" fill="#DC2626" stroke="#991B1B" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-check')"/>
+                        <text x="400" y="478" class="bpmn-text" fill="white" font-size="10">Execute</text>
+                        <text x="400" y="490" class="bpmn-text" fill="white" font-size="10">Success?</text>
+                        <path d="M 400 400 L 400 450" class="arrow"/>
+
+                        <rect x="300" y="600" width="200" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('database')"/>
+                        <text x="400" y="630" class="bpmn-text" fill="white">💾 Results</text>
+                        <path d="M 400 510 L 400 600" class="arrow"/>
+                        <text x="415" y="560" font-size="11" font-weight="bold" fill="#059669">YES</text>
+
+                        <rect x="300" y="700" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('llm')"/>
+                        <text x="400" y="730" class="bpmn-text" fill="white">🤖 LLM</text>
+                        <path d="M 400 650 L 400 700" class="arrow"/>
+
+                        <rect x="300" y="800" width="200" height="50" rx="5" fill="#667eea" stroke="#5568d3" stroke-width="2" class="bpmn-shape" onclick="showInfo('display')"/>
+                        <text x="400" y="830" class="bpmn-text" fill="white">🎨 Display</text>
+                        <path d="M 400 750 L 400 800" class="arrow"/>
+
+                        <text x="50" y="900" font-size="11" fill="#666">⏱️ Performance: 200-500ms</text>
+                        <text x="50" y="920" font-size="11" fill="#666">✅ Confidence: ≥80%</text>
+                    </svg>
+                </div>
+
+                <!-- VECTOR PATH -->
+                <div class="tab-content" id="tab-2">
+                    <svg viewBox="0 0 1000 1800" width="100%" height="100%" style="min-height: 700px;">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+                            </marker>
+                        </defs>
+
+                        <text x="50" y="30" font-size="14" font-weight="bold" fill="#EC4899">🔍 Vector Path</text>
+
+                        <rect x="300" y="60" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('user-input')"/>
+                        <text x="400" y="90" class="bpmn-text" fill="white">👤 Query</text>
+
+                        <polygon points="400,160 480,190 400,220 320,190" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('classify')"/>
+                        <text x="400" y="195" class="bpmn-text" fill="white" font-size="9">Contextual?</text>
+                        <path d="M 400 110 L 400 160" class="arrow"/>
+
+                        <rect x="300" y="270" width="200" height="50" rx="5" fill="#EC4899" stroke="#BE185D" stroke-width="2" class="bpmn-shape" onclick="showInfo('vector-service')"/>
+                        <text x="400" y="300" class="bpmn-text" fill="white">🔍 Vector Service</text>
+                        <path d="M 400 220 L 400 270" class="arrow"/>
+
+                        <rect x="300" y="360" width="200" height="50" rx="5" fill="#FFF" stroke="#EC4899" stroke-width="2" class="bpmn-shape" onclick="showInfo('embed')"/>
+                        <text x="400" y="390" class="bpmn-text" fill="#EC4899">Embed Query</text>
+                        <path d="M 400 320 L 400 360" class="arrow"/>
+
+                        <rect x="300" y="450" width="200" height="50" rx="5" fill="#FFF" stroke="#EC4899" stroke-width="2" class="bpmn-shape" onclick="showInfo('search')"/>
+                        <text x="400" y="480" class="bpmn-text" fill="#EC4899">Search FAISS</text>
+                        <path d="M 400 410 L 400 450" class="arrow"/>
+
+                        <rect x="300" y="540" width="200" height="50" rx="5" fill="#FFF" stroke="#F59E0B" stroke-width="2" class="bpmn-shape" onclick="showInfo('score')"/>
+                        <text x="400" y="570" class="bpmn-text" fill="#F59E0B">3-Signal Score</text>
+                        <path d="M 400 500 L 400 540" class="arrow"/>
+
+                        <rect x="300" y="630" width="200" height="50" rx="5" fill="#FFF" stroke="#667eea" stroke-width="2" class="bpmn-shape" onclick="showInfo('quality')"/>
+                        <text x="400" y="660" class="bpmn-text" fill="#667eea">Quality Filter</text>
+                        <path d="M 400 590 L 400 630" class="arrow"/>
+
+                        <rect x="300" y="720" width="200" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('database')"/>
+                        <text x="400" y="750" class="bpmn-text" fill="white">💾 Top-5 Chunks</text>
+                        <path d="M 400 680 L 400 720" class="arrow"/>
+
+                        <rect x="300" y="820" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('llm')"/>
+                        <text x="400" y="850" class="bpmn-text" fill="white">🤖 LLM</text>
+                        <path d="M 400 770 L 400 820" class="arrow"/>
+
+                        <rect x="300" y="920" width="200" height="50" rx="5" fill="#667eea" stroke="#5568d3" stroke-width="2" class="bpmn-shape" onclick="showInfo('display')"/>
+                        <text x="400" y="950" class="bpmn-text" fill="white">🎨 Display</text>
+                        <path d="M 400 870 L 400 920" class="arrow"/>
+
+                        <text x="50" y="1020" font-size="11" fill="#666">⏱️ Performance: 100-200ms</text>
+                        <text x="50" y="1040" font-size="11" fill="#666">✅ Confidence: ≥75%</text>
+                    </svg>
+                </div>
+
+                <!-- HYBRID PATH -->
+                <div class="tab-content" id="tab-3">
+                    <svg viewBox="0 0 1000 1600" width="100%" height="100%" style="min-height: 700px;">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+                            </marker>
+                        </defs>
+
+                        <text x="50" y="30" font-size="14" font-weight="bold" fill="#8B5CF6">🔀 Hybrid Path (SQL + Vector Parallel)</text>
+
+                        <rect x="300" y="60" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('user-input')"/>
+                        <text x="400" y="90" class="bpmn-text" fill="white">👤 Query</text>
+
+                        <polygon points="400,160 480,190 400,220 320,190" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('classify')"/>
+                        <text x="400" y="195" class="bpmn-text" fill="white" font-size="9">Hybrid?</text>
+                        <path d="M 400 110 L 400 160" class="arrow"/>
+
+                        <rect x="100" y="280" width="150" height="50" rx="5" fill="#EF4444" stroke="#DC2626" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-service')"/>
+                        <text x="175" y="310" class="bpmn-text" fill="white" font-size="10">SQL Path</text>
+                        <path d="M 350 220 L 225 280" class="arrow"/>
+
+                        <rect x="550" y="280" width="150" height="50" rx="5" fill="#EC4899" stroke="#BE185D" stroke-width="2" class="bpmn-shape" onclick="showInfo('vector-service')"/>
+                        <text x="625" y="310" class="bpmn-text" fill="white" font-size="10">Vector Path</text>
+                        <path d="M 450 220 L 575 280" class="arrow"/>
+
+                        <text x="300" y="370" font-size="10" font-weight="bold" fill="#666" text-anchor="middle">⬇️ Both execute in parallel ⬇️</text>
+
+                        <rect x="100" y="410" width="150" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('database')"/>
+                        <text x="175" y="440" class="bpmn-text" fill="white" font-size="10">SQL Results</text>
+                        <path d="M 175 330 L 175 410" class="arrow"/>
+
+                        <rect x="550" y="410" width="150" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('database')"/>
+                        <text x="625" y="440" class="bpmn-text" fill="white" font-size="10">Vectors Results</text>
+                        <path d="M 625 330 L 625 410" class="arrow"/>
+
+                        <text x="300" y="510" font-size="10" font-weight="bold" fill="#666">⬇️ Merge & Combine ⬇️</text>
+
+                        <rect x="300" y="550" width="200" height="50" rx="5" fill="#8B5CF6" stroke="#6D28D9" stroke-width="2" class="bpmn-shape" onclick="showInfo('combine')"/>
+                        <text x="400" y="580" class="bpmn-text" fill="white">Merge Results</text>
+                        <path d="M 175 460 L 400 550" class="arrow"/>
+                        <path d="M 625 460 L 400 550" class="arrow"/>
+
+                        <rect x="300" y="650" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('llm')"/>
+                        <text x="400" y="680" class="bpmn-text" fill="white">🤖 Synthesize Both</text>
+                        <path d="M 400 600 L 400 650" class="arrow"/>
+
+                        <rect x="300" y="750" width="200" height="50" rx="5" fill="#667eea" stroke="#5568d3" stroke-width="2" class="bpmn-shape" onclick="showInfo('display')"/>
+                        <text x="400" y="780" class="bpmn-text" fill="white">🎨 Display</text>
+                        <path d="M 400 700 L 400 750" class="arrow"/>
+
+                        <text x="50" y="850" font-size="11" fill="#666">⏱️ Performance: 300-600ms (parallel execution)</text>
+                        <text x="50" y="870" font-size="11" fill="#666">✅ Confidence: 50-70% (mixed signals)</text>
+                    </svg>
+                </div>
+
+                <!-- FALLBACK FLOW -->
+                <div class="tab-content" id="tab-4">
+                    <svg viewBox="0 0 1000 1800" width="100%" height="100%" style="min-height: 700px;">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+                            </marker>
+                            <marker id="arrowhead-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#EC4899"/>
+                            </marker>
+                        </defs>
+
+                        <text x="50" y="30" font-size="14" font-weight="bold" fill="#EC4899">⚠️ Fallback & Error Handling Flow</text>
+
+                        <rect x="300" y="60" width="200" height="50" rx="5" fill="#3B82F6" stroke="#1E40AF" stroke-width="2" class="bpmn-shape" onclick="showInfo('user-input')"/>
+                        <text x="400" y="90" class="bpmn-text" fill="white">👤 Ambiguous Query</text>
+
+                        <polygon points="400,160 480,190 400,220 320,190" fill="#EF4444" stroke="#991B1B" stroke-width="2" class="bpmn-shape" onclick="showInfo('classify')"/>
+                        <text x="400" y="188" class="bpmn-text" fill="white" font-size="10">Low</text>
+                        <text x="400" y="200" class="bpmn-text" fill="white" font-size="10">Confidence</text>
+                        <path d="M 400 110 L 400 160" class="arrow"/>
+
+                        <rect x="300" y="270" width="200" height="50" rx="5" fill="#EF4444" stroke="#DC2626" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-service')"/>
+                        <text x="400" y="300" class="bpmn-text" fill="white">🗄️ Try SQL First</text>
+                        <path d="M 400 220 L 400 270" class="arrow"/>
+
+                        <polygon points="400,380 480,410 400,440 320,410" fill="#DC2626" stroke="#991B1B" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-check')"/>
+                        <text x="400" y="408" class="bpmn-text" fill="white" font-size="10">Has</text>
+                        <text x="400" y="420" class="bpmn-text" fill="white" font-size="10">Results?</text>
+                        <path d="M 400 320 L 400 380" class="arrow"/>
+
+                        <rect x="100" y="520" width="160" height="50" rx="5" fill="#10B981" stroke="#059669" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-success')"/>
+                        <text x="180" y="550" class="bpmn-text" fill="white">✅ Use Results</text>
+                        <path d="M 340 440 L 200 520" class="arrow"/>
+                        <text x="250" y="480" font-size="11" font-weight="bold" fill="#059669">YES</text>
+
+                        <rect x="550" y="520" width="160" height="50" rx="5" fill="#EC4899" stroke="#BE185D" stroke-width="2" class="bpmn-shape" onclick="showInfo('sql-fail')"/>
+                        <text x="630" y="550" class="bpmn-text" fill="white">❌ Fallback</text>
+                        <path d="M 460 440 L 630 520" class="fallback-arrow"/>
+                        <text x="520" y="480" font-size="11" font-weight="bold" fill="#EC4899">NO</text>
+
+                        <rect x="550" y="620" width="160" height="50" rx="5" fill="#EC4899" stroke="#BE185D" stroke-width="2" class="bpmn-shape" onclick="showInfo('vector-service')"/>
+                        <text x="630" y="650" class="bpmn-text" fill="white">🔍 Try Vector</text>
+                        <path d="M 630 570 L 630 620" class="fallback-arrow"/>
+
+                        <text x="300" y="730" font-size="10" font-weight="bold" fill="#666" text-anchor="middle">⬇️ Merge: Use available results ⬇️</text>
+
+                        <path d="M 180 570 L 300 720" class="arrow"/>
+                        <path d="M 630 670 L 500 720" class="arrow"/>
+
+                        <rect x="300" y="760" width="200" height="50" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="2" class="bpmn-shape" onclick="showInfo('llm')"/>
+                        <text x="400" y="790" class="bpmn-text" fill="white">🤖 LLM Synthesize</text>
+
+                        <rect x="300" y="860" width="200" height="50" rx="5" fill="#667eea" stroke="#5568d3" stroke-width="2" class="bpmn-shape" onclick="showInfo('display')"/>
+                        <text x="400" y="890" class="bpmn-text" fill="white">🎨 Display Response</text>
+                        <path d="M 400 810 L 400 860" class="arrow"/>
+
+                        <text x="50" y="960" font-size="11" fill="#666">⚠️ Fallback Triggered When:</text>
+                        <text x="50" y="980" font-size="11" fill="#666">• Confidence &lt;50%</text>
+                        <text x="50" y="1000" font-size="11" fill="#666">• SQL query returns no results</text>
+                        <text x="50" y="1020" font-size="11" fill="#666">• SQL syntax error</text>
+                        <text x="50" y="1040" font-size="11" fill="#666">• Automatic retry with Vector search</text>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="info-panel" id="infoPanel">
+                <h3>ℹ️ Click a Component</h3>
+                <p>Select any shape in the diagram to see detailed information about what it does, the file that handles it, decision logic, and performance metrics.</p>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3B82F6;"></div>
+                <span>Input/Output</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8B5CF6;"></div>
+                <span>Decision Gateway</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #EF4444;"></div>
+                <span>SQL Operations</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #EC4899;"></div>
+                <span>Vector Operations</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10B981;"></div>
+                <span>Data/Storage</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #F59E0B;"></div>
+                <span>LLM/AI Processing</span>
+            </div>
+        </div>
+
+        <div class="help">
+            <strong>💡 How to Use:</strong> Click the tabs to see different flows (Complete, SQL-only, Vector-only, Hybrid, Fallback). Click any colored box or diamond in the diagram to see what it does, which file handles it, performance metrics, and decision logic.
+        </div>
+    </div>
+
+    <script>
+        const components = {
+            'start': { title: '🟢 Start', content: '<p><strong>What:</strong> System initialization</p><p><strong>Status:</strong> Ready to receive query</p>' },
+            'user-input': { title: '👤 User Input', content: '<p><strong>File:</strong> <code>src/ui/app.py</code></p><p><strong>What:</strong> User types query in Streamlit</p><p><strong>Example:</strong> "Who is the leading scorer?"</p><p><strong>Performance:</strong> Instant</p>' },
+            'check-conv': { title: '🔄 Conversation Check (Gateway)', content: '<p><strong>Files:</strong> <code>src/ui/app.py</code>, <code>src/api/routes/chat.py</code></p><p><strong>Decision:</strong> Is this a new conversation or continuation?</p><p><strong>YES →</strong> Retrieve conversation history and add to context</p><p><strong>NO →</strong> Initialize clean context with system prompt</p><p><strong>Purpose:</strong> Maintain conversation continuity</p><p><strong>Performance:</strong> 5-10ms</p>' },
+            'retrieve-history': { title: '📝 Retrieve History', content: '<p><strong>What:</strong> Load previous messages from session</p><p><strong>Data:</strong> Previous Q&A, context, turn history</p><p><strong>Use:</strong> Help LLM understand conversation context</p>' },
+            'new-context': { title: '✨ New Context', content: '<p><strong>What:</strong> Initialize new conversation</p><p><strong>Sets:</strong> Fresh conversation_id, empty history</p><p><strong>Includes:</strong> System prompt with source grounding</p>' },
+            'expansion': { title: '🔍 Query Expansion', content: '<p><strong>File:</strong> <code>src/services/query_expansion.py</code></p><p><strong>What:</strong> Add synonyms and related terms</p><p><strong>Strategy:</strong> Short queries get aggressive expansion, long get minimal</p><p><strong>Example:</strong> "Who scored?" → "scored, points, goals, stats"</p><p><strong>Purpose:</strong> Improve vector search recall</p><p><strong>Performance:</strong> 20-50ms</p>' },
+            'classify': { title: '🎯 Query Classification (Gateway)', content: '<p><strong>File:</strong> <code>src/services/query_classifier.py</code></p><p><strong>Checks in order:</strong></p><ul><li><strong>DEFINITIONAL?</strong> ("what is", "define") → CONTEXTUAL</li><li><strong>GLOSSARY TERM?</strong> (PER, efficiency, etc.)</li><li><strong>STAT PATTERN?</strong> (2+ stat keywords) → SQL_ONLY</li><li><strong>Fallback:</strong> CONTEXTUAL</li></ul><p><strong>Output:</strong> QueryType + confidence (0-1)</p><p><strong>Confidence Thresholds:</strong> ≥80% SQL, ≥75% Vector, 50-70% Hybrid, &lt;50% Fallback</p><p><strong>Performance:</strong> 45-100ms</p>' },
+            'routing': { title: '🚀 Routing Decision (Gateway)', content: '<p><strong>File:</strong> <code>src/services/chat.py</code></p><p><strong>Routes by confidence:</strong></p><ul><li><strong>SQL_ONLY:</strong> ≥80% → Query database</li><li><strong>CONTEXTUAL:</strong> ≥75% → Search vector store</li><li><strong>HYBRID:</strong> 50-70% → Use both</li><li><strong>Fallback:</strong> &lt;50% → Try SQL, fallback to Vector if fails</li></ul><p><strong>Decision:</strong> Determines which service to call</p><p><strong>Performance:</strong> 10ms decision logic</p>' },
+            'sql-service': { title: '🗄️ SQL Service', content: '<p><strong>File:</strong> <code>src/services/sql_service.py</code>, <code>src/tools/sql_tool.py</code></p><p><strong>Steps:</strong></p><ul><li>Generate SQL with LLM</li><li>Validate syntax</li><li>Execute against database</li><li>Format results for LLM context</li></ul><p><strong>Database:</strong> <code>data/sql/nba_stats.db</code></p><p><strong>Tables:</strong> players, player_stats, teams</p><p><strong>Performance:</strong> 200-500ms</p>' },
+            'sql-gen': { title: '⚙️ Generate SQL', content: '<p><strong>What:</strong> LLM converts natural language to SQL</p><p><strong>Context:</strong> Database schema + table descriptions</p><p><strong>Validation:</strong> Check syntax before execution</p><p><strong>Example SQL:</strong> SELECT name, pts FROM player_stats ORDER BY pts DESC</p>' },
+            'sql-exec': { title: '▶️ Execute Query', content: '<p><strong>What:</strong> Run SQL statement against database</p><p><strong>Checks:</strong> Verify no SQL injection, validate schema</p><p><strong>Result:</strong> Rows from database (limited to 20)</p><p><strong>Error Handling:</strong> Syntax errors trigger fallback</p>' },
+            'sql-check': { title: '❓ Check Results (Gateway)', content: '<p><strong>Decision:</strong> Does SQL query have results?</p><p><strong>YES →</strong> Use results, format for LLM</p><p><strong>NO →</strong> Fallback to Vector search</p><p><strong>Purpose:</strong> Graceful degradation if SQL fails</p>' },
+            'sql-success': { title: '✅ SQL Success', content: '<p><strong>What:</strong> SQL returned valid results</p><p><strong>Action:</strong> Format results and pass to LLM</p><p><strong>Format:</strong> Numbered list or bullet points</p>' },
+            'sql-fail': { title: '❌ SQL Fallback', content: '<p><strong>What:</strong> SQL returned no results or error</p><p><strong>Action:</strong> Trigger fallback to Vector search</p><p><strong>This:</strong> Ensures we always get an answer</p>' },
+            'vector-service': { title: '🔍 Vector Service', content: '<p><strong>File:</strong> <code>src/services/vector_service.py</code></p><p><strong>Steps:</strong></p><ul><li>Embed query (384-dim Mistral)</li><li>Search FAISS index</li><li>Apply 3-signal hybrid scoring (Phase 2)</li><li>Apply quality filtering (Phase 3)</li><li>Return top-5 ranked chunks</li></ul><p><strong>Store:</strong> 5 Reddit discussion chunks</p><p><strong>Performance:</strong> 100-200ms</p>' },
+            'embed': { title: '📊 Embed Query', content: '<p><strong>What:</strong> Convert query to 384-dimensional vector</p><p><strong>Model:</strong> Mistral Embeddings API</p><p><strong>Purpose:</strong> Enable similarity search</p>' },
+            'search': { title: '🔎 Search FAISS', content: '<p><strong>What:</strong> Find semantically similar documents</p><p><strong>Method:</strong> Vector similarity (inner product)</p><p><strong>Returns:</strong> Top candidates for re-ranking</p>' },
+            'score': { title: '📈 3-Signal Scoring', content: '<p><strong>Phase 2 (Hybrid Scoring):</strong></p><ul><li><strong>Cosine Similarity:</strong> 50% (semantic)</li><li><strong>BM25 Ranking:</strong> 35% (keyword matching)</li><li><strong>Metadata Boost:</strong> 15% (Reddit upvotes, engagement)</li></ul><p><strong>Formula:</strong> (cosine×0.5) + (bm25×0.35) + (meta×0.15)</p><p><strong>Result:</strong> Documents ranked 0-100%</p>' },
+            'quality': { title: '✨ Quality Filter', content: '<p><strong>Phase 3 Step 1:</strong> Filter low-quality documents</p><p><strong>Checks:</strong></p><ul><li>Text coherence (word length: 4-8 chars ideal)</li><li>Metadata completeness (source, timestamp)</li><li>Reddit authority (upvotes, official badge)</li></ul><p><strong>Threshold:</strong> Keep only quality ≥ 0.5</p><p><strong>Purpose:</strong> Remove corrupted OCR, noisy text</p>' },
+            'hybrid': { title: '🔀 Hybrid Service', content: '<p><strong>File:</strong> <code>src/services/chat.py</code></p><p><strong>What:</strong> Execute SQL and Vector in parallel</p><p><strong>Steps:</strong></p><ul><li>Start SQL execution (concurrent)</li><li>Start Vector search (concurrent)</li><li>Merge results when both complete</li><li>Pass to LLM for synthesis</li></ul><p><strong>Benefit:</strong> Get statistics + context in one pass</p><p><strong>Performance:</strong> 300-600ms (parallel, faster than sequential)</p>' },
+            'combine': { title: '🔗 Combine Results', content: '<p><strong>What:</strong> Merge SQL and Vector results</p><p><strong>Process:</strong> Create unified context</p><p><strong>Format:</strong> Statistics + Discussion content</p><p><strong>Purpose:</strong> Give LLM both data types for richer answer</p>' },
+            'database': { title: '💾 Database / FAISS', content: '<p><strong>SQL Database:</strong></p><ul><li><code>data/sql/nba_stats.db</code> (SQLite)</li><li>Tables: players, player_stats, teams</li></ul><p><strong>FAISS Index:</strong></p><ul><li><code>data/vector/faiss.index</code></li><li>5 Reddit discussion chunks</li><li>384-dimensional embeddings</li></ul><p><strong>Performance:</strong> 10-100ms</p>' },
+            'llm': { title: '🤖 LLM Synthesis', content: '<p><strong>Model:</strong> Gemini 2.0 Flash</p><p><strong>What:</strong> Generate response from context</p><p><strong>Input:</strong> SQL results or document chunks</p><p><strong>Process:</strong></p><ul><li>Build prompt with context</li><li>Add source grounding instructions</li><li>Generate response</li><li>Extract citations</li></ul><p><strong>Token limits:</strong> 2000 input, 1000 output</p><p><strong>Performance:</strong> 500-1000ms</p>' },
+            'format-response': { title: '📋 Format Response', content: '<p><strong>What:</strong> Prepare final response for UI</p><p><strong>Adds:</strong></p><ul><li>Answer text</li><li>Source citations</li><li>Processing time metadata</li><li>Query type (SQL/Vector/Hybrid)</li><li>Confidence scores</li></ul><p><strong>Output Model:</strong> ChatResponse Pydantic model</p><p><strong>Performance:</strong> 20-50ms</p>' },
+            'display': { title: '🎨 Display in UI', content: '<p><strong>File:</strong> <code>src/ui/app.py</code></p><p><strong>Displays:</strong></p><ul><li>Answer text</li><li>Expandable sources (with scores)</li><li>Feedback buttons</li><li>Query classification badge</li><li>Processing time</li></ul><p><strong>Performance:</strong> Instant (client-side)</p>' },
+            'end': { title: '🏁 End', content: '<p><strong>Status:</strong> Response delivered to user</p><p><strong>Next:</strong> Await user feedback or new query</p>' }
+        };
+
+        function showInfo(key) {
+            const info = components[key];
+            if (info) {
+                document.getElementById('infoPanel').innerHTML = '<h3>' + info.title + '</h3>' + info.content;
+            }
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab-content').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-button').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+        }
+    </script>
+</body>
+</html>

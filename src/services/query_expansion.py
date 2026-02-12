@@ -149,3 +149,35 @@ class QueryExpander:
         else:
             # Query is already detailed, minimal expansion
             return self.expand(query, max_expansions=1)
+
+    def expand_smart_category(self, query: str, category: str = None) -> str:
+        """Smart expansion with category awareness (Phase 3 Step 3).
+
+        Different query categories have different expansion needs:
+        - "noisy": Minimal expansion (1 term) - avoid matching noise
+        - "conversational": Aggressive expansion (5 terms) - catch all synonyms
+        - "simple": Balanced expansion (4 terms)
+        - "complex": Conservative expansion (2 terms) - focused
+        - None/unknown: Use word-count logic (existing expand_smart)
+
+        Args:
+            query: Original user query
+            category: Query category hint (noisy, conversational, simple, complex)
+
+        Returns:
+            Expanded or original query
+        """
+        # Category-based overrides
+        if category == "noisy":
+            max_exp = 1  # Conservative - avoid false matches
+        elif category == "conversational":
+            max_exp = 5  # Aggressive - catch all conversation synonyms
+        elif category == "simple":
+            max_exp = 4  # Balanced
+        elif category == "complex":
+            max_exp = 2  # Conservative - focus on core concepts
+        else:
+            # Default: use word-count logic
+            return self.expand_smart(query)
+
+        return self.expand(query, max_expansions=max_exp)

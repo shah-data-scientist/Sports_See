@@ -744,6 +744,7 @@ class ChatService:
         query: str,
         k: int | None = None,
         min_score: float | None = None,
+        category: str | None = None,
     ) -> list[SearchResult]:
         """Search for relevant documents with smart metadata filtering.
 
@@ -768,9 +769,16 @@ class ChatService:
         self.ensure_ready()
 
         # PHASE 7: Expand query for better keyword matching (replaces metadata filtering)
-        expanded_query = self.query_expander.expand_smart(query)
+        # Phase 3 Step 3: Use category-aware expansion if category provided
+        if category:
+            expanded_query = self.query_expander.expand_smart_category(query, category=category)
+        else:
+            expanded_query = self.query_expander.expand_smart(query)
+
         if expanded_query != query:
             logger.info(f"Expanded query: '{query}' -> '{expanded_query[:100]}...'")
+            if category:
+                logger.info(f"  (using {category}-aware expansion)")
 
         # PHASE 6 metadata filtering DISABLED - caused false negatives
         # (Only 3 chunks tagged as player_stats, all were headers not actual data)
@@ -803,6 +811,56 @@ class ChatService:
             )
             for chunk, score in results
         ]
+
+    @staticmethod
+    def _format_context_for_complex_queries(sources: list) -> str:
+        """Format context specifically for complex multi-source queries (Phase 3 Step 4).
+
+        Complex queries require careful synthesis of multiple sources.
+        This formatter:
+        - Limits to top 5 sources (avoid overwhelming LLM)
+        - Adds explicit relevance markers
+        - Includes source citations for attribution
+        - Structures for easy synthesis
+
+        Args:
+            sources: List of SearchResult objects
+
+        Returns:
+            Formatted context string optimized for complex analysis
+        """
+        if not sources:
+            return "No sources available."
+
+        # Limit to top 5 for complex queries
+        top_sources = sources[:5]
+
+        formatted_parts = ["CONTEXT (organized by relevance):\n"]
+
+        for i, source in enumerate(top_sources, 1):
+            # Format: [Source N: name] (Relevance: score%)
+            source_name = source.source if hasattr(source, "source") else str(source)
+            score = source.score if hasattr(source, "score") else 0
+
+            formatted_parts.append(f"[Source {i}: {source_name}] (Relevance: {score:.0f}%)")
+
+            # Get text (handle both SearchResult and dict)
+            text = source.text if hasattr(source, "text") else str(source)
+
+            # Truncate to 500 chars to avoid overwhelming
+            if len(text) > 500:
+                text = text[:500] + "..."
+
+            formatted_parts.append(text)
+            formatted_parts.append("")  # Blank line between sources
+
+        # Add synthesis instruction
+        formatted_parts.append(
+            "\n⚠️ SYNTHESIS NOTE: Only state facts that are supported by the sources above. "
+            "If a claim appears in only one source, mark it as [Source X only]."
+        )
+
+        return "\n".join(formatted_parts)
 
     @logfire.instrument("ChatService.generate_response")
     def generate_response(
@@ -1025,6 +1083,7 @@ class ChatService:
                 query=effective_query,
                 k=adaptive_k,
                 min_score=request.min_score,
+                category=query_type.value,  # Phase 3 Step 3: Category-aware expansion
             )
 
             # Format vector search context
@@ -1087,6 +1146,7 @@ class ChatService:
                     query=effective_query,
                     k=adaptive_k,
                     min_score=request.min_score,
+                    category=query_type.value,  # Phase 3 Step 3: Category-aware expansion
                 )
 
             if search_results:
