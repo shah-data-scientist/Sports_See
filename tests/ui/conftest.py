@@ -1,42 +1,65 @@
 """
 FILE: conftest.py
 STATUS: Active
-RESPONSIBILITY: Pytest configuration for Playwright UI tests
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Playwright fixtures and configuration for UI tests
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
-import time
 import pytest
-from playwright.sync_api import sync_playwright
+import time
+from playwright.sync_api import Page
 
 
 @pytest.fixture(scope="session")
 def browser_context_args():
     """Configure browser context arguments."""
     return {
-        "viewport": {"width": 1920, "height": 1080},
         "ignore_https_errors": True,
+        "viewport": {"width": 1920, "height": 1080},
     }
 
 
-@pytest.fixture(scope="function")
-def page(browser_context_args):
-    """Provide a Playwright page for each test."""
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(
-            headless=True,  # Run in IDE, not user's PC
-            slow_mo=500,  # Slow down by 500ms for visibility
-        )
-        context = browser.new_context(**browser_context_args)
-        page = context.new_page()
+@pytest.fixture
+def streamlit_page(page: Page) -> Page:
+    """
+    Fixture that opens Streamlit app and waits for it to load.
 
-        yield page
+    Args:
+        page: Playwright page fixture
 
-        # Cleanup
-        context.close()
-        browser.close()
+    Yields:
+        Page object with Streamlit app loaded
+    """
+    # Navigate to Streamlit app
+    page.goto("http://localhost:8505", wait_until="networkidle")
 
-        # Rate limit protection: Wait 5 seconds between tests
-        # Gemini free tier: 15 RPM = 1 request per 4 seconds
-        time.sleep(5)
+    # Wait for main content to load
+    page.wait_for_selector("text='Ask about'", timeout=10000)
+
+    # Small delay to ensure Streamlit is fully ready
+    time.sleep(1)
+
+    yield page
+
+
+@pytest.fixture
+def api_base_url() -> str:
+    """
+    Return API base URL for direct API tests.
+
+    Returns:
+        API base URL
+    """
+    return "http://localhost:8000/api/v1"
+
+
+def pytest_configure(config):
+    """Configure pytest with custom markers."""
+    config.addinivalue_line("markers", "chat: Chat functionality tests")
+    config.addinivalue_line("markers", "feedback: Feedback workflow tests")
+    config.addinivalue_line("markers", "conversation: Conversation management tests")
+    config.addinivalue_line("markers", "error_handling: Error handling tests")
+    config.addinivalue_line("markers", "statistics: Statistics display tests")
+    config.addinivalue_line("markers", "rich_conversation: Rich conversation tests")
+    config.addinivalue_line("markers", "sources: Source verification tests")
