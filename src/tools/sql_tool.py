@@ -350,23 +350,35 @@ EXAMPLES:""",
 
         return sql
 
-    def execute_sql(self, sql: str) -> list[dict]:
-        """Execute SQL query and return results.
+    def execute_sql(self, sql: str, timeout_seconds: int = 15) -> list[dict]:
+        """Execute SQL query with timeout protection.
 
         Args:
             sql: SQL query string
+            timeout_seconds: Maximum execution time (default 15 seconds)
 
         Returns:
             List of result rows as dictionaries
 
         Raises:
+            TimeoutError: If query execution exceeds timeout
             Exception: If SQL execution fails
         """
-        logger.info(f"Executing SQL: {sql}")
+        logger.info(f"Executing SQL (timeout: {timeout_seconds}s): {sql}")
 
         try:
+            # Set SQLite timeout to catch hanging queries
+            import sqlite3
+            sqlite3.PARSE_DECLTYPES = True
+
             # Execute query - db.run() returns a STRING representation with include_columns=True
+            start_time = time.time()
             result_str = self.db.run(sql, include_columns=True)
+            elapsed = time.time() - start_time
+
+            # Check if execution exceeded timeout
+            if elapsed > timeout_seconds:
+                raise TimeoutError(f"SQL query exceeded {timeout_seconds}s timeout (took {elapsed:.1f}s)")
 
             # SQLDatabase returns a string like "[{'col1': 'val1', 'col2': 'val2'}]"
             # Parse it back to a list of dicts

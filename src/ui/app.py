@@ -30,6 +30,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+@st.cache_data(ttl=60)
+def get_cached_feedback_stats(client: APIClient) -> dict:
+    """Get cached feedback statistics (refreshes every 60 seconds).
+
+    Args:
+        client: API client
+
+    Returns:
+        Feedback statistics dictionary
+    """
+    return client.get_feedback_stats()
+
+
+@st.cache_data(ttl=30)
+def get_cached_health_status(client: APIClient) -> dict:
+    """Get cached health status (refreshes every 30 seconds).
+
+    Args:
+        client: API client
+
+    Returns:
+        Health status dictionary
+    """
+    return client.health_check()
+
+
 @st.cache_resource
 def get_api_client() -> APIClient:
     """Get cached API client for HTTP communication with backend.
@@ -205,28 +231,29 @@ def render_conversation_controls(client: APIClient) -> None:
             # Current conversation indicator + rename option
             current_id = st.session_state.get("current_conversation_id")
             if current_id:
-                try:
-                    current_conv = client.get_conversation(current_id)
-                    if current_conv:
-                        title = current_conv.get("title", "Untitled") if isinstance(current_conv, dict) else getattr(current_conv, "title", "Untitled")
-                        st.caption(f"📌 Current: {title}")
+                # Find current conversation from list (avoid N+1 query)
+                current_conv = next(
+                    (c for c in conversations if (c.get("id") if isinstance(c, dict) else c.id) == current_id),
+                    None
+                )
+                if current_conv:
+                    title = current_conv.get("title", "Untitled") if isinstance(current_conv, dict) else getattr(current_conv, "title", "Untitled")
+                    st.caption(f"📌 Current: {title}")
 
-                        # Rename conversation
-                        with st.expander("✏️ Rename Conversation"):
-                            new_title = st.text_input(
-                                "New title:",
-                                value=title if title != "Untitled" else "",
-                                placeholder="Give this conversation a name..."
-                            )
-                            if st.button("Rename", key="rename_btn"):
-                                try:
-                                    client.update_conversation(current_id, title=new_title)
-                                    st.success(f"✅ Renamed to: {new_title}")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"❌ Failed to rename: {e}")
-                except Exception:
-                    pass
+                    # Rename conversation
+                    with st.expander("✏️ Rename Conversation"):
+                        new_title = st.text_input(
+                            "New title:",
+                            value=title if title != "Untitled" else "",
+                            placeholder="Give this conversation a name..."
+                        )
+                        if st.button("Rename", key="rename_btn"):
+                            try:
+                                client.update_conversation(current_id, title=new_title)
+                                st.success(f"✅ Renamed to: {new_title}")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Failed to rename: {e}")
 
             # Conversation selector
             st.selectbox(
@@ -336,9 +363,9 @@ def main() -> None:
     # Get API client
     client = get_api_client()
 
-    # Check API health
+    # Check API health (cached, refreshes every 30 seconds)
     try:
-        health = client.health_check()
+        health = get_cached_health_status(client)
         is_healthy = health.get("status") == "healthy"
         index_size = health.get("index_size", 0)
     except Exception as e:
@@ -518,10 +545,10 @@ def main() -> None:
 
         st.divider()
 
-        # Feedback statistics
+        # Feedback statistics (cached, refreshes every 60 seconds)
         st.subheader("Feedback Stats")
         try:
-            stats = client.get_feedback_stats()
+            stats = get_cached_feedback_stats(client)
             total_interactions = stats.get("total_interactions", 0) if isinstance(stats, dict) else getattr(stats, "total_interactions", 0)
             total_feedback = stats.get("total_feedback", 0) if isinstance(stats, dict) else getattr(stats, "total_feedback", 0)
             positive_count = stats.get("positive_count", 0) if isinstance(stats, dict) else getattr(stats, "positive_count", 0)
