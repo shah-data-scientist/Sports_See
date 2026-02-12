@@ -45,8 +45,8 @@ class Settings(BaseSettings):
         description="Model for generating embeddings",
     )
     chat_model: str = Field(
-        default="gemini-2.0-flash-lite",
-        description="Model for chat completion (evaluation fallback only - production uses Gemini)",
+        default="gemini-1.5-pro",
+        description="Model for chat completion (upgraded for better reasoning on complex analysis queries)",
         alias="MODEL_NAME",
     )
     temperature: float = Field(

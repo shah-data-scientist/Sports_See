@@ -1,0 +1,16 @@
+[client]
+showErrorDetails = true
+
+[logger]
+level = "warning"
+
+[client.toolbarMode]
+mode = "minimal"
+
+[server]
+# Disable auto-reload to prevent torch module inspection issues
+runOnSave = false
+fileWatcherType = "poll"
+
+[deprecation]
+showPyplotGlobalUse = false
