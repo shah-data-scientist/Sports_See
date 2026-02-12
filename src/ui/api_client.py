@@ -38,7 +38,7 @@ class APIClient:
         """Initialize API client.
 
         Args:
-            base_url: Base URL of the API server (default: localhost:8000)
+            base_url: Base URL of the API server (default: localhost:8000, set to 8000 for standard port)
         """
         self.base_url = base_url
         self.timeout = 60  # 60 second timeout for long queries
@@ -303,7 +303,7 @@ class APIClient:
         logger.info(f"Submitting feedback for interaction: {interaction_id}")
         payload = {
             "interaction_id": interaction_id,
-            "rating": rating,
+            "rating": rating.lower(),  # Convert to lowercase (API expects "positive" or "negative")
         }
         if comment:
             payload["comment"] = comment
