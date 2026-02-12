@@ -244,14 +244,21 @@ class VectorStoreRepository:
         k: int = 5,
         min_score: float | None = None,
         metadata_filters: dict[str, Any] | None = None,
+        query_text: str | None = None,
     ) -> list[tuple[DocumentChunk, float]]:
-        """Search for similar documents with optional metadata filtering.
+        """Search for similar documents with BM25 reranking and metadata boosting.
+
+        Phase 13 (Vector remediation): Implements 3-signal hybrid scoring
+        - Cosine similarity (50%): Semantic match
+        - BM25 (35%): Term-based relevance (requires query_text)
+        - Metadata boost (15%): Authority signals (upvotes, NBA official)
 
         Args:
             query_embedding: Query embedding vector (1 x dim)
             k: Number of results to return
             min_score: Minimum similarity score (0-1)
             metadata_filters: Optional dict to filter chunks by metadata
+            query_text: Optional original query text for BM25 reranking
 
         Returns:
             List of (chunk, score) tuples sorted by score descending
@@ -314,6 +321,7 @@ class VectorStoreRepository:
                 scores = scores[0]
 
             results: list[tuple[DocumentChunk, float]] = []
+            cosine_scores = []  # Track for BM25 normalization
             for i, idx in enumerate(original_indices):
                 if idx < 0 or idx >= len(self._chunks):
                     continue
@@ -326,14 +334,67 @@ class VectorStoreRepository:
                     continue
 
                 results.append((self._chunks[idx], score_percent))
+                cosine_scores.append(score_percent)
 
-            # Apply metadata boost for Reddit re-ranking
-            results = [
-                (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
-                for chunk, score in results
-            ]
+            # Phase 13: 3-Signal Hybrid Scoring (Cosine + BM25 + Metadata)
+            if query_text and results:
+                # Calculate BM25 scores
+                try:
+                    from rank_bm25 import BM25Okapi
 
-            # Sort by boosted score descending and limit to k
+                    # Extract text from candidates for BM25
+                    chunk_texts = [chunk.text for chunk, _ in results]
+                    query_tokens = query_text.lower().split()
+
+                    # Build BM25 model
+                    tokenized_chunks = [text.lower().split() for text in chunk_texts]
+                    bm25 = BM25Okapi(tokenized_chunks)
+                    bm25_scores = bm25.get_scores(query_tokens)
+
+                    # Normalize BM25 to 0-100
+                    if bm25_scores.max() > 0:
+                        bm25_normalized = (bm25_scores / bm25_scores.max()) * 100
+                    else:
+                        bm25_normalized = bm25_scores
+
+                    # Apply 3-signal formula: (cosine*0.5) + (bm25*0.35) + (metadata*0.15)
+                    new_results = []
+                    for i, (chunk, cosine_score) in enumerate(results):
+                        bm25_score = bm25_normalized[i]
+                        metadata_boost = self._compute_metadata_boost(chunk)
+
+                        # 3-signal composite score
+                        composite_score = (
+                            (cosine_score * 0.5) + (bm25_score * 0.35) + (metadata_boost * 0.15)
+                        )
+                        composite_score = min(composite_score, 100.0)
+
+                        new_results.append((chunk, composite_score))
+
+                    results = new_results
+
+                except ImportError:
+                    # BM25 not available, fall back to cosine + metadata
+                    logger.warning("rank-bm25 not available, using cosine + metadata only")
+                    results = [
+                        (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                        for chunk, score in results
+                    ]
+                except Exception as e:
+                    # BM25 calculation failed, fall back to cosine + metadata
+                    logger.warning(f"BM25 calculation failed ({e}), using cosine + metadata only")
+                    results = [
+                        (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                        for chunk, score in results
+                    ]
+            else:
+                # No query_text provided, fall back to cosine + metadata boosting
+                results = [
+                    (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                    for chunk, score in results
+                ]
+
+            # Sort by final score descending and limit to k
             results.sort(key=lambda x: x[1], reverse=True)
             return results[:k]
 

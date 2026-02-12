@@ -208,6 +208,16 @@ WHERE ps.ts_pct IS NOT NULL AND ps.gp >= 20
 ORDER BY ps.ts_pct DESC
 LIMIT 1;""",
     },
+    {
+        "input": "Which teams have at least 3 players with more than 1000 points?",
+        "query": """SELECT p.team, COUNT(*) AS player_count
+FROM players p
+JOIN player_stats ps ON p.id = ps.player_id
+WHERE ps.pts > 1000
+GROUP BY p.team
+HAVING COUNT(*) >= 3
+ORDER BY player_count DESC;""",
+    },
 ]
 
 
@@ -240,7 +250,7 @@ class NBAGSQLTool:
 
         # Initialize LLM (Gemini for SQL generation)
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite",
+            model="gemini-2.0-flash",
             temperature=0.0,  # Deterministic for SQL generation
             google_api_key=self._api_key,
         )
@@ -278,6 +288,9 @@ IMPORTANT RULES:
     - "top N" with specific number → LIMIT N
     - "top players" without number → LIMIT 5 (reasonable default)
     - Comparison of multiple players → LIMIT 5-10 for manageable results
+12. For "at least N" or "more than N" per-group queries, use GROUP BY + HAVING:
+    - Example: "teams with at least 3 players scoring 1000+" → GROUP BY team HAVING COUNT(*) >= 3
+    - Always put group-level conditions in HAVING (not WHERE)
 
 EXAMPLES:""",
             suffix="\n\nNow generate a SIMPLE, DIRECT SQL query for this question.\nUser question: {input}\nSQL query:",

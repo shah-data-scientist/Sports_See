@@ -101,32 +101,3 @@ async def search(
     return results
 
 
-@router.post(
-    "/ask",
-    response_model=ChatResponse,
-    summary="Quick Question",
-    description="Simplified endpoint - just send a question as query parameter.",
-)
-async def ask(
-    question: str = Query(
-        ...,
-        min_length=1,
-        max_length=2000,
-        description="Your question",
-        examples=["Who won the NBA championship in 2023?"],
-    ),
-) -> ChatResponse:
-    """Quick question endpoint.
-
-    Simplified interface for asking questions - just pass the question
-    as a query parameter.
-
-    Args:
-        question: The question to ask
-
-    Returns:
-        ChatResponse with AI-generated answer
-    """
-    request = ChatRequest(query=question)
-    service = get_chat_service()
-    return service.chat(request)

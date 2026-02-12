@@ -1,16 +1,10 @@
+[server]
+runOnSave = false
+fileWatcherType = "none"
+headless = true
+
 [client]
-showErrorDetails = true
+showErrorDetails = false
 
 [logger]
-level = "warning"
-
-[client.toolbarMode]
-mode = "minimal"
-
-[server]
-# Disable auto-reload to prevent torch module inspection issues
-runOnSave = false
-fileWatcherType = "poll"
-
-[deprecation]
-showPyplotGlobalUse = false
+level = "error"

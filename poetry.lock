@@ -6366,6 +6366,24 @@ gdrive = ["google-api-python-client (>=2.178.0)", "google-auth (>=2.40.3)", "goo
 tracing = ["langfuse (>=3.2.4)", "mlflow (>=3.1.4)"]
 
 [[package]]
+name = "rank-bm25"
+version = "0.2.2"
+description = "Various BM25 algorithms for document ranking"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae"},
+    {file = "rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[package.extras]
+dev = ["pytest"]
+
+[[package]]
 name = "rapidocr-onnxruntime"
 version = "1.4.4"
 description = "A cross platform OCR Library based on OnnxRuntime."
@@ -8865,4 +8883,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "8da9e1a1bec0dce834e10573fc07aceef2931044b38106539722beac632db2c1"
+content-hash = "f464649a1bd2aad822a40606672dfbbf2eae9bdeb693a6f22b3d3fc089cf1a65"

@@ -306,20 +306,27 @@ def analyze_query_structure(results: list[dict[str, Any]]) -> dict[str, Any]:
         if "LIMIT" in sql_upper:
             structure_stats["queries_with_limit"] += 1
 
-        question = result.get("question", "").lower()
-        is_player_query = any(
-            keyword in question
-            for keyword in ["who", "player", "lebron", "curry", "name"]
-        )
+        # Check JOIN correctness: only flag as "missing JOIN" if the query
+        # references player_stats but NOT players table AND needs player names.
+        # Aggregate-only queries (COUNT, AVG, etc.) on player_stats alone are valid.
+        sql_lower = sql.lower()
+        has_players_table = "players" in sql_lower
+        has_player_stats_table = "player_stats" in sql_lower
+        has_join = "JOIN" in sql_upper
 
-        if is_player_query:
-            has_players_table = "players" in sql.lower()
-            has_player_stats_table = "player_stats" in sql.lower()
-            has_join = "JOIN" in sql_upper
-
-            if has_players_table and has_player_stats_table and has_join:
-                structure_stats["correctness"]["correct_joins"] += 1
-            elif has_player_stats_table and not has_join:
+        if has_players_table and has_player_stats_table and has_join:
+            structure_stats["correctness"]["correct_joins"] += 1
+        elif has_player_stats_table and not has_join:
+            # Check if query actually needs player names (SELECT p.name, WHERE p.name)
+            # Aggregate queries on player_stats alone (AVG, COUNT, MAX, etc.) don't need JOIN
+            needs_player_name = any(
+                kw in sql_lower for kw in ["p.name", "players.name", "p.team"]
+            )
+            question = result.get("question", "").lower()
+            asks_about_player = any(
+                kw in question for kw in ["who", "player", "name", "lebron", "curry", "jokic", "embiid"]
+            )
+            if needs_player_name or asks_about_player:
                 structure_stats["correctness"]["missing_joins"] += 1
                 structure_stats["correctness"]["examples"].append({
                     "question": result.get("question"),

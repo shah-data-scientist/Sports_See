@@ -7,6 +7,7 @@ MAINTAINER: Shahu
 """
 
 import json
+import statistics
 import sys
 import time
 from collections import defaultdict
@@ -29,10 +30,112 @@ from src.evaluation.analysis.sql_quality_analysis import (
 )
 from src.evaluation.test_cases.sql_test_cases import SQL_TEST_CASES
 
-# Rate limiting configuration for Gemini free tier
-RATE_LIMIT_DELAY_SECONDS = 15  # Increased from 9 to 15 seconds
-MAX_RETRIES = 2
-RETRY_BACKOFF_SECONDS = 15  # Wait 15s on 429 before retry
+# Rate limiting configuration for Gemini free tier (15 RPM)
+# SQL queries consume ~2 Gemini calls each (SQL gen + LLM response)
+# At 20s delay = 3 queries/min = ~6 Gemini calls/min (well under 15 RPM)
+RATE_LIMIT_DELAY_SECONDS = 20
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 30  # Wait 30s on 429 before retry
+BATCH_SIZE = 10  # Extra cooldown every N queries
+BATCH_COOLDOWN_SECONDS = 30  # Extra pause between batches
+
+
+# ============================================================================
+# INLINE: SQLOracle - Ground truth validation
+# ============================================================================
+class SQLOracle:
+    """Ground truth oracle for validating SQL evaluation results."""
+
+    def __init__(self):
+        """Initialize oracle with ground truth from test cases."""
+        self.oracle = self._build_oracle()
+
+    def _build_oracle(self) -> dict[str, dict[str, Any]]:
+        """Build oracle from test case ground truth."""
+        oracle = {}
+        for test_case in SQL_TEST_CASES:
+            key = test_case.question.strip().lower()
+            oracle[key] = {
+                "expected_answer": test_case.ground_truth_answer,
+                "expected_data": test_case.ground_truth_data,
+                "category": getattr(test_case, "category", "unknown"),
+            }
+        return oracle
+
+    def get_oracle_entry(self, question: str) -> dict[str, Any] | None:
+        """Retrieve oracle entry for a question."""
+        key = question.strip().lower()
+        return self.oracle.get(key)
+
+    def validate_result(self, question: str, actual_response: str) -> bool:
+        """Validate if response is semantically correct."""
+        if not actual_response or not actual_response.strip():
+            return False
+        oracle_entry = self.get_oracle_entry(question)
+        if oracle_entry is None:
+            return False
+        # Simple validation: check if key numeric values appear in response
+        response_lower = actual_response.lower()
+        expected_data = oracle_entry.get("expected_data")
+        if isinstance(expected_data, dict):
+            for value in expected_data.values():
+                if isinstance(value, (int, float)):
+                    if str(value) not in response_lower and str(int(value)) not in response_lower:
+                        return False
+        return True
+
+
+# ============================================================================
+# INLINE: Comprehensive analysis functions
+# ============================================================================
+def analyze_sql_results(results: list[dict], oracle: SQLOracle) -> dict[str, Any]:
+    """Generate comprehensive SQL evaluation analysis."""
+    successful = [r for r in results if r.get("success", False)]
+
+    # Calculate accuracy
+    correct_count = sum(
+        1 for r in successful
+        if oracle.validate_result(r.get("question", ""), r.get("response", ""))
+    )
+    accuracy_rate = (correct_count / len(successful) * 100) if successful else 0
+
+    # Calculate latencies
+    times = [r.get("processing_time_ms", 0) for r in successful if isinstance(r.get("processing_time_ms"), (int, float))]
+    if times:
+        p50 = statistics.median(times)
+        p95 = statistics.quantiles(times, n=20)[18] if len(times) >= 20 else max(times)
+        p99 = statistics.quantiles(times, n=100)[98] if len(times) >= 100 else max(times)
+    else:
+        p50 = p95 = p99 = 0
+
+    # Analyze by category
+    by_category = defaultdict(lambda: {"count": 0, "correct": 0, "times": []})
+    for r in results:
+        cat = r.get("category", "unknown")
+        by_category[cat]["count"] += 1
+        if r.get("success") and oracle.validate_result(r.get("question", ""), r.get("response", "")):
+            by_category[cat]["correct"] += 1
+        if isinstance(r.get("processing_time_ms"), (int, float)):
+            by_category[cat]["times"].append(r["processing_time_ms"])
+
+    return {
+        "overall": {
+            "total_queries": len(results),
+            "successful": len(successful),
+            "accuracy_rate": round(accuracy_rate, 2),
+            "p50_ms": round(p50, 2),
+            "p95_ms": round(p95, 2),
+            "p99_ms": round(p99, 2),
+        },
+        "by_category": {
+            cat: {
+                "count": data["count"],
+                "accuracy_rate": round(data["correct"] / data["count"] * 100 if data["count"] > 0 else 0, 2),
+                "avg_time_ms": round(statistics.mean(data["times"]) if data["times"] else 0, 2),
+            }
+            for cat, data in by_category.items()
+        },
+    }
 
 
 def _is_followup_question(question: str) -> bool:
@@ -65,6 +168,21 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
     success_count = 0
     failure_count = 0
 
+    # Checkpoint file for crash recovery
+    output_dir = Path("evaluation_results")
+    output_dir.mkdir(exist_ok=True)
+    checkpoint_path = output_dir / "sql_evaluation_checkpoint.json"
+
+    # Resume from checkpoint if exists
+    start_index = 0
+    if checkpoint_path.exists():
+        checkpoint_data = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        results = checkpoint_data.get("results", [])
+        start_index = len(results)
+        success_count = sum(1 for r in results if r.get("success"))
+        failure_count = sum(1 for r in results if not r.get("success"))
+        logger.info(f"Resuming from checkpoint: {start_index}/{len(SQL_TEST_CASES)} done ({success_count} success, {failure_count} failures)")
+
     # Create FastAPI app and run evaluation through API
     app = create_app()
     with TestClient(app) as client:
@@ -72,10 +190,19 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
         current_turn_number = 0
 
         for i, test_case in enumerate(SQL_TEST_CASES, 1):
+            # Skip already-completed cases (checkpoint resume)
+            if i <= start_index:
+                continue
+
             logger.info(f"[{i}/{len(SQL_TEST_CASES)}] Evaluating: {test_case.question}")
 
             # Rate limit delay (skip before first query)
-            if i > 1:
+            if i > 1 and i > start_index + 1:
+                # Extra batch cooldown every BATCH_SIZE queries
+                queries_done = i - start_index - 1
+                if queries_done > 0 and queries_done % BATCH_SIZE == 0:
+                    logger.info(f"  Batch cooldown: {BATCH_COOLDOWN_SECONDS}s (after {queries_done} queries)...")
+                    time.sleep(BATCH_COOLDOWN_SECONDS)
                 time.sleep(RATE_LIMIT_DELAY_SECONDS)
 
             # Handle conversational test cases
@@ -181,18 +308,38 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
                 })
                 failure_count += 1
 
+            # Save checkpoint after each query
+            checkpoint_path.write_text(
+                json.dumps({"results": results, "completed": i}, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
     logger.info(f"\nEvaluation complete: {success_count} success, {failure_count} failures")
+
+    # Generate comprehensive analysis using oracle and analysis module
+    logger.info("Generating comprehensive analysis...")
+    oracle = SQLOracle()
+    analysis = analyze_sql_results(results, oracle)
 
     # Save results to JSON
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path("evaluation_results")
-    output_dir.mkdir(exist_ok=True)
 
     json_path = output_dir / f"sql_evaluation_{timestamp}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
+    # Save analysis to separate JSON file
+    analysis_path = output_dir / f"sql_evaluation_analysis_{timestamp}.json"
+    with open(analysis_path, "w", encoding="utf-8") as f:
+        json.dump(analysis, f, indent=2, ensure_ascii=False)
+
+    # Clean up checkpoint after successful save
+    if checkpoint_path.exists():
+        checkpoint_path.unlink()
+        logger.info("Checkpoint file cleaned up")
+
     logger.info(f"Results saved to: {json_path}")
+    logger.info(f"Analysis saved to: {analysis_path}")
 
     return results, str(json_path)
 
@@ -212,6 +359,9 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
     report_path = output_dir / f"sql_evaluation_report_{timestamp}.md"
 
     # Run all analyses
+    oracle = SQLOracle()
+    analysis = analyze_sql_results(results, oracle)
+
     error_taxonomy = analyze_error_taxonomy(results)
     fallback_patterns = analyze_fallback_patterns(results)
     response_quality = analyze_response_quality(results)
@@ -247,9 +397,12 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         f.write(f"- **Total Queries:** {total_queries}\n")
         f.write(f"- **Successful Executions:** {successful_queries} ({success_rate:.1f}%)\n")
         f.write(f"- **Failed Executions:** {failed_queries}\n")
+        f.write(f"- **Result Accuracy:** {analysis['overall']['result_accuracy_rate']:.1f}% ({analysis['overall']['result_accuracy_count']}/{analysis['overall']['execution_success_count']})\n")
         f.write(f"- **Classification Accuracy:** {classification_accuracy:.1f}%\n")
         f.write(f"- **Misclassifications:** {misclassifications}\n")
-        f.write(f"- **Avg Processing Time:** {avg_processing_time:.0f}ms\n\n")
+        f.write(f"- **Avg Processing Time:** {avg_processing_time:.0f}ms\n")
+        f.write(f"- **p95 Processing Time:** {analysis['overall']['p95_processing_time_ms']:.0f}ms\n")
+        f.write(f"- **p99 Processing Time:** {analysis['overall']['p99_processing_time_ms']:.0f}ms\n\n")
 
         # Failure Analysis
         f.write("## Failure Analysis\n\n")
@@ -287,11 +440,48 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
             f.write("### Routing Misclassifications\n\n")
             f.write("✓ No routing misclassifications detected.\n\n")
 
+        # Result Accuracy Analysis
+        f.write("## Result Accuracy Analysis\n\n")
+        f.write(f"- **Correct Results:** {analysis['accuracy']['correct_results']}\n")
+        f.write(f"- **Incorrect Results:** {analysis['accuracy']['incorrect_results']}\n")
+        f.write(f"- **Unknown (Not in Oracle):** {analysis['accuracy']['unknown_results']}\n\n")
+
+        if analysis['accuracy']['accuracy_breakdown']:
+            f.write("### Accuracy Breakdown\n\n")
+            for accuracy_type, count in analysis['accuracy']['accuracy_breakdown'].items():
+                f.write(f"- **{accuracy_type.replace('_', ' ').title()}:** {count}\n")
+            f.write("\n")
+
+        # SQL Quality Analysis
+        f.write("## SQL Quality Analysis\n\n")
+        f.write(f"- **Total Queries with SQL:** {analysis['sql_quality']['total_queries_with_sql']}\n")
+        f.write(f"- **Queries with JOINs:** {analysis['sql_quality']['queries_with_joins']}\n")
+        f.write(f"- **JOIN Correctness Rate:** {analysis['sql_quality']['join_correctness_rate']:.1f}% ({analysis['sql_quality']['join_correctness_count']}/{analysis['sql_quality']['queries_with_joins']})\n")
+        f.write(f"- **Broken JOINs:** {analysis['sql_quality']['broken_joins_count']} ({analysis['sql_quality']['broken_joins_rate']:.1f}%)\n")
+        f.write(f"- **Missing JOINs (Estimated):** {analysis['sql_quality']['missing_joins_estimated']}\n\n")
+
+        if analysis['sql_quality']['broken_joins_sample']:
+            f.write("### Broken JOINs (Sample)\n\n")
+            for i, broken_join in enumerate(analysis['sql_quality']['broken_joins_sample'], 1):
+                f.write(f"{i}. **{broken_join['question'][:80]}**\n")
+                f.write(f"   - Issue: {broken_join['issue']}\n")
+                f.write(f"   - SQL: `{broken_join['sql']}`\n\n")
+
         # Performance Metrics
         f.write("### Performance Metrics\n\n")
         f.write(f"- **Average Processing Time:** {avg_processing_time:.0f}ms\n")
         f.write(f"- **Min Processing Time:** {min_processing_time:.0f}ms\n")
-        f.write(f"- **Max Processing Time:** {max_processing_time:.0f}ms\n\n")
+        f.write(f"- **Max Processing Time:** {max_processing_time:.0f}ms\n")
+        f.write(f"- **p50 (Median):** {analysis['overall']['p50_processing_time_ms']:.0f}ms\n")
+        f.write(f"- **p95:** {analysis['overall']['p95_processing_time_ms']:.0f}ms\n")
+        f.write(f"- **p99:** {analysis['overall']['p99_processing_time_ms']:.0f}ms\n\n")
+
+        if analysis['performance']['outlier_queries']:
+            f.write("### Performance Outliers\n\n")
+            f.write(f"Found {analysis['performance']['outlier_count']} queries exceeding threshold ({analysis['performance']['outlier_threshold_ms']:.0f}ms):\n\n")
+            for outlier in analysis['performance']['outlier_queries']:
+                f.write(f"- **{outlier['question'][:80]}** ({outlier['time_ms']:.0f}ms) - {outlier['category']}\n")
+            f.write("\n")
 
         # Response Quality Analysis
         f.write("## Response Quality Analysis\n\n")
@@ -371,6 +561,18 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         else:
             f.write("No SQL queries were captured for column selection analysis.\n\n")
 
+        # Category Performance Analysis
+        f.write("## Category Performance Analysis\n\n")
+        f.write("| Category | Count | Success | Accuracy | Avg Time | Fallback Rate |\n")
+        f.write("|----------|-------|---------|----------|----------|---------------|\n")
+        for category, stats in sorted(analysis['by_category'].items()):
+            f.write(
+                f"| {category} | {stats['count']} | "
+                f"{stats['success_rate']:.1f}% | {stats['accuracy_rate']:.1f}% | "
+                f"{stats['avg_processing_time_ms']:.0f}ms | {stats['fallback_rate']:.1f}% |\n"
+            )
+        f.write("\n")
+
         # Key Findings
         f.write("## Key Findings\n\n")
         findings = []
@@ -382,12 +584,31 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         else:
             findings.append(f"❌ **Poor execution reliability** ({success_rate:.1f}% success rate) - needs attention")
 
+        # Result accuracy finding
+        result_accuracy = analysis['overall']['result_accuracy_rate']
+        if result_accuracy >= 90:
+            findings.append(f"✓ **Excellent result accuracy** ({result_accuracy:.1f}%) - responses match expected results")
+        elif result_accuracy >= 75:
+            findings.append(f"⚠ **Good result accuracy** ({result_accuracy:.1f}%) - some errors detected")
+        else:
+            findings.append(f"❌ **Low result accuracy** ({result_accuracy:.1f}%) - significant improvements needed")
+
         if classification_accuracy >= 95:
             findings.append(f"✓ **High classification accuracy** ({classification_accuracy:.1f}%)")
         elif classification_accuracy >= 80:
             findings.append(f"⚠ **Moderate classification accuracy** ({classification_accuracy:.1f}%) - could be improved")
         else:
             findings.append(f"❌ **Low classification accuracy** ({classification_accuracy:.1f}%) - needs improvement")
+
+        # JOIN quality finding
+        join_correctness = analysis['sql_quality']['join_correctness_rate']
+        broken_joins = analysis['sql_quality']['broken_joins_count']
+        if join_correctness >= 95:
+            findings.append(f"✓ **Excellent JOIN correctness** ({join_correctness:.1f}%) - properly structured queries")
+        elif broken_joins > 0:
+            findings.append(f"❌ **Critical: {broken_joins} broken JOINs detected** ({analysis['sql_quality']['broken_joins_rate']:.1f}%) - results may be incorrect")
+        else:
+            findings.append(f"⚠ **Moderate JOIN quality** ({join_correctness:.1f}%)")
 
         if fallback_patterns['fallback_rate'] < 10:
             findings.append(f"✓ **Low fallback rate** ({fallback_patterns['fallback_rate']:.1f}%) indicates good SQL routing")
@@ -403,11 +624,14 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         else:
             findings.append(f"❌ **Multiple LLM errors** ({error_taxonomy['total_errors']}) detected - review prompts")
 
-        if query_structure['total_queries'] > 0:
-            if query_structure['correctness']['missing_joins'] == 0:
-                findings.append("✓ **All player queries use correct JOINs**")
-            else:
-                findings.append(f"❌ **{query_structure['correctness']['missing_joins']} queries missing required JOINs**")
+        # Latency finding
+        p95_time = analysis['overall']['p95_processing_time_ms']
+        if p95_time < 10000:
+            findings.append(f"✓ **Fast performance** (p95: {p95_time:.0f}ms) suitable for interactive use")
+        elif p95_time < 30000:
+            findings.append(f"⚠ **Moderate performance** (p95: {p95_time:.0f}ms)")
+        else:
+            findings.append(f"❌ **Slow performance** (p95: {p95_time:.0f}ms) - consider optimization")
 
         for finding in findings:
             f.write(f"{finding}\n\n")

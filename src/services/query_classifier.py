@@ -2,7 +2,7 @@
 FILE: query_classifier.py
 STATUS: Active
 RESPONSIBILITY: Classify queries as statistical, contextual, or hybrid for routing
-LAST MAJOR UPDATE: 2026-02-11
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -11,6 +11,19 @@ import re
 from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+# Basketball glossary terms that should route to CONTEXTUAL (vector search)
+# These are reference/definitional terms, not data queries
+BASKETBALL_GLOSSARY_TERMS = [
+    # Abbreviations & Metrics
+    "triple-double", "double-double", "triple double", "double double",
+    # Formal definitions (not just abbreviations, but actual terms people look up)
+    "first option", "second option", "third option",
+    "iso", "isolation", "pick and roll", "pick-and-roll", "pnr",
+    "zone defense", "man-to-man defense", "man to man",
+    "variance", "true shooting", "effective field goal",
+    "player impact estimate", "plus-minus",
+]
 
 
 class QueryType(Enum):
@@ -29,13 +42,19 @@ class QueryClassifier:
     # If a user mentions any of these, the query is almost certainly statistical.
 
     # Basic stat abbreviations (from player_stats table)
+    # Note: fg%, 3p%, ts% etc. use non-word-boundary matching (see pattern A below)
+    # because % is not a word character and \b won't match between letter and %
     _STAT_ABBRS = (
-        r"pts|reb|ast|stl|blk|tov|pf|gp|fgm|fga|fg%|ftm|fta|ft%"
-        r"|3pm|3pa|3p%|efg%|ts%|usg%|oreb|dreb|oreb%|dreb%|reb%"
+        r"pts|reb|ast|stl|blk|tov|pf|gp|fgm|fga|ftm|fta"
+        r"|3pm|3pa|oreb|dreb"
         r"|fp|dd2|td3|pie|pace|poss"
+        r"|ppg|rpg|apg|spg|bpg|mpg"  # Per-game abbreviations
+        r"|avg|pct"  # Common informal abbreviations
     )
+    # Percentage abbreviations (need special matching without trailing \b)
+    _PCT_ABBRS = r"fg%|ft%|3p%|efg%|ts%|usg%|oreb%|dreb%|reb%|ast%"
     # Advanced metric abbreviations
-    _ADV_ABBRS = r"offrtg|defrtg|netrtg|ast%|ast/to|to\s*ratio|ast\s*ratio"
+    _ADV_ABBRS = r"offrtg|defrtg|netrtg|ast/to|to\s*ratio|ast\s*ratio"
 
     # Full stat words (natural language equivalents of column headers)
     _STAT_WORDS = (
@@ -44,6 +63,11 @@ class QueryClassifier:
         r"|free\s*throws?|field\s*goals?|three.pointers?"
         r"|double.doubles?|triple.doubles?"
         r"|possessions?|personal\s+fouls?"
+        r"|stats|statistics|averages?|numbers"
+        r"|attempts?|makes?|percentage|pct|efficiency"
+        r"|record|season|roster"
+        r"|mvp|all.star|all.nba|rookie|veteran|starter|bench"
+        r"|scorer|rebounder|passer|shooter|blocker|playmaker"
     )
     # Data dictionary full names (the words people actually use in questions)
     # Source: data_dictionary table in nba_stats.db (45 entries)
@@ -71,10 +95,12 @@ class QueryClassifier:
     # Statistical query patterns (SQL database)
     STATISTICAL_PATTERNS = [
         # ── A. Database column headers as detection patterns ───────────
-        # Stat abbreviations (strong signal: PTS, REB, AST, FG%, TS%, PIE, etc.)
+        # Stat abbreviations (strong signal: PTS, REB, AST, PIE, etc.)
         rf"\b({_STAT_ABBRS})\b",
         rf"\b({_ADV_ABBRS})\b",
-        # Full stat words (points, rebounds, assists, steals, blocks, etc.)
+        # Percentage abbreviations (% is not a word char, so match without trailing \b)
+        rf"(?<!\w)({_PCT_ABBRS})",
+        # Full stat words (points, rebounds, assists, steals, blocks, stats, mvp, etc.)
         rf"\b({_STAT_WORDS})\b",
         # Data dictionary full names (the words people use: "field goal percentage", etc.)
         rf"({_DICT_NAMES})",
@@ -96,9 +122,8 @@ class QueryClassifier:
         # Threshold comparisons with numbers
         r"\b(better|worse|higher|lower|greater|fewer|more|less)\s+than\s+\d+",
         r"\b(over|under|above|below|exceeds?|at\s+least|at\s+most)\s+\d+",
-        # Comparative queries
-        r"\bcompare\b.*\b(to|vs|versus|and|with)\b",
-        r"\bcompare\b.*\b(stats|statistics|numbers)\b",
+        # Comparative queries (including bare "compare" without "to/vs")
+        r"\bcompare\b",
         r"\b(who has more|who has fewer|who has less|which player has more|who recorded more)\b",
 
         # ── E. Explicit filters with numbers ──────────────────────────
@@ -111,29 +136,37 @@ class QueryClassifier:
         r"\b(who\s+is|who.?s|which)\b.*\b(best|better|worst|worse)\b.*\b(scorer|rebounder|passer|defender|shooter|blocker|player)\b",
         r"\b(best|better|worst|worse)\b.*\b(at|in|for)\b.*\b(scoring|rebounding|assists|defense|shooting|blocking|stealing)\b",
         r"\b(who has|which player has)\b.*\b(best|worst|highest|lowest|top|better)\b.*\b(percentage|pct|efficiency|rating)\b",
-        # Show/List/Find/Get stat leaders
+        # Show/List/Find/Get stat leaders or stats
         r"\b(show|list|find|get)\b.*\b(assist|rebound|point|steal|block|score|stat).*(leader|top|best|worst)\b",
         r"\b(show|list|find|get)\b.*(the)?\s*(top|bottom|best|worst|leading|leader)",
+        r"\b(show|list|find|get)\b.*\b(me\s+)?\b(stats|statistics|averages?|numbers)\b",
         # Casual queries
-        r"\b(who\s+is|who.?s)\b.*\b(leading|top|number one|#1|the\s+best|the\s+worst)\b",
+        r"\b(who\s+is|who.?s)\b.*\b(leading|top|number one|#1|the\s+best|the\s+worst|the\s+mvp)\b",
         r"\b(tell me about|gimme|give me)\b.*\b(stats|statistics|numbers|leaders?|scoring|averages?)\b",
         r"\b(leaders?|leader)\b",
 
         # ── G. Team roster / player list queries ──────────────────────
         r"\b(list|show|find|get)\b.*\b(all\s+)?\bplayers?\b",
         r"\bplays?\s+(for|on)\b",
+        # Team name + "stats/players/roster"
+        r"\b(lakers?|celtics?|warriors?|nets?|knicks?|bulls?|heat|suns?|nuggets?|bucks?|76ers|sixers|cavaliers?|cavs|hawks?|rockets?|clippers?|mavericks?|mavs|grizzlies|thunder|pelicans?|kings?|pistons?|hornets?|wizards?|pacers?|raptors?|blazers?|spurs?|wolves|timberwolves|magic|jazz)\b",
 
         # ── H. Statistical verbs ──────────────────────────────────────
         r"\b(scored|averaging|shooting|recording|ranked|ranking)\b.*\d+",
         r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b",
+        r"\b(scored|averaging|recording)\b",  # Without numbers too
 
         # ── I. Possessive & pronoun stat queries ──────────────────────
         r"\bwhat is\b.*'s?\s+\b(\d-point|three.point|free.throw|field.goal|scoring|shooting|rebound|assist|block|steal)",
         r"\b(his|her|their|its)\s+(assists?|rebounds?|points?|steals?|blocks?|stats?|scoring|shooting|games?|wins?|losses?|minutes?|turnovers?|fouls?|rating|efficiency|percentage)\b",
+        # Possessive with player name: "curry's", "lebron's"
+        r"\w+'s\s+(stats|points|rebounds|assists|steals|blocks|shooting|scoring|efficiency|averages?|numbers|percentage|pct|record)\b",
 
         # ── J. 3-point / shooting references ──────────────────────────
         r"\bfrom\s+3\b|\bfrom\s+three\b|\bfrom\s+downtown\b",
         r"\b(shoots?|shooting)\b.*\b(better|worse|best|worst|from\s+\d|from\s+three)\b",
+        # Informal: "3 pt", "3pt", "3-pt" (with or without spaces)
+        r"\b3\s*-?\s*pt\b",
 
         # ── K. Filter/find queries ────────────────────────────────────
         r"\b(find|which|who are)\b.*\b(players?|teams?)\b.*\b(with|having|that)\b",
@@ -145,23 +178,31 @@ class QueryClassifier:
         # "efficient goal maker", "better scorer", "more efficient shooter"
         r"\b(efficient|effective|productive)\s+(goal\s*maker|scorer|shooter|rebounder|passer|blocker|playmaker|player)\b",
         r"\b(who\s+is|who.?s)\b.*\b(more|most|less|least)\b.*\b(efficient|effective|productive)\b",
+
+        # ── M. Noisy/informal query patterns ─────────────────────────
+        # Slang verbs + stat terms: "whats the avg", "gimme", "show me"
+        r"\b(whats?|wuts|wat)\b.*\b(avg|average|stats?|pct|record|points?|assists?|rebounds?)\b",
+        # "da league", "in da", "da nba" (slang)
+        r"\bda\s+(league|nba)\b",
+        # "plz", "pls", "lol", "yo", "bruh" near stat terms
+        r"\b(plz|pls|lol|yo|bruh|bro|fam)\b",
     ]
 
     # Contextual query patterns (vector search)
     CONTEXTUAL_PATTERNS = [
-        # Why/how questions (qualitative)
-        r"\b(why|how|explain|what makes|what caused)\b(?!.*\b(many|much)\b)",
+        # Why/how questions (qualitative) — exclude "how many", "how much", "how does X compare"
+        r"\b(why|explain|what makes|what caused)\b",
+        r"\bhow\b(?!.*\b(many|much)\b)(?!.*\bcompare\b)",
         # Opinions and discussions
         r"\b(think|believe|opinion|discussion|debate|argue)\b",
         r"\b(reddit|fans|people|community)\b.*\b(think|say|discuss)\b",
         # Strategy and style
         r"\b(strategy|style|approach|technique|tactics)\b",
-        r"\b(play|playing|game plan)\b",
         # Historical context
         r"\b(history|evolution|changed|transformation)\b",
         # Qualitative assessments (exclude "better than [number]" = statistical threshold)
         r"\b(greatest|goat|best ever|all.time)\b(?!.*\bstats\b)",
-        r"\b(better|worse)\b(?!.*\bstats\b)(?!.*\bthan\s+\d)",
+        r"\b(better|worse)\b(?!.*\bstats\b)(?!.*\bthan\s+\d)(?!.*\bcompare\b)",
         # Impact and influence
         r"\b(impact|influence|effect|significance)\b",
         # Analysis and interpretation
@@ -211,6 +252,45 @@ class QueryClassifier:
         self.contextual_regex = [re.compile(p, re.IGNORECASE) for p in self.CONTEXTUAL_PATTERNS]
         self.hybrid_regex = [re.compile(p, re.IGNORECASE) for p in self.HYBRID_PATTERNS]
 
+    @staticmethod
+    def _is_definitional(query: str) -> bool:
+        """Detect if query is asking for definition or explanation.
+
+        Definitions should route to CONTEXTUAL even if they contain stat keywords.
+        Examples: "Define TS%", "What is a triple-double?", "What does efficiency mean?"
+
+        Note: Be careful not to catch explanatory "explain" in hybrid queries like
+        "explain why they are so effective" - only catch definitional "explain".
+        """
+        q = query.strip().lower()
+
+        definitional_patterns = [
+            r"\b(define|definition)\b",  # Explicit define/definition
+            r"\bwhat\s+(is|does|means?|do)\b\s+[a-z]{0,20}(\s+[a-z]{0,20})?$",  # "What is X?" - only at end
+            r"\b(what\s+is\s+a)\b",  # "what is a triple-double"
+            r"\b(meaning\s+of|refers\s+to|what.*refers?)",  # Reference questions
+            r"\bexplain\b\s+(the\s+)?(definition|meaning|concept|difference)",  # Definitional explain only
+        ]
+
+        return any(re.search(p, q) for p in definitional_patterns)
+
+    @staticmethod
+    def _has_glossary_term(query: str) -> bool:
+        """Check if query references a basketball glossary term.
+
+        Glossary terms are definitional/reference content, should route to CONTEXTUAL.
+        Examples: "What is a triple-double?", "Explain pick and roll", "First option meaning"
+        """
+        q = query.lower()
+
+        # Check for glossary terms
+        for term in BASKETBALL_GLOSSARY_TERMS:
+            # Use word boundaries to avoid false matches
+            if re.search(rf"\b{re.escape(term)}\b", q):
+                return True
+
+        return False
+
     def classify(self, query: str) -> QueryType:
         """Classify query type based on patterns.
 
@@ -219,6 +299,9 @@ class QueryClassifier:
         - Promote to HYBRID when both stat and context patterns match strongly
         - Better tie-breaking logic
 
+        Phase 13 (Vector remediation):
+        - CRITICAL: Check definitional queries FIRST (override stat keywords)
+
         Args:
             query: User query string
 
@@ -226,6 +309,18 @@ class QueryClassifier:
             QueryType (STATISTICAL, CONTEXTUAL, or HYBRID)
         """
         query_normalized = query.strip().lower()
+
+        # CRITICAL: Check definitional queries FIRST (override stat keywords)
+        # Examples: "Define TS%", "What is a triple-double?" should be CONTEXTUAL not SQL
+        if self._is_definitional(query):
+            logger.info(f"Query is definitional, routing to CONTEXTUAL")
+            return QueryType.CONTEXTUAL
+
+        # Check for glossary terms (basketball reference/definitional terms)
+        # Examples: "triple-double", "pick and roll", "first option"
+        if self._has_glossary_term(query):
+            logger.info(f"Query references glossary term, routing to CONTEXTUAL")
+            return QueryType.CONTEXTUAL
 
         # Check hybrid patterns first (most specific)
         hybrid_matches = sum(1 for pattern in self.hybrid_regex if pattern.search(query_normalized))
@@ -282,6 +377,12 @@ if __name__ == "__main__":
         ("What is LeBron's average points per game?", QueryType.STATISTICAL),
         ("Which team has the most wins?", QueryType.STATISTICAL),
         ("Show me players with over 100 three-pointers", QueryType.STATISTICAL),
+        # Previously-failed statistical queries (should now classify correctly)
+        ("Who is the MVP this season?", QueryType.STATISTICAL),
+        ("Show me stats for the Warriors", QueryType.STATISTICAL),
+        ("show me currys 3 pt pct", QueryType.STATISTICAL),
+        ("whats the avg fg% in da league lol", QueryType.STATISTICAL),
+        ("How does LeBron James compare?", QueryType.STATISTICAL),
         # Contextual
         ("Why is LeBron considered the GOAT?", QueryType.CONTEXTUAL),
         ("What do Reddit fans think about the trade?", QueryType.CONTEXTUAL),

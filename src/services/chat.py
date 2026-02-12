@@ -2,29 +2,67 @@
 FILE: chat.py
 STATUS: Active
 RESPONSIBILITY: Hybrid RAG pipeline (SQL + Vector Search) orchestration service
-LAST MAJOR UPDATE: 2026-02-11
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
 import logging
 import time
-from typing import Callable, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
-from google import genai
-from google.genai.errors import ClientError
+# LAZY IMPORTS: Heavy modules are imported on-demand, not at module load time
+# This prevents 30-second startup hangs in Streamlit
+# Modules are imported inside functions/methods that actually use them
+_lazy_imports_initialized = False
+genai = None
+ClientError = None
+EmbeddingService = None
+QueryClassifier = None
+QueryType = None
+QueryExpander = None
+VisualizationService = None
+NBAGSQLTool = None
 
+
+def _initialize_lazy_imports():
+    """Initialize all heavy imports on first use."""
+    global _lazy_imports_initialized, genai, ClientError, EmbeddingService
+    global QueryClassifier, QueryType, QueryExpander, VisualizationService, NBAGSQLTool
+
+    if _lazy_imports_initialized:
+        return
+
+    # Import heavy modules (only happens once)
+    from google import genai as genai_module
+    from google.genai.errors import ClientError as ClientErrorModule
+    from src.services.embedding import EmbeddingService as EmbeddingServiceModule
+    from src.services.query_classifier import QueryClassifier as QueryClassifierModule
+    from src.services.query_classifier import QueryType as QueryTypeModule
+    from src.services.query_expansion import QueryExpander as QueryExpanderModule
+    from src.services.visualization_service import VisualizationService as VisualizationServiceModule
+    from src.tools.sql_tool import NBAGSQLTool as NBAGSQLToolModule
+
+    genai = genai_module
+    ClientError = ClientErrorModule
+    EmbeddingService = EmbeddingServiceModule
+    QueryClassifier = QueryClassifierModule
+    QueryType = QueryTypeModule
+    QueryExpander = QueryExpanderModule
+    VisualizationService = VisualizationServiceModule
+    NBAGSQLTool = NBAGSQLToolModule
+
+    _lazy_imports_initialized = True
+
+
+# Import only lightweight modules at module level
 from src.core.config import settings
 from src.core.exceptions import IndexNotFoundError, LLMError
 from src.core.observability import logfire
 from src.core.security import sanitize_query, validate_search_params
 from src.models.chat import ChatRequest, ChatResponse, SearchResult, Visualization
+from src.models.feedback import ChatInteractionCreate
 from src.repositories.feedback import FeedbackRepository
 from src.repositories.vector_store import VectorStoreRepository
-from src.services.embedding import EmbeddingService
-from src.services.query_classifier import QueryClassifier, QueryType
-from src.services.query_expansion import QueryExpander
-from src.services.visualization_service import VisualizationService
-from src.tools.sql_tool import NBAGSQLTool
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +138,7 @@ def retry_with_exponential_backoff(
 
 # Default prompt (fallback for general queries)
 # Phase 12C: Answer relevancy fix - direct, focused instructions
+# Phase 13: Add source grounding to prevent hallucination
 SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
 
 {conversation_history}
@@ -112,24 +151,27 @@ CONTEXT:
 USER QUESTION:
 {question}
 
-INSTRUCTIONS:
+CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
 
-**ANSWER THE EXACT QUESTION THE USER ASKED - NOTHING MORE, NOTHING LESS**
+**MANDATORY: You MUST ONLY answer based on the provided CONTEXT above.**
 
 1. Read the USER QUESTION carefully - understand what they're asking for
 2. Find the answer in the CONTEXT above - extract specific facts, numbers, or names
 3. Provide a DIRECT answer to the question
-4. Cite sources: [Source: document name] or [SQL] for database results
+4. Cite sources for ALL claims: [Source: document name] or [SQL] for database results
 5. If conversation history exists, use it to resolve pronouns (he, his, them)
 6. If no relevant data exists, say: "The available data doesn't contain this information"
 7. Respond in English
 
-Keep your answer focused and concise. Don't add extra information not requested.
+FORBIDDEN: Do NOT provide information from general knowledge not in the CONTEXT above.
+
+Keep your answer focused and concise. Only use provided sources.
 
 ANSWER:"""
 
 # SQL-only prompt: Force extraction of statistical data
 # Phase 12C: Answer relevancy fix - clear, direct extraction
+# Phase 13: Add source grounding for statistical context
 SQL_ONLY_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
 
 {conversation_history}
@@ -142,19 +184,22 @@ STATISTICAL DATA (FROM SQL DATABASE):
 USER QUESTION:
 {question}
 
-INSTRUCTIONS:
+CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
 
-**ANSWER THE EXACT QUESTION USING THE STATISTICAL DATA ABOVE**
+**ANSWER THE EXACT QUESTION USING THE STATISTICAL DATA ABOVE - CITE ALL SOURCES**
 
 1. The STATISTICAL DATA contains the exact answer from the database
 2. Extract the relevant data:
    - "COUNT Result: X" → answer with the number X
    - "AVERAGE Result: X" → answer with X
    - "Found N records" → list/summarize those records
-3. Provide a DIRECT answer to the question
+3. Provide a DIRECT answer to the question with citations [SQL]
 4. Format clearly - present numbers in a readable way
 5. If conversation history exists, resolve pronouns (he, his, them)
 6. Respond in English
+
+MANDATORY: Only use the STATISTICAL DATA provided above.
+Do NOT add information from general knowledge or sources not provided.
 
 CRITICAL: The STATISTICAL DATA above ALWAYS contains the answer.
 Do NOT say "data not available" if data is clearly shown above.
@@ -215,6 +260,7 @@ YOUR ANSWER (MUST combine both SQL stats + contextual analysis):"""
 
 # Contextual prompt: For qualitative analysis
 # Phase 12C: Answer relevancy fix - focused qualitative analysis
+# Phase 13: Add source grounding to prevent hallucination
 CONTEXTUAL_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
 
 {conversation_history}
@@ -227,20 +273,29 @@ CONTEXTUAL KNOWLEDGE:
 USER QUESTION:
 {question}
 
-INSTRUCTIONS:
+CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
 
-**ANSWER THE EXACT QUESTION USING THE CONTEXTUAL KNOWLEDGE ABOVE**
+**MANDATORY: You MUST ONLY answer based on the provided CONTEXTUAL KNOWLEDGE above.**
+**FORBIDDEN: Do NOT use information from general knowledge not in the sources.**
 
 1. Read the question - understand what qualitative insight they want
 2. Find the answer in the CONTEXTUAL KNOWLEDGE - look for playing styles, strategies, expert opinions, analysis
-3. Provide a DIRECT answer to the question
-4. Cite sources for credibility: [Source: document name]
+3. For EACH fact you state:
+   - Either cite the source: [Source: document name]
+   - Or explicitly say: "The sources indicate..." or "According to the sources..."
+4. If information is NOT in the contextual knowledge:
+   - YOU MUST SAY: "Based on the provided sources, I cannot find information about [topic]."
+   - Do NOT provide information from your general knowledge
 5. Focus on qualitative analysis (WHY/HOW, not statistics)
 6. If conversation history exists, resolve pronouns (he, his, them)
-7. If context lacks the information, say: "The available context doesn't contain this information"
-8. Respond in English
+7. Respond in English
 
-Keep your answer focused on what was asked. Don't add unrelated analysis.
+FORBIDDEN BEHAVIORS:
+- Do NOT state facts from general knowledge if not in sources
+- Do NOT infer beyond what sources explicitly state
+- Do NOT answer if sources lack the information
+
+Keep your answer focused on what was asked. Only use provided sources.
 
 ANSWER:"""
 
@@ -258,11 +313,11 @@ class ChatService:
 
     def __init__(
         self,
-        vector_store: VectorStoreRepository | None = None,
-        embedding_service: EmbeddingService | None = None,
-        feedback_repository: FeedbackRepository | None = None,
-        api_key: str | None = None,
-        model: str | None = None,
+        vector_store: Optional[Any] = None,  # VectorStoreRepository
+        embedding_service: Optional[Any] = None,  # EmbeddingService
+        feedback_repository: Optional[Any] = None,  # FeedbackRepository
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
         enable_sql: bool = True,
         enable_vector_fallback: bool = True,
         conversation_history_limit: int = 5,
@@ -279,8 +334,11 @@ class ChatService:
             enable_vector_fallback: Enable fallback to vector search when SQL fails (default: True)
             conversation_history_limit: Number of previous turns to include in context (default: 5)
         """
+        # Initialize lazy imports on first ChatService instantiation
+        _initialize_lazy_imports()
+
         self._api_key = api_key or settings.google_api_key
-        self._model = model or "gemini-1.5-pro"  # Upgraded to Pro for better reasoning on complex analysis
+        self._model = model or settings.chat_model
         self._temperature = settings.temperature
         self._enable_sql = enable_sql
         self._enable_vector_fallback = enable_vector_fallback
@@ -290,11 +348,11 @@ class ChatService:
         self._vector_store = vector_store
         self._embedding_service = embedding_service
         self._feedback_repository = feedback_repository
-        self._client: genai.Client | None = None
-        self._sql_tool: NBAGSQLTool | None = None
-        self._query_classifier: QueryClassifier | None = None
-        self._query_expander: QueryExpander | None = None
-        self._visualization_service: VisualizationService | None = None
+        self._client: Optional[Any] = None  # genai.Client
+        self._sql_tool: Optional[Any] = None  # NBAGSQLTool
+        self._query_classifier: Optional[Any] = None  # QueryClassifier
+        self._query_expander: Optional[Any] = None  # QueryExpander
+        self._visualization_service: Optional[Any] = None  # VisualizationService
 
     @property
     def vector_store(self) -> VectorStoreRepository:
@@ -305,7 +363,7 @@ class ChatService:
         return self._vector_store
 
     @property
-    def embedding_service(self) -> EmbeddingService:
+    def embedding_service(self) -> Any:  # EmbeddingService
         """Get embedding service (lazy initialization)."""
         if self._embedding_service is None:
             # EmbeddingService uses Mistral - don't pass Google API key!
@@ -314,7 +372,7 @@ class ChatService:
         return self._embedding_service
 
     @property
-    def client(self) -> genai.Client:
+    def client(self) -> Any:  # genai.Client
         """Get Gemini client (lazy initialization)."""
         if self._client is None:
             self._client = genai.Client(api_key=self._api_key)
@@ -326,7 +384,7 @@ class ChatService:
         return self._model
 
     @property
-    def sql_tool(self) -> NBAGSQLTool | None:
+    def sql_tool(self) -> Optional[Any]:  # NBAGSQLTool
         """Get SQL tool (lazy initialization)."""
         if not self._enable_sql:
             return None
@@ -340,21 +398,21 @@ class ChatService:
         return self._sql_tool
 
     @property
-    def query_classifier(self) -> QueryClassifier:
+    def query_classifier(self) -> Any:  # QueryClassifier
         """Get query classifier (lazy initialization)."""
         if self._query_classifier is None:
             self._query_classifier = QueryClassifier()
         return self._query_classifier
 
     @property
-    def query_expander(self) -> QueryExpander:
+    def query_expander(self) -> Any:  # QueryExpander
         """Get query expander (lazy initialization)."""
         if self._query_expander is None:
             self._query_expander = QueryExpander()
         return self._query_expander
 
     @property
-    def visualization_service(self) -> VisualizationService:
+    def visualization_service(self) -> Any:  # VisualizationService
         """Get visualization service (lazy initialization)."""
         if self._visualization_service is None:
             self._visualization_service = VisualizationService()
@@ -415,6 +473,217 @@ class ChatService:
 
         history_lines.append("---\n")
         return "\n".join(history_lines)
+
+    @staticmethod
+    def _estimate_question_complexity(query: str) -> int:
+        """Estimate question complexity and return adaptive k value.
+
+        Complexity levels:
+        - Simple (k=3): Straightforward stats, single player/team lookups, direct comparisons
+        - Moderate (k=5): Multiple stats, top N queries, contextual analysis
+        - Complex (k=7-9): Multi-step analysis, comparative analysis, strategic insights
+
+        Args:
+            query: User query string
+
+        Returns:
+            Adaptive k value (3, 5, 7, or 9)
+        """
+        query_lower = query.lower()
+        word_count = len(query.split())
+
+        # Calculate complexity score
+        complexity_score = 0
+
+        # Length indicators
+        if word_count < 5:
+            complexity_score += 1  # Very short = likely simple
+        elif word_count > 15:
+            complexity_score += 2  # Long = likely complex
+
+        # Query type indicators (simple)
+        simple_patterns = [
+            "how many", "what is", "who is", "who scored", "who has",
+            "count", "how much", "what does", "player stats",
+        ]
+        for pattern in simple_patterns:
+            if pattern in query_lower:
+                complexity_score += 0  # Simple queries don't add to score
+
+        # Query type indicators (moderate)
+        moderate_patterns = [
+            "top ", "best ", "compare", "versus", "most", "least",
+            "ranking", "average", "leaders", "leaders in",
+        ]
+        for pattern in moderate_patterns:
+            if pattern in query_lower:
+                complexity_score += 1
+
+        # Query type indicators (complex)
+        complex_patterns = [
+            "explain", "analyze", "impact", "effect", "why", "how does",
+            "strategy", "style", "strengths", "weakness", "capability",
+            "tendency", "pattern", "role", "system", "philosophy",
+            "efficient", "effectiveness", "defense", "offense",
+        ]
+        for pattern in complex_patterns:
+            if pattern in query_lower:
+                complexity_score += 2
+
+        # Multiple data sources indicators
+        if " and " in query_lower:
+            complexity_score += 1
+        if query_lower.count(",") > 0:
+            complexity_score += 1
+
+        # Determine k based on complexity score
+        if complexity_score <= 1:
+            return 3  # Simple: single player/stat lookup
+        elif complexity_score <= 3:
+            return 5  # Moderate: comparisons, multiple stats
+        elif complexity_score <= 5:
+            return 7  # Complex: multi-step analysis
+        else:
+            return 9  # Very complex: deep analytical queries
+
+    @staticmethod
+    def _is_followup_query(query: str) -> bool:
+        """Detect if a query is a conversational follow-up requiring context.
+
+        Checks for pronouns, short fragments, corrections, and other
+        indicators that the query depends on previous conversation turns.
+
+        Args:
+            query: User query string
+
+        Returns:
+            True if query appears to be a follow-up
+        """
+        q = query.strip().lower()
+        words = q.split()
+
+        # Very short queries (< 5 words) are likely follow-ups
+        if len(words) <= 4 and not any(
+            kw in q for kw in ["top", "best", "worst", "who scored", "list", "show all"]
+        ):
+            return True
+
+        # Pronouns referencing previous context (word-boundary aware)
+        pronoun_patterns = [
+            "his ", "her ", "their ", "its ", "he ", "she ", "they ",
+            "him ", "them ", "that player", "that team", "the same",
+        ]
+        q_padded = f" {q} "
+        if any(f" {p}" in q_padded for p in pronoun_patterns):
+            return True
+
+        # Follow-up phrases
+        followup_phrases = [
+            "what about", "and what", "how about", "how does that",
+            "compare him", "compare her", "compare them",
+            "what else", "anything else", "tell me more",
+            "actually", "i meant", "no i mean", "sorry i meant",
+            "only from", "just the", "sort them", "filter",
+            "now show", "now tell", "and also", "but what",
+        ]
+        if any(q.startswith(p) or f" {p}" in q for p in followup_phrases):
+            return True
+
+        return False
+
+    def _rewrite_followup_query(
+        self, query: str, conversation_history: str
+    ) -> str:
+        """Rewrite a follow-up query into a self-contained question using conversation history.
+
+        Uses Gemini to resolve pronouns, references, and implicit context
+        from the conversation history.
+
+        Args:
+            query: The follow-up query (e.g., "What about his assists?")
+            conversation_history: Formatted conversation history string
+
+        Returns:
+            Rewritten self-contained query, or original query if rewriting fails
+        """
+        rewrite_prompt = (
+            "You are a query rewriter. Given a conversation history and a follow-up question, "
+            "rewrite the follow-up into a COMPLETE, SELF-CONTAINED question that can be understood "
+            "without any prior context.\n\n"
+            "Rules:\n"
+            "- Replace all pronouns (he, his, she, her, they, them, it) with the actual entity names\n"
+            "- Expand short fragments into full questions\n"
+            "- Preserve the user's intent exactly\n"
+            "- Keep the rewritten query concise (one sentence)\n"
+            "- Output ONLY the rewritten question, nothing else\n\n"
+            f"{conversation_history}\n"
+            f"Follow-up question: {query}\n\n"
+            "Rewritten question:"
+        )
+
+        try:
+            logger.info("Rewriting follow-up query using conversation context")
+
+            def _call_llm():
+                return self.client.models.generate_content(
+                    model=self._model,
+                    contents=rewrite_prompt,
+                    config={
+                        "temperature": 0.0,
+                        "max_output_tokens": 150,
+                    },
+                )
+
+            response = retry_with_exponential_backoff(_call_llm)
+
+            if response.text:
+                rewritten = response.text.strip().strip('"').strip("'")
+                # Sanity check: rewritten query should not be empty or too long
+                if 3 < len(rewritten) < 500:
+                    logger.info(f"Query rewritten: '{query}' → '{rewritten}'")
+                    return rewritten
+
+            logger.warning("Query rewriting returned empty result, using original query")
+            return query
+
+        except Exception as e:
+            logger.warning(f"Query rewriting failed ({e}), using original query")
+            return query
+
+    def _save_interaction(
+        self,
+        query: str,
+        response: str,
+        sources: list[SearchResult],
+        processing_time_ms: float,
+        conversation_id: str | None,
+        turn_number: int | None,
+    ) -> None:
+        """Save a chat interaction to the database for conversation history.
+
+        Args:
+            query: User query
+            response: Generated response
+            sources: Search result sources
+            processing_time_ms: Processing time in milliseconds
+            conversation_id: Conversation ID (optional)
+            turn_number: Turn number in conversation (optional)
+        """
+        try:
+            source_texts = [s.source for s in sources] if sources else []
+            interaction = ChatInteractionCreate(
+                query=query,
+                response=response,
+                sources=source_texts,
+                processing_time_ms=int(processing_time_ms),
+                conversation_id=conversation_id,
+                turn_number=turn_number,
+            )
+            self.feedback_repository.save_interaction(interaction)
+            logger.debug("Interaction saved for conversation %s turn %s", conversation_id, turn_number)
+        except Exception as e:
+            # Don't fail the request if interaction saving fails
+            logger.warning(f"Failed to save interaction: {e}")
 
     def _format_sql_results(self, sql_results: list[dict]) -> str:
         """Format SQL results with special handling for scalar values (COUNT, AVG, SUM).
@@ -511,11 +780,13 @@ class ChatService:
         query_embedding = self.embedding_service.embed_query(expanded_query)
 
         # Search WITHOUT metadata filters (Phase 7 approach)
+        # Phase 13: Pass query_text for 3-signal hybrid scoring (cosine + BM25 + metadata)
         results = self.vector_store.search(
             query_embedding=query_embedding,
             k=k,
             min_score=min_score,
             metadata_filters=None,
+            query_text=expanded_query,
         )
 
         # Convert to response models
@@ -682,8 +953,19 @@ class ChatService:
             if conversation_history:
                 logger.info(f"Including conversation history ({request.turn_number - 1} previous turns)")
 
-        # Classify query to determine routing
-        query_type = self.query_classifier.classify(query) if self._enable_sql else QueryType.CONTEXTUAL
+        # Rewrite follow-up queries to resolve pronouns/references BEFORE classification
+        # This ensures the classifier and SQL tool receive a self-contained query
+        effective_query = query
+        if conversation_history and self._is_followup_query(query):
+            effective_query = self._rewrite_followup_query(query, conversation_history)
+
+        # Classify query to determine routing (use effective_query for better classification)
+        query_type = self.query_classifier.classify(effective_query) if self._enable_sql else QueryType.CONTEXTUAL
+
+        # Phase 13 Step 9: Adaptive k selection based on question complexity
+        # Override default k if request.k not explicitly set (use 0 as indicator)
+        adaptive_k = request.k if request.k and request.k > 0 else self._estimate_question_complexity(effective_query)
+        logger.info(f"Using k={adaptive_k} (complexity-based: simple=3, moderate=5, complex=7-9)")
 
         # Route to appropriate data source(s)
         search_results = []
@@ -694,12 +976,12 @@ class ChatService:
         generated_sql = None  # Track generated SQL for Phase 2 analysis
         sql_result_data = None  # Track SQL results for visualization
 
-        # Statistical query → SQL tool
+        # Statistical query → SQL tool (use effective_query for resolved pronouns)
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
             if self.sql_tool:
                 try:
                     logger.info(f"Routing to SQL tool (query_type: {query_type.value})")
-                    sql_result = self.sql_tool.query(query)
+                    sql_result = self.sql_tool.query(effective_query)
 
                     # Capture generated SQL for evaluation/analysis
                     if sql_result["sql"]:
@@ -740,8 +1022,8 @@ class ChatService:
                 logger.info(f"Routing to vector search (query_type: {query_type.value})")
 
             search_results = self.search(
-                query=query,
-                k=request.k,
+                query=effective_query,
+                k=adaptive_k,
                 min_score=request.min_score,
             )
 
@@ -802,8 +1084,8 @@ class ChatService:
             # Get vector search results (if not already retrieved)
             if not search_results:
                 search_results = self.search(
-                    query=query,
-                    k=request.k,
+                    query=effective_query,
+                    k=adaptive_k,
                     min_score=request.min_score,
                 )
 
@@ -854,6 +1136,18 @@ class ChatService:
                     )
                 elif not sql_result_data:
                     logger.info("Visualization skipped: SQL query returned no results")
+
+        # Auto-save interaction for conversation history (enables follow-up resolution)
+        if request.conversation_id:
+            response_sources = search_results if request.include_sources else []
+            self._save_interaction(
+                query=query,
+                response=answer,
+                sources=response_sources,
+                processing_time_ms=processing_time_ms,
+                conversation_id=request.conversation_id,
+                turn_number=request.turn_number,
+            )
 
         return ChatResponse(
             answer=answer,

@@ -9,6 +9,7 @@ MAINTAINER: Shahu
 import logging
 
 from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import BaseModel
 
 from src.models.feedback import (
     ChatInteractionResponse,
@@ -22,6 +23,15 @@ from src.services.feedback import get_feedback_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/feedback")
+
+
+class LogInteractionRequest(BaseModel):
+    """Request model for logging a chat interaction."""
+
+    query: str
+    response: str
+    sources: list[str]
+    processing_time_ms: int
 
 
 @router.post(
@@ -122,3 +132,31 @@ async def get_interaction(interaction_id: str) -> ChatInteractionResponse:
             detail=f"Interaction {interaction_id} not found",
         )
     return result
+
+
+@router.post(
+    "/log-interaction",
+    response_model=ChatInteractionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Log chat interaction",
+    description="Log a chat interaction to the database for tracking and feedback.",
+)
+async def log_interaction(request: LogInteractionRequest) -> ChatInteractionResponse:
+    """Log a chat interaction to the database.
+
+    Args:
+        request: LogInteractionRequest with query, response, sources, processing_time_ms
+
+    Returns:
+        ChatInteractionResponse with the logged interaction
+    """
+    service = get_feedback_service()
+    try:
+        return service.log_interaction(
+            query=request.query,
+            response=request.response,
+            sources=request.sources,
+            processing_time_ms=request.processing_time_ms,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

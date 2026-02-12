@@ -39,9 +39,12 @@ from src.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Rate limiting configuration (Gemini free tier: 15 RPM)
-RATE_LIMIT_DELAY = 9  # seconds between requests
+# Vector queries consume ~2 Gemini calls each (embedding + LLM response)
+RATE_LIMIT_DELAY = 20  # seconds between requests
 MAX_RETRIES = 3
-RETRY_BACKOFF_BASE = 15  # Start with 15s, then 30s, then 60s
+RETRY_BACKOFF_BASE = 30  # Start with 30s, then 60s, then 120s
+BATCH_SIZE = 10  # Extra cooldown every N queries
+BATCH_COOLDOWN_SECONDS = 30  # Extra pause between batches
 
 
 def _load_checkpoint(checkpoint_path: Path) -> dict[str, Any] | None:
@@ -220,6 +223,11 @@ def run_vector_evaluation(resume: bool = True) -> tuple[list[dict], str]:
 
                 # Rate limiting (skip for first query of batch)
                 if i > start_index:
+                    # Extra batch cooldown every BATCH_SIZE queries
+                    queries_done = i - start_index
+                    if queries_done > 0 and queries_done % BATCH_SIZE == 0:
+                        logger.info(f"  Batch cooldown: {BATCH_COOLDOWN_SECONDS}s (after {queries_done} queries)...")
+                        time.sleep(BATCH_COOLDOWN_SECONDS)
                     logger.info(f"  Rate limit delay: {RATE_LIMIT_DELAY}s...")
                     time.sleep(RATE_LIMIT_DELAY)
 
@@ -433,7 +441,7 @@ def calculate_ragas_metrics(results: list[dict]) -> list[dict]:
     logger.info("Building RAGAS evaluator (Gemini LLM + Mistral embeddings)...")
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-lite",
+        model="gemini-2.0-flash",
         google_api_key=settings.google_api_key,
         temperature=0.0
     )

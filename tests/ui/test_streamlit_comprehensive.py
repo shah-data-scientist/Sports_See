@@ -52,13 +52,13 @@ def test_page_title_and_header(page: Page, streamlit_url: str):
     wait_for_streamlit_ready(page)
 
     # Check page title
-    expect(page).to_have_title("NBA Sports Analysis Chatbot")
+    expect(page).to_have_title("NBA Analyst AI")
 
     # Check main header
-    expect(page.locator("h1")).to_contain_text("NBA Sports Analysis Chatbot")
+    expect(page.locator("h1")).to_contain_text("NBA Analyst")
 
     # Check caption with model info
-    expect(page.get_by_text("Modèle:")).to_be_visible()
+    expect(page.get_by_text("Model:")).to_be_visible()
 
     print("✓ Page title and header test passed")
 
@@ -73,7 +73,7 @@ def test_chat_input_visible(page: Page, streamlit_url: str):
     expect(chat_input).to_be_enabled()
 
     # Check placeholder text
-    expect(chat_input).to_have_attribute("placeholder", "Posez votre question sur la NBA...")
+    expect(chat_input).to_have_attribute("placeholder", "Ask about NBA...")
 
     print("✓ Chat input visibility test passed")
 
@@ -192,7 +192,7 @@ def test_positive_feedback_submission(
     time.sleep(2)
 
     # Check for confirmation message
-    expect(page.get_by_text("Merci pour votre feedback positif")).to_be_visible()
+    expect(page.get_by_text("Thanks for positive feedback")).to_be_visible()
 
     page.screenshot(path=screenshots_dir / "test_positive_feedback.png")
     print("✓ Positive feedback submission test passed")
@@ -233,12 +233,12 @@ def test_negative_feedback_with_comment(
         comment_textarea.fill("Test comment: response was not accurate")
 
     # Submit feedback
-    submit_button = page.get_by_role("button", name="Envoyer le feedback")
+    submit_button = page.get_by_role("button", name="Send feedback")
     submit_button.click()
     time.sleep(2)
 
     # Check for confirmation
-    expect(page.get_by_text("Merci pour votre feedback")).to_be_visible()
+    expect(page.get_by_text("Thanks for your feedback")).to_be_visible()
 
     page.screenshot(path=screenshots_dir / "test_negative_feedback.png")
     print("✓ Negative feedback with comment test passed")
@@ -250,10 +250,10 @@ def test_feedback_statistics_update(page: Page, streamlit_url: str):
     wait_for_streamlit_ready(page)
 
     # Check for statistics metrics
-    expect(page.get_by_text("Total interactions")).to_be_visible()
-    expect(page.get_by_text("Avec feedback")).to_be_visible()
-    expect(page.get_by_text("👍 Positifs")).to_be_visible()
-    expect(page.get_by_text("👎 Négatifs")).to_be_visible()
+    expect(page.get_by_text("Total Interactions")).to_be_visible()
+    expect(page.get_by_text("With Feedback")).to_be_visible()
+    expect(page.get_by_text("👍 Positive")).to_be_visible()
+    expect(page.get_by_text("👎 Negative")).to_be_visible()
 
     print("✓ Feedback statistics display test passed")
 
@@ -273,7 +273,7 @@ def test_new_conversation_button(page: Page, streamlit_url: str):
     time.sleep(15)
 
     # Click new conversation button
-    new_conv_button = page.get_by_text("🆕 Nouvelle conversation")
+    new_conv_button = page.get_by_text("🆕 New Conversation")
     expect(new_conv_button).to_be_visible()
     new_conv_button.click()
     time.sleep(2)
@@ -281,7 +281,7 @@ def test_new_conversation_button(page: Page, streamlit_url: str):
     # Check that messages were cleared (only welcome message remains)
     messages = page.locator("[data-testid='stChatMessage']")
     expect(messages).to_have_count(1)
-    expect(messages.first).to_contain_text("Nouvelle conversation démarrée")
+    expect(messages.first).to_contain_text("New conversation started")
 
     print("✓ New conversation button test passed")
 
@@ -320,14 +320,14 @@ def test_conversation_selector_visible(page: Page, streamlit_url: str):
     wait_for_streamlit_ready(page)
 
     # Check for conversation selector
-    expect(page.get_by_text("Charger une conversation")).to_be_visible()
+    expect(page.get_by_text("Load Conversation")).to_be_visible()
 
     # Check for load button
-    load_button = page.get_by_text("📂 Charger")
+    load_button = page.get_by_text("📂 Load")
     expect(load_button).to_be_visible()
 
     # Check for archive button
-    archive_button = page.get_by_text("🗄️ Archiver")
+    archive_button = page.get_by_text("🗄️ Archive")
     expect(archive_button).to_be_visible()
 
     print("✓ Conversation selector visibility test passed")
@@ -386,13 +386,13 @@ def test_index_status_indicator(page: Page, streamlit_url: str):
     wait_for_streamlit_ready(page)
 
     # Check for either loaded or not loaded status
-    status_text = page.get_by_text("Index chargé")
+    status_text = page.get_by_text("Index loaded")
     if status_text.is_visible():
         # Index is loaded
-        expect(page.get_by_text("vecteurs")).to_be_visible()
+        expect(page.get_by_text("vectors")).to_be_visible()
     else:
         # Index not loaded
-        expect(page.get_by_text("Index non chargé")).to_be_visible()
+        expect(page.get_by_text("Index not loaded")).to_be_visible()
 
     print("✓ Index status indicator test passed")
 
@@ -403,9 +403,9 @@ def test_settings_display(page: Page, streamlit_url: str):
     wait_for_streamlit_ready(page)
 
     # Check for settings
-    expect(page.get_by_text("Modèle:")).to_be_visible()
-    expect(page.get_by_text("Résultats:")).to_be_visible()
-    expect(page.get_by_text("Température:")).to_be_visible()
+    expect(page.get_by_text("Model:")).to_be_visible()
+    expect(page.get_by_text("Results:")).to_be_visible()
+    expect(page.get_by_text("Temperature:")).to_be_visible()
 
     print("✓ Settings display test passed")
 

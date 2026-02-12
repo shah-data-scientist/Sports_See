@@ -40,7 +40,7 @@ def _build_evaluator_llm():
 
         logger.info("Using Gemini as RAGAS evaluator LLM")
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite",
+            model="gemini-2.0-flash",
             google_api_key=settings.google_api_key,
             temperature=0.0,
         )
@@ -91,7 +91,7 @@ def _generate_with_retry(client, prompt: str, *, use_gemini: bool, chat_service=
         try:
             if use_gemini:
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash-lite",
+                    model="gemini-2.0-flash",
                     contents=prompt,
                 )
                 return response.text
@@ -337,7 +337,7 @@ def _build_report(result, samples: list[EvaluationSample]) -> EvaluationReport:
         overall_scores=overall,
         category_results=category_results,
         sample_count=len(samples),
-        model_used="gemini-2.0-flash-lite" if settings.google_api_key else settings.chat_model,
+        model_used="gemini-2.0-flash" if settings.google_api_key else settings.chat_model,
     )
 
 

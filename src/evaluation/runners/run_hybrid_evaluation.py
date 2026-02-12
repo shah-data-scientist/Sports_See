@@ -30,10 +30,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Rate limiting configuration for Gemini free tier
-RATE_LIMIT_DELAY_SECONDS = 15
-MAX_RETRIES = 2
-RETRY_BACKOFF_SECONDS = 15
+# Rate limiting configuration for Gemini free tier (15 RPM)
+# Hybrid queries consume ~3 Gemini calls each (SQL gen + embedding + LLM response)
+RATE_LIMIT_DELAY_SECONDS = 20
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 30
+BATCH_SIZE = 10  # Extra cooldown every N queries
+BATCH_COOLDOWN_SECONDS = 30  # Extra pause between batches
 
 
 def _is_followup_question(question: str) -> bool:
@@ -105,6 +108,11 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
 
             # Rate limit delay (skip before first query)
             if test_num > 1:
+                # Extra batch cooldown every BATCH_SIZE queries
+                queries_done = test_num - start_index - 1
+                if queries_done > 0 and queries_done % BATCH_SIZE == 0:
+                    logger.info(f"  Batch cooldown: {BATCH_COOLDOWN_SECONDS}s (after {queries_done} queries)...")
+                    time.sleep(BATCH_COOLDOWN_SECONDS)
                 time.sleep(RATE_LIMIT_DELAY_SECONDS)
 
             # Handle conversational context

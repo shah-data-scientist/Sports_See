@@ -2,7 +2,7 @@
 FILE: app.py
 STATUS: Active
 RESPONSIBILITY: Streamlit chat interface with feedback collection and statistics
-LAST MAJOR UPDATE: 2026-02-06
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 import streamlit as st
+import requests
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -18,14 +19,8 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from src.core.config import settings
-from src.core.exceptions import AppException, IndexNotFoundError
-from src.models.chat import ChatRequest
 from src.models.conversation import ConversationStatus
-from src.models.feedback import FeedbackRating
-from src.repositories.conversation import ConversationRepository
-from src.services.chat import ChatService
-from src.services.conversation import ConversationService
-from src.services.feedback import FeedbackService
+from src.ui.api_client import APIClient, ChatRequest as APIClientChatRequest
 
 # Configure logging
 logging.basicConfig(
@@ -36,54 +31,14 @@ logger = logging.getLogger(__name__)
 
 
 @st.cache_resource
-def get_chat_service() -> ChatService | None:
-    """Get cached ChatService instance.
+def get_api_client() -> APIClient:
+    """Get cached API client for HTTP communication with backend.
 
     Returns:
-        Initialized ChatService or None if initialization fails
+        Initialized APIClient
     """
-    try:
-        logger.info("Initializing ChatService...")
-        service = ChatService()
-
-        # Try to load the index
-        try:
-            service.ensure_ready()
-            logger.info("ChatService ready with %d vectors", service.vector_store.index_size)
-        except IndexNotFoundError:
-            logger.warning("Index not found - service will be limited")
-            st.warning(
-                "⚠️ Vector index not loaded.\n\n"
-                "Run `poetry run python src/indexer.py` to build the knowledge base."
-            )
-
-        return service
-
-    except Exception as e:
-        logger.error("Failed to initialize ChatService: %s", e)
-        st.error(f"❌ Initialization Error: {e}")
-        return None
-
-
-@st.cache_resource
-def get_feedback_service() -> FeedbackService:
-    """Get cached FeedbackService instance.
-
-    Returns:
-        Initialized FeedbackService
-    """
-    return FeedbackService()
-
-
-@st.cache_resource
-def get_conversation_service() -> ConversationService:
-    """Get cached ConversationService instance.
-
-    Returns:
-        Initialized ConversationService
-    """
-    repository = ConversationRepository()
-    return ConversationService(repository=repository)
+    logger.info("Initializing API client...")
+    return APIClient()
 
 
 def render_message(role: str, content: str) -> None:
@@ -101,26 +56,60 @@ def render_sources(sources: list) -> None:
     """Render source documents in an expander.
 
     Args:
-        sources: List of SearchResult objects
+        sources: List of source dicts with 'source', 'score', 'text'
     """
     if not sources:
         return
 
     with st.expander(f"Sources ({len(sources)})"):
         for i, source in enumerate(sources, 1):
-            st.markdown(f"**{i}. {source.source}** (Score: {source.score:.1f}%)")
-            st.caption(source.text[:300] + "..." if len(source.text) > 300 else source.text)
+            # Handle both dict and object responses
+            source_name = source.get("source") if isinstance(source, dict) else getattr(source, "source", "Unknown")
+            score = source.get("score", 0) if isinstance(source, dict) else getattr(source, "score", 0)
+            text = source.get("text", "") if isinstance(source, dict) else getattr(source, "text", "")
+
+            st.markdown(f"**{i}. {source_name}** (Score: {score:.1f}%)")
+            st.caption(text[:300] + "..." if len(text) > 300 else text)
             st.divider()
 
 
-def render_feedback_buttons(interaction_id: str, index: int) -> None:
+def get_user_friendly_error_message(error: Exception) -> str:
+    """Convert API errors to user-friendly messages.
+
+    Args:
+        error: The exception that occurred
+
+    Returns:
+        User-friendly error message
+    """
+    error_str = str(error).lower()
+
+    if "429" in error_str or "rate limit" in error_str:
+        return "⚠️ The AI service is busy due to high demand. Please try again in 1 minute."
+
+    if "500" in error_str or "internal server error" in error_str:
+        return "⚠️ The AI service encountered an issue. Please try again in a moment."
+
+    if "timeout" in error_str:
+        return "⏱️ Request took too long. Please try again with a simpler question."
+
+    if "connection" in error_str:
+        return "❌ Cannot connect to the API server. Make sure it's running on http://localhost:8000"
+
+    if "404" in error_str:
+        return "❌ API endpoint not found. Check server configuration."
+
+    return f"⚠️ An error occurred. Please try again: {str(error)[:100]}"
+
+
+def render_feedback_buttons(interaction_id: str, index: int, client: APIClient) -> None:
     """Render feedback buttons for an interaction.
 
     Args:
         interaction_id: ID of the chat interaction
         index: Index for unique key generation
+        client: API client for submitting feedback
     """
-    feedback_service = get_feedback_service()
     feedback_key = f"feedback_{interaction_id}"
     comment_key = f"comment_{interaction_id}"
 
@@ -138,14 +127,15 @@ def render_feedback_buttons(interaction_id: str, index: int) -> None:
     with col1:
         if st.button("👍", key=f"pos_{index}_{interaction_id}", help="Good answer"):
             try:
-                feedback_service.submit_feedback(
+                client.submit_feedback(
                     interaction_id=interaction_id,
-                    rating=FeedbackRating.POSITIVE,
+                    rating="POSITIVE",
                 )
                 st.session_state[feedback_key] = "positive"
                 st.rerun()
-            except ValueError as e:
+            except Exception as e:
                 logger.warning("Feedback error: %s", e)
+                st.error("Failed to submit feedback")
 
     with col2:
         if st.button("👎", key=f"neg_{index}_{interaction_id}", help="Bad answer"):
@@ -164,60 +154,91 @@ def render_feedback_buttons(interaction_id: str, index: int) -> None:
 
             if submitted:
                 try:
-                    feedback_service.submit_feedback(
+                    client.submit_feedback(
                         interaction_id=interaction_id,
-                        rating=FeedbackRating.NEGATIVE,
+                        rating="NEGATIVE",
                         comment=comment if comment.strip() else None,
                     )
                     st.session_state[feedback_key] = "negative"
                     st.session_state.pop(f"show_comment_{interaction_id}", None)
                     st.rerun()
-                except ValueError as e:
+                except Exception as e:
                     logger.warning("Feedback error: %s", e)
+                    st.error("Failed to submit feedback")
 
 
-def render_conversation_controls() -> None:
-    """Render conversation management controls in sidebar."""
-    conversation_service = get_conversation_service()
+def render_conversation_controls(client: APIClient) -> None:
+    """Render conversation management controls in sidebar.
 
+    Args:
+        client: API client for conversation management
+    """
     st.subheader("Conversations")
 
     # New Conversation button
     if st.button("🆕 New Conversation", use_container_width=True):
-        # Create new conversation
-        new_conv = conversation_service.start_conversation()
-        st.session_state.current_conversation_id = new_conv.id
-        st.session_state.turn_number = 1
-        st.session_state.messages = [
-            {
-                "role": "assistant",
-                "content": "New conversation started! How can I help?",
-                "interaction_id": None,
-            }
-        ]
-        st.rerun()
+        try:
+            new_conv = client.start_conversation()
+            st.session_state.current_conversation_id = new_conv["id"]
+            st.session_state.turn_number = 1
+            st.session_state.messages = [
+                {
+                    "role": "assistant",
+                    "content": "New conversation started! How can I help?",
+                    "interaction_id": None,
+                }
+            ]
+            st.rerun()
+        except Exception as e:
+            logger.error("Error creating conversation: %s", e)
+            st.error("Failed to create conversation")
+            return
 
     # Load existing conversations
     try:
-        conversations = conversation_service.list_conversations(
-            status=ConversationStatus.ACTIVE,
+        conversations = client.list_conversations(
+            status="ACTIVE",
             limit=20
         )
 
         if conversations:
-            # Current conversation indicator
+            # Current conversation indicator + rename option
             current_id = st.session_state.get("current_conversation_id")
             if current_id:
-                current_conv = conversation_service.get_conversation(current_id)
-                if current_conv:
-                    st.caption(f"Current: {current_conv.title or 'Untitled'}")
+                try:
+                    current_conv = client.get_conversation(current_id)
+                    if current_conv:
+                        title = current_conv.get("title", "Untitled") if isinstance(current_conv, dict) else getattr(current_conv, "title", "Untitled")
+                        st.caption(f"📌 Current: {title}")
+
+                        # Rename conversation
+                        with st.expander("✏️ Rename Conversation"):
+                            new_title = st.text_input(
+                                "New title:",
+                                value=title if title != "Untitled" else "",
+                                placeholder="Give this conversation a name..."
+                            )
+                            if st.button("Rename", key="rename_btn"):
+                                try:
+                                    client.update_conversation(current_id, title=new_title)
+                                    st.success(f"✅ Renamed to: {new_title}")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to rename: {e}")
+                except Exception:
+                    pass
 
             # Conversation selector
             st.selectbox(
                 "Load Conversation",
-                options=[""] + [c.id for c in conversations],
+                options=[""] + [c["id"] if isinstance(c, dict) else c.id for c in conversations],
                 format_func=lambda x: "Select..." if x == "" else next(
-                    (c.title or f"Conversation {c.id[:8]}..." for c in conversations if c.id == x), x
+                    (
+                        (c["title"] or f"Conversation {c['id'][:8]}..." if isinstance(c, dict) else c.title or f"Conversation {c.id[:8]}...")
+                        for c in conversations
+                        if (c["id"] if isinstance(c, dict) else c.id) == x
+                    ),
+                    x,
                 ),
                 key="conversation_selector",
             )
@@ -227,46 +248,60 @@ def render_conversation_controls() -> None:
             with col1:
                 if st.button("📂 Load", disabled=not st.session_state.get("conversation_selector")):
                     conv_id = st.session_state.conversation_selector
-                    history = conversation_service.get_conversation_history(conv_id)
-                    if history:
-                        # Load conversation messages
-                        st.session_state.current_conversation_id = conv_id
-                        st.session_state.turn_number = len(history.messages) + 1
-                        st.session_state.messages = [
-                            {
-                                "role": "assistant",
-                                "content": f"Conversation loaded: {history.title or 'Untitled'}",
-                                "interaction_id": None,
-                            }
-                        ]
-                        # Add all previous messages
-                        for msg in history.messages:
-                            st.session_state.messages.append({
-                                "role": "user",
-                                "content": msg.query,
-                                "interaction_id": None,
-                            })
-                            st.session_state.messages.append({
-                                "role": "assistant",
-                                "content": msg.response,
-                                "interaction_id": msg.id,
-                            })
-                        st.rerun()
+                    try:
+                        history = client.get_conversation_history(conv_id)
+                        if history:
+                            # Load conversation messages
+                            st.session_state.current_conversation_id = conv_id
+                            messages_list = history.get("messages", []) if isinstance(history, dict) else getattr(history, "messages", [])
+                            st.session_state.turn_number = len(messages_list) + 1
+                            title = history.get("title", "Untitled") if isinstance(history, dict) else getattr(history, "title", "Untitled")
+                            st.session_state.messages = [
+                                {
+                                    "role": "assistant",
+                                    "content": f"Conversation loaded: {title}",
+                                    "interaction_id": None,
+                                }
+                            ]
+                            # Add all previous messages
+                            for msg in messages_list:
+                                query = msg.get("query") if isinstance(msg, dict) else getattr(msg, "query", "")
+                                response = msg.get("response") if isinstance(msg, dict) else getattr(msg, "response", "")
+                                msg_id = msg.get("id") if isinstance(msg, dict) else getattr(msg, "id", None)
+
+                                st.session_state.messages.append({
+                                    "role": "user",
+                                    "content": query,
+                                    "interaction_id": None,
+                                })
+                                st.session_state.messages.append({
+                                    "role": "assistant",
+                                    "content": response,
+                                    "interaction_id": msg_id,
+                                })
+                            st.rerun()
+                    except Exception as e:
+                        logger.error("Error loading conversation: %s", e)
+                        st.error("Failed to load conversation")
 
             with col2:
                 if st.button("🗄️ Archive", disabled=not current_id):
                     if current_id:
-                        conversation_service.archive(current_id)
-                        st.session_state.pop("current_conversation_id", None)
-                        st.session_state.turn_number = 1
-                        st.session_state.messages = [
-                            {
-                                "role": "assistant",
-                                "content": "Conversation archived. Start a new one!",
-                                "interaction_id": None,
-                            }
-                        ]
-                        st.rerun()
+                        try:
+                            client.archive_conversation(current_id)
+                            st.session_state.pop("current_conversation_id", None)
+                            st.session_state.turn_number = 1
+                            st.session_state.messages = [
+                                {
+                                    "role": "assistant",
+                                    "content": "Conversation archived. Start a new one!",
+                                    "interaction_id": None,
+                                }
+                            ]
+                            st.rerun()
+                        except Exception as e:
+                            logger.error("Error archiving conversation: %s", e)
+                            st.error("Failed to archive conversation")
 
     except Exception as e:
         logger.error("Error loading conversations: %s", e)
@@ -287,23 +322,29 @@ def main() -> None:
     st.caption(f"AI Assistant for {settings.app_name} | Model: {settings.chat_model}")
 
     # Welcome message
-    st.markdown("""
+    st.markdown(
+        """
     ---
     **Welcome! 🎉**
 
     Drop your {app_name} questions anytime - we'll dig up the stats, the drama, the highlights.
     No question too random. (Well, *almost* no question too random.) 😎
-    """.format(app_name=settings.app_name))
+    """.format(app_name=settings.app_name)
+    )
     st.markdown("---")
-    service = get_chat_service()
-    feedback_service = get_feedback_service()
 
-    if service is None:
-        st.error("❌ Service unavailable. Check configuration.")
+    # Get API client
+    client = get_api_client()
+
+    # Check API health
+    try:
+        health = client.health_check()
+        is_healthy = health.get("status") == "healthy"
+        index_size = health.get("index_size", 0)
+    except Exception as e:
+        logger.error("API health check failed: %s", e)
+        st.error(f"❌ Cannot connect to API. Is it running on http://localhost:8000?")
         st.stop()
-
-    # Initialize conversation service
-    conversation_service = get_conversation_service()
 
     # Initialize session state
     if "messages" not in st.session_state:
@@ -328,7 +369,7 @@ def main() -> None:
 
         # Show feedback buttons for assistant messages with interaction_id
         if message["role"] == "assistant" and message.get("interaction_id"):
-            render_feedback_buttons(message["interaction_id"], i)
+            render_feedback_buttons(message["interaction_id"], i, client)
 
     # Chat input
     if prompt := st.chat_input(f"Ask about {settings.app_name}..."):
@@ -340,11 +381,9 @@ def main() -> None:
         })
         render_message("user", prompt)
 
-        # Check if service is ready
-        if not service.is_ready:
-            error_msg = (
-                "Vector index not loaded. Run indexing first."
-            )
+        # Check if index is loaded
+        if not is_healthy:
+            error_msg = "⚠️ Vector index not loaded. Run `poetry run python src/indexer.py` to build the knowledge base."
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": error_msg,
@@ -361,13 +400,16 @@ def main() -> None:
 
                     # Auto-create conversation on first message
                     if st.session_state.current_conversation_id is None:
-                        new_conv = conversation_service.start_conversation()
-                        st.session_state.current_conversation_id = new_conv.id
-                        st.session_state.turn_number = 1
-                        logger.info(f"Created new conversation: {new_conv.id}")
+                        try:
+                            new_conv = client.start_conversation()
+                            st.session_state.current_conversation_id = new_conv["id"]
+                            st.session_state.turn_number = 1
+                            logger.info(f"Created new conversation: {new_conv['id']}")
+                        except Exception as e:
+                            logger.warning(f"Could not create conversation: {e}")
 
-                    # Create request with conversation context
-                    request = ChatRequest(
+                    # Create request
+                    api_request = APIClientChatRequest(
                         query=prompt,
                         k=settings.search_k,
                         include_sources=True,
@@ -375,49 +417,51 @@ def main() -> None:
                         turn_number=st.session_state.turn_number,
                     )
 
-                    # Get response (with conversation context!)
-                    logger.info(f"[UI-DEBUG] Calling service.chat() for query: '{prompt}'")
-                    start_service = time_module.time()
-                    response = service.chat(request)
-                    service_elapsed = time_module.time() - start_service
-                    logger.info(f"[UI-DEBUG] service.chat() returned in {service_elapsed:.2f}s")
-                    logger.info(f"[UI-DEBUG] Response answer length: {len(response.answer) if response.answer else 0}")
-                    logger.info(f"[UI-DEBUG] Response sources count: {len(response.sources) if response.sources else 0}")
+                    # Get response from API
+                    logger.info(f"[UI-DEBUG] Calling API /chat for query: '{prompt}'")
+                    start_time = time_module.time()
+                    response = client.chat(api_request)
+                    elapsed = time_module.time() - start_time
+                    logger.info(f"[UI-DEBUG] API /chat returned in {elapsed:.2f}s")
+
+                    # Extract response data
+                    answer = response.get("answer", "") if isinstance(response, dict) else getattr(response, "answer", "")
+                    sources = response.get("sources", []) if isinstance(response, dict) else getattr(response, "sources", [])
+                    processing_time_ms = response.get("processing_time_ms", 0) if isinstance(response, dict) else getattr(response, "processing_time_ms", 0)
+
+                    logger.info(f"[UI-DEBUG] Response answer length: {len(answer)}")
+                    logger.info(f"[UI-DEBUG] Response sources count: {len(sources)}")
 
                     # Display answer
-                    logger.info(f"[UI-DEBUG] About to display answer with st.write()")
-                    st.write(response.answer)
+                    logger.info(f"[UI-DEBUG] About to display answer")
+                    st.write(answer)
                     logger.info(f"[UI-DEBUG] Answer displayed successfully")
 
                     # Display sources
                     logger.info(f"[UI-DEBUG] About to render sources")
-                    render_sources(response.sources)
+                    render_sources(sources)
                     logger.info(f"[UI-DEBUG] Sources rendered successfully")
 
                     # Display processing time
                     logger.info(f"[UI-DEBUG] About to display processing time")
-                    st.caption(f"⏱️ {response.processing_time_ms:.0f}ms")
+                    st.caption(f"⏱️ {processing_time_ms:.0f}ms")
                     logger.info(f"[UI-DEBUG] Processing time displayed successfully")
 
                     # Log interaction to database
                     logger.info(f"[UI-DEBUG] About to log interaction to database")
-                    source_names = [s.source for s in response.sources] if response.sources else []
-                    interaction = feedback_service.log_interaction(
-                        query=prompt,
-                        response=response.answer,
-                        sources=source_names,
-                        processing_time_ms=int(response.processing_time_ms),
-                    )
-                    logger.info(f"[UI-DEBUG] Interaction logged with id: {interaction.id}")
-
-                    # Update conversation title after first message
-                    if st.session_state.turn_number == 1:
-                        logger.info(f"[UI-DEBUG] Updating conversation title for first message")
-                        conversation_service.update_conversation_after_message(
-                            st.session_state.current_conversation_id,
-                            prompt
+                    source_names = [s.get("source") if isinstance(s, dict) else getattr(s, "source", "") for s in sources]
+                    try:
+                        interaction = client.log_interaction(
+                            query=prompt,
+                            response=answer,
+                            sources=source_names,
+                            processing_time_ms=int(processing_time_ms),
                         )
-                        logger.info(f"[UI-DEBUG] Conversation title updated")
+                        interaction_id = interaction.get("id") if isinstance(interaction, dict) else getattr(interaction, "id", None)
+                        logger.info(f"[UI-DEBUG] Interaction logged with id: {interaction_id}")
+                    except Exception as e:
+                        logger.warning(f"Could not log interaction: {e}")
+                        interaction_id = None
 
                     # Increment turn number for next message
                     st.session_state.turn_number += 1
@@ -427,28 +471,20 @@ def main() -> None:
                     logger.info(f"[UI-DEBUG] About to add message to session state")
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": response.answer,
-                        "interaction_id": interaction.id,
+                        "content": answer,
+                        "interaction_id": interaction_id,
                     })
                     logger.info(f"[UI-DEBUG] Message added to session state")
 
-                    # Display feedback buttons without rerun to avoid hanging
+                    # Display feedback buttons
                     logger.info(f"[UI-DEBUG] About to render feedback buttons")
-                    render_feedback_buttons(interaction.id, len(st.session_state.messages) - 1)
+                    if interaction_id:
+                        render_feedback_buttons(interaction_id, len(st.session_state.messages) - 1, client)
                     logger.info(f"[UI-DEBUG] Feedback buttons rendered successfully")
 
-                except AppException as e:
-                    error_msg = f"❌ Error: {e.message}"
-                    st.error(error_msg)
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": error_msg,
-                        "interaction_id": None,
-                    })
-
-                except Exception as e:
-                    logger.exception("Unexpected error: %s", e)
-                    error_msg = "An unexpected error occurred. Please try again."
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, Exception) as e:
+                    logger.exception("API error: %s", e)
+                    error_msg = get_user_friendly_error_message(e)
                     st.error(error_msg)
                     st.session_state.messages.append({
                         "role": "assistant",
@@ -461,15 +497,15 @@ def main() -> None:
         st.header("Settings")
 
         # Display service status
-        if service.is_ready:
-            st.success(f"✅ Index loaded ({service.vector_store.index_size} vectors)")
+        if is_healthy:
+            st.success(f"✅ API Ready ({index_size} vectors)")
         else:
-            st.warning("⚠️ Index not loaded")
+            st.warning("⚠️ API Degraded")
 
         st.divider()
 
         # Conversation controls
-        render_conversation_controls()
+        render_conversation_controls(client)
 
         st.divider()
 
@@ -478,25 +514,33 @@ def main() -> None:
         st.text(f"Model: {settings.chat_model}")
         st.text(f"Results: {settings.search_k}")
         st.text(f"Temperature: {settings.temperature}")
+        st.text(f"API: http://localhost:8000")
 
         st.divider()
 
         # Feedback statistics
         st.subheader("Feedback Stats")
         try:
-            stats = feedback_service.get_stats()
+            stats = client.get_feedback_stats()
+            total_interactions = stats.get("total_interactions", 0) if isinstance(stats, dict) else getattr(stats, "total_interactions", 0)
+            total_feedback = stats.get("total_feedback", 0) if isinstance(stats, dict) else getattr(stats, "total_feedback", 0)
+            positive_count = stats.get("positive_count", 0) if isinstance(stats, dict) else getattr(stats, "positive_count", 0)
+            negative_count = stats.get("negative_count", 0) if isinstance(stats, dict) else getattr(stats, "negative_count", 0)
+            positive_rate = stats.get("positive_rate", 0) if isinstance(stats, dict) else getattr(stats, "positive_rate", 0)
+
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Total Interactions", stats.total_interactions)
-                st.metric("👍 Positive", stats.positive_count)
+                st.metric("Total Interactions", total_interactions)
+                st.metric("👍 Positive", positive_count)
             with col2:
-                st.metric("With Feedback", stats.total_feedback)
-                st.metric("👎 Negative", stats.negative_count)
+                st.metric("With Feedback", total_feedback)
+                st.metric("👎 Negative", negative_count)
 
-            if stats.total_feedback > 0:
-                st.progress(stats.positive_rate / 100, text=f"Positive Rate: {stats.positive_rate}%")
+            if total_feedback > 0:
+                st.progress(positive_rate / 100, text=f"Positive Rate: {positive_rate}%")
         except Exception as e:
             logger.error("Error getting feedback stats: %s", e)
+            st.warning("Could not load feedback stats")
 
         st.divider()
 
@@ -513,7 +557,7 @@ def main() -> None:
 
     # Footer
     st.markdown("---")
-    st.caption("Powered by Mistral AI & FAISS | Data-driven Insights")
+    st.caption("🔗 Connected to API | Powered by Mistral AI & FAISS")
 
 
 if __name__ == "__main__":
