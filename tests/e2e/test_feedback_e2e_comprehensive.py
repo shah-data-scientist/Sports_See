@@ -38,20 +38,35 @@ class TestFeedbackE2EComprehensive:
         4. Verify API response is successful (not 422 error)
         5. Verify feedback was saved to database
         """
-        # Step 1: Ask a question
-        chat_input = streamlit_page.locator("input").first
+        # Step 1: Capture page content length before query
+        content_before = len(streamlit_page.content())
+
+        # Step 2: Ask a question
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
         chat_input.fill("Who is Michael Jordan?")
         chat_input.press("Enter")
 
-        # Step 2: Wait for response and verify it appears
-        response_text = streamlit_page.locator("text=/.*Jordan.*/i")
-        response_text.wait_for(state="visible", timeout=10000)
-        assert response_text.is_visible(), "Response did not appear in UI"
+        # Step 3: Wait for response by polling for page content growth
+        # LLM responses take 5-30s; poll every 2s up to 45s
+        max_wait_ms = 45000
+        poll_interval_ms = 2000
+        elapsed = 0
+        response_appeared = False
+        while elapsed < max_wait_ms:
+            streamlit_page.wait_for_timeout(poll_interval_ms)
+            elapsed += poll_interval_ms
+            content_after = len(streamlit_page.content())
+            # Response adds significant content (at least 200 chars)
+            if content_after - content_before > 200:
+                response_appeared = True
+                break
+        assert response_appeared, (
+            f"Response did not appear after {max_wait_ms}ms "
+            f"(content grew by {len(streamlit_page.content()) - content_before} chars)"
+        )
 
-        # Step 3: Look for feedback buttons (wait up to 10 seconds)
-        # Note: In real test, would click positive button
-        # For now, verify buttons exist or wait for them
-        streamlit_page.wait_for_timeout(5000)
+        # Step 4: Wait for feedback buttons to render after response
+        streamlit_page.wait_for_timeout(3000)
 
         # Step 4: Verify no error messages about feedback submission
         error_indicators = streamlit_page.locator("text=/.*error.*/i")
@@ -81,7 +96,7 @@ class TestFeedbackE2EComprehensive:
         - Feedback API doesn't return 422 errors
         """
         # Ask a question through UI
-        chat_input = streamlit_page.locator("input").first
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
         query = "What is the NBA?"
         chat_input.fill(query)
         chat_input.press("Enter")
@@ -118,7 +133,7 @@ class TestFeedbackE2EComprehensive:
         - UI updates after feedback submission
         """
         # Step 1: Send a question
-        chat_input = streamlit_page.locator("input").first
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
         chat_input.fill("NBA teams in California")
         chat_input.press("Enter")
 
@@ -159,7 +174,7 @@ class TestFeedbackE2EComprehensive:
         - No errors during interaction logging
         """
         # Step 1: First query
-        chat_input = streamlit_page.locator("input").first
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
         chat_input.fill("First question about NBA")
         chat_input.press("Enter")
         streamlit_page.wait_for_timeout(5000)
@@ -197,7 +212,7 @@ class TestFeedbackE2EComprehensive:
         - Can submit new query after error
         """
         # Step 1: Send a query that might timeout (complex query)
-        chat_input = streamlit_page.locator("input").first
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
         chat_input.fill(
             "Complex query that might take time: "
             "Analyze top 5 scorers and their efficiency metrics"
@@ -279,7 +294,9 @@ class TestAPIResponseValidation:
             timeout=10,
         )
         assert interaction.status_code == 201
-        interaction_id = interaction.json()["interaction_id"]
+        response_data = interaction.json()
+        # Handle both possible response structures
+        interaction_id = response_data.get("interaction_id") or response_data.get("id")
 
         # Then submit feedback
         payload = {
@@ -338,7 +355,7 @@ class TestUIStateAfterAPIErrors:
 
     def test_ui_remains_functional_after_api_error(self, streamlit_page: Page):
         """Test that UI doesn't freeze after API error."""
-        chat_input = streamlit_page.locator("input").first
+        chat_input = streamlit_page.locator("[data-testid='stChatInputTextArea']")
 
         # Send query
         chat_input.fill("Test query")

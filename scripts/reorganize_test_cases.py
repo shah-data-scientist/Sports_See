@@ -7,7 +7,7 @@ MAINTAINER: Shahu
 """
 
 from src.evaluation.hybrid_test_cases import HYBRID_TEST_CASES
-from src.evaluation.models import TestCategory, EvaluationTestCase
+from src.evaluation.models.vector_models import TestCategory, EvaluationTestCase
 
 
 def categorize_hybrid_queries():
@@ -112,7 +112,7 @@ Pure SQL queries → moved to SQL_TEST_CASES
 Pure Vector queries → moved to vector test selection
 """
 
-from src.evaluation.models import EvaluationTestCase, TestCategory
+from src.evaluation.models.vector_models import EvaluationTestCase, TestCategory
 
 # ========================================================================
 # TRUE HYBRID TEST CASES

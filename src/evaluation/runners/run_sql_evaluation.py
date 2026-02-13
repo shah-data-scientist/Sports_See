@@ -1,8 +1,8 @@
 """
 FILE: run_sql_evaluation.py
 STATUS: Active
-RESPONSIBILITY: Main entry point for SQL evaluation - runs tests, analyzes results, generates comprehensive report
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Execute SQL evaluation tests via API; delegate analysis to sql_quality_analysis module
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -27,6 +27,7 @@ from src.evaluation.analysis.sql_quality_analysis import (
     analyze_query_complexity,
     analyze_query_structure,
     analyze_response_quality,
+    analyze_results,  # NEW: Unified interface
 )
 from src.evaluation.test_cases.sql_test_cases import SQL_TEST_CASES
 
@@ -122,6 +123,7 @@ def analyze_sql_results(results: list[dict], oracle: SQLOracle) -> dict[str, Any
         "overall": {
             "total_queries": len(results),
             "successful": len(successful),
+            "correct_count": correct_count if successful else 0,
             "accuracy_rate": round(accuracy_rate, 2),
             "p50_ms": round(p50, 2),
             "p95_ms": round(p95, 2),
@@ -156,13 +158,22 @@ def _is_conversational_case(test_case) -> bool:
     return False
 
 
-def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
+def run_sql_evaluation(test_indices: list[int] | None = None) -> tuple[list[dict[str, Any]], str]:
     """Run SQL evaluation on all test cases using FastAPI API.
+
+    Args:
+        test_indices: Optional list of test case indices to run (for mini mode)
 
     Returns:
         Tuple of (results list, output JSON path)
     """
     logger.info(f"Starting SQL evaluation with {len(SQL_TEST_CASES)} test cases")
+
+    if test_indices is not None:
+        selected_cases = [SQL_TEST_CASES[i] for i in test_indices if i < len(SQL_TEST_CASES)]
+        logger.info(f"Mini mode: running {len(selected_cases)} of {len(SQL_TEST_CASES)} test cases")
+    else:
+        selected_cases = list(SQL_TEST_CASES)
 
     results = []
     success_count = 0
@@ -181,7 +192,7 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
         start_index = len(results)
         success_count = sum(1 for r in results if r.get("success"))
         failure_count = sum(1 for r in results if not r.get("success"))
-        logger.info(f"Resuming from checkpoint: {start_index}/{len(SQL_TEST_CASES)} done ({success_count} success, {failure_count} failures)")
+        logger.info(f"Resuming from checkpoint: {start_index}/{len(selected_cases)} done ({success_count} success, {failure_count} failures)")
 
     # Create FastAPI app and run evaluation through API
     app = create_app()
@@ -189,12 +200,12 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
         current_conversation_id = None
         current_turn_number = 0
 
-        for i, test_case in enumerate(SQL_TEST_CASES, 1):
+        for i, test_case in enumerate(selected_cases, 1):
             # Skip already-completed cases (checkpoint resume)
             if i <= start_index:
                 continue
 
-            logger.info(f"[{i}/{len(SQL_TEST_CASES)}] Evaluating: {test_case.question}")
+            logger.info(f"[{i}/{len(selected_cases)}] Evaluating: {test_case.question}")
 
             # Rate limit delay (skip before first query)
             if i > 1 and i > start_index + 1:
@@ -316,10 +327,9 @@ def run_sql_evaluation() -> tuple[list[dict[str, Any]], str]:
 
     logger.info(f"\nEvaluation complete: {success_count} success, {failure_count} failures")
 
-    # Generate comprehensive analysis using oracle and analysis module
+    # Generate comprehensive analysis using unified interface
     logger.info("Generating comprehensive analysis...")
-    oracle = SQLOracle()
-    analysis = analyze_sql_results(results, oracle)
+    analysis = analyze_results(results, SQL_TEST_CASES)
 
     # Save results to JSON
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -369,6 +379,41 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
     query_complexity = analyze_query_complexity(results)
     column_selection = analyze_column_selection(results)
 
+    # Compute accuracy breakdown for report
+    correct_count = analysis['overall']['correct_count']
+    successful_count = analysis['overall']['successful']
+    analysis['accuracy'] = {
+        'correct_results': correct_count,
+        'incorrect_results': successful_count - correct_count,
+        'unknown_results': len(results) - successful_count,
+        'accuracy_breakdown': {},
+    }
+
+    # Compute SQL quality from query_structure for report
+    total_with_sql = query_structure['total_queries']
+    joins_count = query_structure['queries_with_join']
+    correct_joins = query_structure['correctness']['correct_joins']
+    broken_joins = joins_count - correct_joins
+    analysis['sql_quality'] = {
+        'total_queries_with_sql': total_with_sql,
+        'queries_with_joins': joins_count,
+        'join_correctness_count': correct_joins,
+        'join_correctness_rate': (correct_joins / joins_count * 100) if joins_count > 0 else 100.0,
+        'broken_joins_count': broken_joins,
+        'broken_joins_rate': (broken_joins / joins_count * 100) if joins_count > 0 else 0.0,
+        'missing_joins_estimated': query_structure['correctness']['missing_joins'],
+        'broken_joins_sample': query_structure['correctness']['examples'],
+    }
+
+    # Enrich by_category with success_rate, fallback_rate, avg_processing_time_ms
+    for cat, stats in analysis['by_category'].items():
+        cat_results = [r for r in results if r.get("category") == cat]
+        cat_successful = sum(1 for r in cat_results if r.get("success"))
+        cat_fallbacks = sum(1 for r in cat_results if r.get("actual_routing") == "fallback_to_vector")
+        stats['success_rate'] = (cat_successful / len(cat_results) * 100) if cat_results else 0.0
+        stats['avg_processing_time_ms'] = stats.pop('avg_time_ms', 0)
+        stats['fallback_rate'] = (cat_fallbacks / len(cat_results) * 100) if cat_results else 0.0
+
     # Calculate summary statistics
     total_queries = len(results)
     successful_queries = sum(1 for r in results if r.get("success", False))
@@ -397,12 +442,12 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         f.write(f"- **Total Queries:** {total_queries}\n")
         f.write(f"- **Successful Executions:** {successful_queries} ({success_rate:.1f}%)\n")
         f.write(f"- **Failed Executions:** {failed_queries}\n")
-        f.write(f"- **Result Accuracy:** {analysis['overall']['result_accuracy_rate']:.1f}% ({analysis['overall']['result_accuracy_count']}/{analysis['overall']['execution_success_count']})\n")
+        f.write(f"- **Result Accuracy:** {analysis['overall']['accuracy_rate']:.1f}% ({analysis['overall']['correct_count']}/{analysis['overall']['successful']})\n")
         f.write(f"- **Classification Accuracy:** {classification_accuracy:.1f}%\n")
         f.write(f"- **Misclassifications:** {misclassifications}\n")
         f.write(f"- **Avg Processing Time:** {avg_processing_time:.0f}ms\n")
-        f.write(f"- **p95 Processing Time:** {analysis['overall']['p95_processing_time_ms']:.0f}ms\n")
-        f.write(f"- **p99 Processing Time:** {analysis['overall']['p99_processing_time_ms']:.0f}ms\n\n")
+        f.write(f"- **p95 Processing Time:** {analysis['overall']['p95_ms']:.0f}ms\n")
+        f.write(f"- **p99 Processing Time:** {analysis['overall']['p99_ms']:.0f}ms\n\n")
 
         # Failure Analysis
         f.write("## Failure Analysis\n\n")
@@ -472,15 +517,21 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
         f.write(f"- **Average Processing Time:** {avg_processing_time:.0f}ms\n")
         f.write(f"- **Min Processing Time:** {min_processing_time:.0f}ms\n")
         f.write(f"- **Max Processing Time:** {max_processing_time:.0f}ms\n")
-        f.write(f"- **p50 (Median):** {analysis['overall']['p50_processing_time_ms']:.0f}ms\n")
-        f.write(f"- **p95:** {analysis['overall']['p95_processing_time_ms']:.0f}ms\n")
-        f.write(f"- **p99:** {analysis['overall']['p99_processing_time_ms']:.0f}ms\n\n")
+        f.write(f"- **p50 (Median):** {analysis['overall']['p50_ms']:.0f}ms\n")
+        f.write(f"- **p95:** {analysis['overall']['p95_ms']:.0f}ms\n")
+        f.write(f"- **p99:** {analysis['overall']['p99_ms']:.0f}ms\n\n")
 
-        if analysis['performance']['outlier_queries']:
+        # Compute outliers inline (queries > p95 threshold)
+        outlier_threshold = analysis['overall']['p95_ms']
+        outlier_queries = [
+            r for r in results
+            if r.get("success") and r.get("processing_time_ms", 0) > outlier_threshold
+        ]
+        if outlier_queries:
             f.write("### Performance Outliers\n\n")
-            f.write(f"Found {analysis['performance']['outlier_count']} queries exceeding threshold ({analysis['performance']['outlier_threshold_ms']:.0f}ms):\n\n")
-            for outlier in analysis['performance']['outlier_queries']:
-                f.write(f"- **{outlier['question'][:80]}** ({outlier['time_ms']:.0f}ms) - {outlier['category']}\n")
+            f.write(f"Found {len(outlier_queries)} queries exceeding p95 threshold ({outlier_threshold:.0f}ms):\n\n")
+            for outlier in outlier_queries:
+                f.write(f"- **{outlier['question'][:80]}** ({outlier['processing_time_ms']:.0f}ms) - {outlier.get('category', 'unknown')}\n")
             f.write("\n")
 
         # Response Quality Analysis
@@ -496,7 +547,7 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
             f.write("#### LLM Declined Examples\n\n")
             for case in error_taxonomy['llm_declined'][:3]:
                 f.write(f"**Q:** {case['question']}\n\n")
-                f.write(f"**Response:** {case['response'][:150]}...\n\n")
+                f.write(f"**Response:** {case['response']}\n\n")
 
         f.write("### Fallback Patterns\n\n")
         f.write(f"- **SQL Only:** {fallback_patterns['sql_only']} ({100 - fallback_patterns['fallback_rate']:.1f}%)\n")
@@ -585,7 +636,7 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
             findings.append(f"❌ **Poor execution reliability** ({success_rate:.1f}% success rate) - needs attention")
 
         # Result accuracy finding
-        result_accuracy = analysis['overall']['result_accuracy_rate']
+        result_accuracy = analysis['overall']['accuracy_rate']
         if result_accuracy >= 90:
             findings.append(f"✓ **Excellent result accuracy** ({result_accuracy:.1f}%) - responses match expected results")
         elif result_accuracy >= 75:
@@ -625,7 +676,7 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
             findings.append(f"❌ **Multiple LLM errors** ({error_taxonomy['total_errors']}) detected - review prompts")
 
         # Latency finding
-        p95_time = analysis['overall']['p95_processing_time_ms']
+        p95_time = analysis['overall']['p95_ms']
         if p95_time < 10000:
             findings.append(f"✓ **Fast performance** (p95: {p95_time:.0f}ms) suitable for interactive use")
         elif p95_time < 30000:
@@ -657,12 +708,12 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
                 f.write(f"- **Processing Time:** {result['processing_time_ms']:.0f}ms\n")
 
                 if result.get("generated_sql"):
-                    f.write(f"- **Generated SQL:** `{result['generated_sql'][:100]}...`\n")
+                    f.write(f"- **Generated SQL:**\n```sql\n{result['generated_sql']}\n```\n\n")
 
                 if not result.get("success", True):
-                    f.write(f"- **Error:** {result.get('error', 'Unknown')}\n")
+                    f.write(f"- **Error:** {result.get('error', 'Unknown')}\n\n")
 
-                f.write(f"- **Response:** {result['response'][:200]}{'...' if len(result['response']) > 200 else ''}\n\n")
+                f.write(f"- **Response:**\n{result['response']}\n\n")
 
         # Report sections
         f.write("---\n\n")
@@ -680,15 +731,27 @@ def generate_comprehensive_report(results: list[dict[str, Any]], json_path: str)
 
 def main():
     """Main entry point for SQL evaluation."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="SQL evaluation runner")
+    parser.add_argument("--mini", action="store_true", help="Run mini evaluation with 4 diverse test cases")
+    args = parser.parse_args()
+
+    test_indices = None
+    if args.mini:
+        # Select 4 diverse cases: simple(0), comparison(13), aggregation(20), complex(27)
+        test_indices = [0, 13, 20, 27]
+        print(f"Mini mode: running indices {test_indices}")
+
     try:
         # Run evaluation
-        results, json_path = run_sql_evaluation()
+        results, json_path = run_sql_evaluation(test_indices=test_indices)
 
         # Generate comprehensive report
         report_path = generate_comprehensive_report(results, json_path)
 
         print("\n" + "="*80)
-        print("SQL EVALUATION COMPLETE")
+        print("SQL EVALUATION COMPLETE" + (" (MINI)" if args.mini else ""))
         print("="*80)
         print(f"\nResults saved to:")
         print(f"  - JSON: {json_path}")

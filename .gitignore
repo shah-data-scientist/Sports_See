@@ -164,5 +164,42 @@ _ul
 _ul-NOUVEAU-MAITRE
 check_changes.ps1
 
+# UI test screenshots
+ui_test_screenshots/
+
+# Evaluation results (auto-generated reports and data)
+evaluation_results/classification_check*
+evaluation_results/chunk_*
+
+# Temporary root-level batch files
+/RUN_*.bat
+/START.bat
+/*.txt
+/*.json
+/GREETING_*.md
+/CHANGES_*.md
+/INDEX_*.md
+/QUICK_*.md
+/SESSION_*.md
+/VISUAL_*.md
+
+# Scripts - temp/debug patterns
+scripts/trace_*.py
+scripts/find_*.py
+scripts/show_*.py
+scripts/verify_*.py
+scripts/visible_*.py
+scripts/silent_*.py
+scripts/launch_*.py
+scripts/automated_*.py
+scripts/parse_*.py
+scripts/run_performance_*.py
+scripts/*.json
+scripts/*.bat
+scripts/*.md
+
+# Temporary docs
+docs/*_VERIFICATION*.md
+
 # Claude IDE
 .claude/

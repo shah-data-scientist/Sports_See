@@ -1,8 +1,8 @@
 """
 FILE: run_hybrid_evaluation.py
 STATUS: Active
-RESPONSIBILITY: Master Hybrid evaluation - Tests SQL + Vector integration via API
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Execute hybrid evaluation tests via API; delegate analysis to hybrid_quality_analysis module
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.api.main import create_app
 from src.evaluation.analysis.hybrid_quality_analysis import analyze_hybrid_results, generate_markdown_report
-from src.evaluation.test_cases.sql_test_cases import HYBRID_TEST_CASES
+from src.evaluation.test_cases.hybrid_test_cases import HYBRID_TEST_CASES
 
 # Configure logging
 logging.basicConfig(
@@ -50,7 +50,7 @@ def _is_followup_question(question: str) -> bool:
     return any(indicator in question_lower for indicator in followup_indicators)
 
 
-def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], str]:
+def run_hybrid_evaluation(resume: bool = True, test_indices: list[int] | None = None) -> tuple[list[dict[str, Any]], str]:
     """
     Run Hybrid evaluation on all test cases using FastAPI API.
 
@@ -63,6 +63,7 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
 
     Args:
         resume: If True, resume from checkpoint if available
+        test_indices: Optional list of indices to run (for mini mode)
 
     Returns:
         Tuple of (results list, output JSON path)
@@ -72,6 +73,12 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
     logger.info(f"Test Cases: {len(HYBRID_TEST_CASES)}")
     logger.info(f"Mode: API-based (POST /api/v1/chat)")
     logger.info("="*80)
+
+    if test_indices is not None:
+        selected_cases = [HYBRID_TEST_CASES[i] for i in test_indices if i < len(HYBRID_TEST_CASES)]
+        logger.info(f"Mini mode: running {len(selected_cases)} of {len(HYBRID_TEST_CASES)} test cases")
+    else:
+        selected_cases = list(HYBRID_TEST_CASES)
 
     # Checkpoint file
     checkpoint_file = Path("evaluation_results") / "hybrid_evaluation_checkpoint.json"
@@ -86,7 +93,7 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
             checkpoint_data = json.loads(checkpoint_file.read_text(encoding="utf-8"))
             results = checkpoint_data.get("results", [])
             start_index = len(results)
-            logger.info(f"✓ Resuming from checkpoint: {start_index}/{len(HYBRID_TEST_CASES)} completed")
+            logger.info(f"✓ Resuming from checkpoint: {start_index}/{len(selected_cases)} completed")
         except Exception as e:
             logger.warning(f"Failed to load checkpoint: {e}. Starting fresh.")
 
@@ -100,11 +107,11 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
         current_conversation_id = None
         current_turn_number = 0
 
-        for i in range(start_index, len(HYBRID_TEST_CASES)):
-            test_case = HYBRID_TEST_CASES[i]
+        for i in range(start_index, len(selected_cases)):
+            test_case = selected_cases[i]
             test_num = i + 1
 
-            logger.info(f"[{test_num}/{len(HYBRID_TEST_CASES)}] Evaluating: {test_case.question[:80]}...")
+            logger.info(f"[{test_num}/{len(selected_cases)}] Evaluating: {test_case.question[:80]}...")
 
             # Rate limit delay (skip before first query)
             if test_num > 1:
@@ -233,7 +240,7 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
             checkpoint_data = {
                 "timestamp": datetime.now().isoformat(),
                 "completed": len(results),
-                "total": len(HYBRID_TEST_CASES),
+                "total": len(selected_cases),
                 "results": results,
             }
             checkpoint_file.write_text(json.dumps(checkpoint_data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -243,8 +250,8 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
     logger.info("="*80)
     logger.info("EVALUATION COMPLETE")
     logger.info("="*80)
-    logger.info(f"Total: {len(HYBRID_TEST_CASES)}")
-    logger.info(f"Success: {success_count} ({success_count/len(HYBRID_TEST_CASES)*100:.1f}%)")
+    logger.info(f"Total: {len(selected_cases)}")
+    logger.info(f"Success: {success_count} ({success_count/len(selected_cases)*100:.1f}%)")
     logger.info(f"Failed: {failure_count}")
     logger.info("="*80)
 
@@ -258,15 +265,15 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
 
     # Run quality analysis
     logger.info("Running quality analysis...")
-    analysis = analyze_hybrid_results(results, HYBRID_TEST_CASES)
+    analysis = analyze_hybrid_results(results, selected_cases)
 
     output_data = {
         "metadata": {
             "timestamp": datetime.now().isoformat(),
-            "total_test_cases": len(HYBRID_TEST_CASES),
+            "total_test_cases": len(selected_cases),
             "successful": success_count,
             "failed": failure_count,
-            "success_rate": round(success_count / len(HYBRID_TEST_CASES) * 100, 1),
+            "success_rate": round(success_count / len(selected_cases) * 100, 1),
         },
         "analysis": analysis,
         "results": results,
@@ -277,7 +284,7 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
 
     # Markdown output
     md_file = output_dir / f"hybrid_evaluation_report_{timestamp}.md"
-    generate_markdown_report(results, analysis, HYBRID_TEST_CASES, md_file)
+    generate_markdown_report(results, analysis, selected_cases, md_file)
     logger.info(f"✓ Markdown report saved: {md_file}")
 
     # Clean up checkpoint
@@ -298,8 +305,20 @@ def run_hybrid_evaluation(resume: bool = True) -> tuple[list[dict[str, Any]], st
 
 def main():
     """Main entry point for hybrid evaluation."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Hybrid evaluation runner")
+    parser.add_argument("--mini", action="store_true", help="Run mini evaluation with 4 diverse test cases")
+    args = parser.parse_args()
+
+    test_indices = None
+    if args.mini:
+        # Select 4 diverse cases: tier1(0), tier2(10), tier3(17), tier4(34)
+        test_indices = [0, 10, 17, 34]
+        print(f"Mini mode: running indices {test_indices}")
+
     try:
-        results, output_file = run_hybrid_evaluation(resume=True)
+        results, output_file = run_hybrid_evaluation(resume=True, test_indices=test_indices)
         return 0
     except KeyboardInterrupt:
         logger.info("\n\nEvaluation interrupted by user. Progress saved to checkpoint.")

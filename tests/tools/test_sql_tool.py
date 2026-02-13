@@ -35,7 +35,7 @@ class TestNBAGSQLToolInit:
         # Check LLM initialization
         mock_llm_class.assert_called_once()
         call_kwargs = mock_llm_class.call_args.kwargs
-        assert call_kwargs["model"] == "gemini-2.0-flash-lite"
+        assert call_kwargs["model"] == "gemini-2.0-flash"
         assert call_kwargs["temperature"] == 0.0
 
         # Check dictionary was loaded

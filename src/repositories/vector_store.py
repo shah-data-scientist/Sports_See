@@ -237,6 +237,24 @@ class VectorStoreRepository:
 
         return boost
 
+    @staticmethod
+    def _compute_quality_boost(chunk: DocumentChunk) -> float:
+        """Compute additive score boost from chunk quality assessment.
+
+        Maps the LLM-assessed quality_score (0.0-1.0) to a boost value
+        on the same 0-5 scale as metadata boost.
+
+        Args:
+            chunk: Document chunk with quality_score in metadata.
+
+        Returns:
+            Additive boost value (0.0 to 5.0). Returns 0.0 if no score.
+        """
+        quality_score = chunk.metadata.get("quality_score")
+        if quality_score is None:
+            return 0.0
+        return float(quality_score) * 5.0
+
     @logfire.instrument("VectorStoreRepository.search {k=}")
     def search(
         self,
@@ -357,15 +375,19 @@ class VectorStoreRepository:
                     else:
                         bm25_normalized = bm25_scores
 
-                    # Apply 3-signal formula: (cosine*0.5) + (bm25*0.35) + (metadata*0.15)
+                    # Apply 4-signal formula: (cosine*0.45) + (bm25*0.30) + (metadata*0.15) + (quality*0.10)
                     new_results = []
                     for i, (chunk, cosine_score) in enumerate(results):
                         bm25_score = bm25_normalized[i]
                         metadata_boost = self._compute_metadata_boost(chunk)
+                        quality_boost = self._compute_quality_boost(chunk)
 
-                        # 3-signal composite score
+                        # 4-signal composite score
                         composite_score = (
-                            (cosine_score * 0.5) + (bm25_score * 0.35) + (metadata_boost * 0.15)
+                            (cosine_score * 0.45)
+                            + (bm25_score * 0.30)
+                            + (metadata_boost * 0.15)
+                            + (quality_boost * 0.10)
                         )
                         composite_score = min(composite_score, 100.0)
 
@@ -374,23 +396,38 @@ class VectorStoreRepository:
                     results = new_results
 
                 except ImportError:
-                    # BM25 not available, fall back to cosine + metadata
-                    logger.warning("rank-bm25 not available, using cosine + metadata only")
+                    # BM25 not available, fall back to cosine + metadata + quality
+                    logger.warning("rank-bm25 not available, using cosine + metadata + quality only")
                     results = [
-                        (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                        (chunk, min(
+                            score
+                            + self._compute_metadata_boost(chunk)
+                            + self._compute_quality_boost(chunk),
+                            100.0,
+                        ))
                         for chunk, score in results
                     ]
                 except Exception as e:
-                    # BM25 calculation failed, fall back to cosine + metadata
-                    logger.warning(f"BM25 calculation failed ({e}), using cosine + metadata only")
+                    # BM25 calculation failed, fall back to cosine + metadata + quality
+                    logger.warning(f"BM25 calculation failed ({e}), using cosine + metadata + quality only")
                     results = [
-                        (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                        (chunk, min(
+                            score
+                            + self._compute_metadata_boost(chunk)
+                            + self._compute_quality_boost(chunk),
+                            100.0,
+                        ))
                         for chunk, score in results
                     ]
             else:
-                # No query_text provided, fall back to cosine + metadata boosting
+                # No query_text provided, fall back to cosine + metadata + quality boosting
                 results = [
-                    (chunk, min(score + self._compute_metadata_boost(chunk), 100.0))
+                    (chunk, min(
+                        score
+                        + self._compute_metadata_boost(chunk)
+                        + self._compute_quality_boost(chunk),
+                        100.0,
+                    ))
                     for chunk, score in results
                 ]
 

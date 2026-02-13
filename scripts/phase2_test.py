@@ -60,9 +60,9 @@ def test_query_classifier():
         correct = 0
         for query, expected in test_cases:
             result = classifier.classify(query)
-            match = result == expected
+            match = result.query_type == expected
             symbol = "[OK]" if match else "[FAIL]"
-            print(f"{symbol} {result.value:15} | {query[:50]}")
+            print(f"{symbol} {result.query_type.value:15} | {query[:50]}")
             if match:
                 correct += 1
 

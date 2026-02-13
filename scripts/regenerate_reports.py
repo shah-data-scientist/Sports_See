@@ -24,7 +24,7 @@ def regenerate_hybrid_report():
         analyze_hybrid_results,
         generate_markdown_report,
     )
-    from src.evaluation.test_cases.sql_test_cases import HYBRID_TEST_CASES
+    from src.evaluation.test_cases.hybrid_test_cases import HYBRID_TEST_CASES
 
     json_path = Path("evaluation_results/hybrid_evaluation_20260212_070628.json")
     data = json.loads(json_path.read_text(encoding="utf-8"))

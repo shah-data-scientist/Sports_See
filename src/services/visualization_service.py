@@ -225,7 +225,6 @@ class VisualizationService:
     def _generate_single_entity(self, query: str, data: list[dict[str, Any]]) -> go.Figure:
         """Generate stat card / table for single entity."""
         row = data[0]
-        keys = list(row.keys())
 
         # Create a simple stat card display with formatted labels
         stats_text = "<br>".join([f"<b>{get_stat_label(k)}:</b> {v}" for k, v in row.items()])
@@ -243,11 +242,18 @@ class VisualizationService:
             align="left",
         )
 
+        # Use entity name from data if available, otherwise generic title
+        entity_name = row.get("name", row.get("team", ""))
+        title = f"{entity_name} Stats" if entity_name else "Player Stats"
+
+        # Adjust height based on number of stats
+        height = max(300, 50 + len(row) * 30)
+
         fig.update_layout(
-            title="Player/Team Stats",
+            title=title,
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
-            height=300,
+            height=height,
             template="plotly_white",
         )
 

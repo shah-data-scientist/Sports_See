@@ -1,8 +1,8 @@
 """
 FILE: sql_quality_analysis.py
 STATUS: Active
-RESPONSIBILITY: Consolidated SQL quality analysis functions (error taxonomy, fallback, response quality, query structure, complexity, column selection)
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: SQL evaluation analysis coordination - unified interface analyze_results(), individual analysis functions, SQL validation oracle
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 """
 
@@ -495,3 +495,94 @@ def analyze_column_selection(results: list[dict[str, Any]]) -> dict[str, Any]:
         selection_stats["under_selection_rate"] = (under_selection_count / selection_stats["total_queries"]) * 100
 
     return selection_stats
+
+
+# ============================================================================
+# UNIFIED INTERFACE: Wrapper functions for consistent runner patterns
+# ============================================================================
+
+class SQLOracle:
+    """Ground truth oracle for validating SQL evaluation results."""
+
+    def __init__(self):
+        """Initialize oracle with ground truth from test cases."""
+        from src.evaluation.test_cases.sql_test_cases import SQL_TEST_CASES
+        self.oracle = self._build_oracle(SQL_TEST_CASES)
+
+    def _build_oracle(self, test_cases) -> dict[str, dict[str, Any]]:
+        """Build oracle from test case ground truth."""
+        oracle = {}
+        for test_case in test_cases:
+            key = test_case.question.strip().lower()
+            oracle[key] = {
+                "expected_answer": test_case.ground_truth_answer,
+                "expected_data": test_case.ground_truth_data,
+                "category": getattr(test_case, "category", "unknown"),
+            }
+        return oracle
+
+    def get_oracle_entry(self, question: str) -> dict[str, Any] | None:
+        """Retrieve oracle entry for a question."""
+        key = question.strip().lower()
+        return self.oracle.get(key)
+
+    def validate_result(self, question: str, actual_response: str) -> bool:
+        """Validate if response is semantically correct."""
+        if not actual_response or not actual_response.strip():
+            return False
+        oracle_entry = self.get_oracle_entry(question)
+        if oracle_entry is None:
+            return False
+        # Simple validation: check if key numeric values appear in response
+        response_lower = actual_response.lower()
+        expected_data = oracle_entry.get("expected_data")
+        if isinstance(expected_data, dict):
+            for value in expected_data.values():
+                if isinstance(value, (int, float)):
+                    if str(value) not in response_lower and str(int(value)) not in response_lower:
+                        return False
+        return True
+
+
+def analyze_results(results: list[dict], test_cases: list) -> dict[str, Any]:
+    """Unified interface: Analyze SQL evaluation results.
+
+    This wrapper handles oracle creation and calls all analysis functions
+    to match the pattern used by Vector and Hybrid runners.
+
+    Args:
+        results: List of evaluation result dictionaries
+        test_cases: List of test case objects (for oracle building)
+
+    Returns:
+        Dictionary with comprehensive analysis
+    """
+    oracle = SQLOracle()
+
+    analysis = {
+        "overall": {
+            "total_queries": len(results),
+            "successful": sum(1 for r in results if r.get("success", False)),
+        }
+    }
+
+    # Add all detailed analysis
+    analysis["error_taxonomy"] = analyze_error_taxonomy(results)
+    analysis["fallback_patterns"] = analyze_fallback_patterns(results)
+    analysis["response_quality"] = analyze_response_quality(results)
+    analysis["query_structure"] = analyze_query_structure(results)
+    analysis["query_complexity"] = analyze_query_complexity(results)
+    analysis["column_selection"] = analyze_column_selection(results)
+
+    # Calculate accuracy using oracle
+    successful = [r for r in results if r.get("success", False)]
+    if successful:
+        correct_count = sum(
+            1 for r in successful
+            if oracle.validate_result(r.get("question", ""), r.get("response", ""))
+        )
+        analysis["overall"]["accuracy_rate"] = round(correct_count / len(successful) * 100, 2)
+    else:
+        analysis["overall"]["accuracy_rate"] = 0
+
+    return analysis

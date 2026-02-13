@@ -8,7 +8,7 @@ MAINTAINER: Shahu
 
 import pytest
 
-from src.evaluation.models import EvaluationTestCase, TestCategory
+from src.evaluation.models.vector_models import EvaluationTestCase, TestCategory
 from src.evaluation.test_cases.vector_test_cases import EVALUATION_TEST_CASES
 
 

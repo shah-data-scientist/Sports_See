@@ -7,6 +7,7 @@ MAINTAINER: Shahu
 """
 
 import argparse
+import json
 import logging
 import random
 import re
@@ -55,6 +56,7 @@ class DataPipeline:
         vector_store: VectorStoreRepository | None = None,
         enable_quality_check: bool = False,
         quality_sample_size: int = 10,
+        quality_threshold: float = 0.5,
     ):
         """Initialize the pipeline.
 
@@ -63,11 +65,13 @@ class DataPipeline:
             vector_store: Repository for FAISS index operations.
             enable_quality_check: Run LLM-powered chunk quality validation.
             quality_sample_size: Number of chunks to sample for quality check.
+            quality_threshold: Minimum quality score for chunk retention (0.0-1.0).
         """
         self._embedding_service = embedding_service or EmbeddingService()
         self._vector_store = vector_store or VectorStoreRepository()
         self._enable_quality_check = enable_quality_check
         self._quality_sample_size = quality_sample_size
+        self._quality_threshold = quality_threshold
 
     @logfire.instrument("Pipeline.load")
     def load(self, input_data: LoadStageInput) -> LoadStageOutput:
@@ -294,6 +298,85 @@ class DataPipeline:
 
         return chunks
 
+    def _enrich_quality_scores(self, chunks: list[ChunkData]) -> list[ChunkData]:
+        """Enrich chunk metadata with pre-computed quality scores.
+
+        Loads quality scores from evaluation_results/chunk_quality_scores.json
+        and maps them to chunks by chunk_id index.
+
+        Args:
+            chunks: List of chunks to enrich.
+
+        Returns:
+            Chunks with quality_score added to metadata.
+        """
+        from pathlib import Path
+
+        scores_path = Path("evaluation_results/chunk_quality_scores.json")
+        if not scores_path.exists():
+            logger.warning("Quality scores file not found at %s, skipping enrichment", scores_path)
+            return chunks
+
+        with open(scores_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        score_map = {}
+        for entry in data.get("chunks", []):
+            cid = entry.get("chunk_id")
+            score = entry.get("quality_score")
+            if cid is not None and score is not None:
+                score_map[cid] = score
+
+        enriched_count = 0
+        for i, chunk in enumerate(chunks):
+            if i in score_map:
+                chunk.metadata["quality_score"] = score_map[i]
+                enriched_count += 1
+
+        logger.info(
+            "Quality enrichment: %d/%d chunks received quality_score",
+            enriched_count,
+            len(chunks),
+        )
+        return chunks
+
+    def _filter_by_quality_threshold(self, chunks: list[ChunkData]) -> list[ChunkData]:
+        """Remove chunks below the quality threshold or without a quality score.
+
+        Args:
+            chunks: List of chunks with quality_score in metadata.
+
+        Returns:
+            Filtered list retaining only chunks with quality_score >= threshold.
+        """
+        filtered = []
+        removed_count = 0
+
+        for chunk in chunks:
+            score = chunk.metadata.get("quality_score")
+            if score is not None and score >= self._quality_threshold:
+                filtered.append(chunk)
+            else:
+                removed_count += 1
+                source = chunk.metadata.get("source", "unknown")
+                reason = f"score={score}" if score is not None else "no score"
+                logger.info(
+                    "Removed chunk %s from %s: %s (threshold=%.2f)",
+                    chunk.id,
+                    source,
+                    reason,
+                    self._quality_threshold,
+                )
+
+        logger.info(
+            "Quality threshold filter (>=%.2f): kept %d/%d chunks (removed %d)",
+            self._quality_threshold,
+            len(filtered),
+            len(chunks),
+            removed_count,
+        )
+        return filtered
+
     @logfire.instrument("Pipeline.chunk")
     def chunk(
         self,
@@ -375,6 +458,10 @@ class DataPipeline:
 
         # Add global post engagement min/max for relative boost (across all posts)
         all_chunks = self._add_global_post_stats(all_chunks)
+
+        # Enrich with pre-computed quality scores and filter by threshold
+        all_chunks = self._enrich_quality_scores(all_chunks)
+        all_chunks = self._filter_by_quality_threshold(all_chunks)
 
         return ChunkStageOutput(
             chunks=all_chunks,

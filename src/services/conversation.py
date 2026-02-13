@@ -7,7 +7,6 @@ MAINTAINER: Shahu
 """
 
 import logging
-from pathlib import Path
 
 from src.models.conversation import (
     ConversationCreate,

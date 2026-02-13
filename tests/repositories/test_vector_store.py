@@ -493,3 +493,52 @@ class TestMetadataBoost:
         # Ensure score is boosted ( > raw score)
         # Raw score for 0.90/1.0 cosine is approx 0.9.
         assert reddit_result[1] > 90.0
+
+
+class TestQualityBoost:
+    """Tests for _compute_quality_boost static method."""
+
+    def test_quality_boost_with_high_score(self):
+        """Chunk with quality_score=0.90 gets boost of 4.5."""
+        chunk = DocumentChunk(
+            id="q1", text="Good quality text",
+            metadata={"quality_score": 0.90},
+        )
+        boost = VectorStoreRepository._compute_quality_boost(chunk)
+        assert boost == pytest.approx(4.5)
+
+    def test_quality_boost_with_low_score(self):
+        """Chunk with quality_score=0.50 gets boost of 2.5."""
+        chunk = DocumentChunk(
+            id="q2", text="Borderline text",
+            metadata={"quality_score": 0.50},
+        )
+        boost = VectorStoreRepository._compute_quality_boost(chunk)
+        assert boost == pytest.approx(2.5)
+
+    def test_quality_boost_with_perfect_score(self):
+        """Chunk with quality_score=1.0 gets max boost of 5.0."""
+        chunk = DocumentChunk(
+            id="q3", text="Perfect text",
+            metadata={"quality_score": 1.0},
+        )
+        boost = VectorStoreRepository._compute_quality_boost(chunk)
+        assert boost == pytest.approx(5.0)
+
+    def test_quality_boost_without_score(self):
+        """Chunk without quality_score gets 0.0 boost."""
+        chunk = DocumentChunk(
+            id="q4", text="No score text",
+            metadata={"source": "test.pdf"},
+        )
+        boost = VectorStoreRepository._compute_quality_boost(chunk)
+        assert boost == 0.0
+
+    def test_quality_boost_with_zero_score(self):
+        """Chunk with quality_score=0.0 gets 0.0 boost."""
+        chunk = DocumentChunk(
+            id="q5", text="Zero score text",
+            metadata={"quality_score": 0.0},
+        )
+        boost = VectorStoreRepository._compute_quality_boost(chunk)
+        assert boost == 0.0

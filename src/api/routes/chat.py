@@ -7,6 +7,9 @@ MAINTAINER: Shahu
 """
 
 import logging
+import re
+import time
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
@@ -31,7 +34,7 @@ router = APIRouter()
         503: {"description": "Vector index not available"},
     },
 )
-async def chat(request: ChatRequest) -> ChatResponse:
+def chat(request: ChatRequest) -> ChatResponse:
     """Process a chat request through the RAG pipeline.
 
     Args:
@@ -40,18 +43,27 @@ async def chat(request: ChatRequest) -> ChatResponse:
     Returns:
         ChatResponse with AI-generated answer and source documents
     """
+    start_time = time.time()
     logger.info("Chat request received: %s", request.query[:50])
 
-    service = get_chat_service()
-    response = service.chat(request)
+    # Process through normal RAG pipeline
+    # Note: Service layer has PHASE 15 greeting detection that handles simple greetings
+    try:
+        service = get_chat_service()
+        logger.debug(f"Service obtained: {type(service)}")
+        response = service.chat(request)
+        logger.debug(f"Response type: {type(response)}")
 
-    logger.info(
-        "Chat response generated in %.2fms with %d sources",
-        response.processing_time_ms,
-        len(response.sources),
-    )
+        logger.info(
+            "Chat response generated in %.2fms with %d sources",
+            response.processing_time_ms,
+            len(response.sources),
+        )
 
-    return response
+        return response
+    except Exception as e:
+        logger.exception(f"Chat error for query '{request.query[:50]}': {type(e).__name__}: {e}")
+        raise
 
 
 @router.get(

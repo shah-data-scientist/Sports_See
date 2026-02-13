@@ -386,3 +386,90 @@ class TestDataPipelineFilterLowQuality:
         filtered = pipeline._filter_low_quality_chunks(chunks)
         assert len(filtered) == 1
         assert filtered[0].id == "good"
+
+
+class TestQualityThresholdFiltering:
+    """Tests for quality score enrichment and threshold filtering."""
+
+    def test_filter_removes_low_quality_chunks(self):
+        """Chunks below threshold are removed."""
+        pipeline = DataPipeline(
+            embedding_service=MagicMock(),
+            vector_store=MagicMock(),
+            quality_threshold=0.5,
+        )
+        chunks = [
+            ChunkData(id="high", text="Good text", metadata={"quality_score": 0.90}),
+            ChunkData(id="mid", text="OK text", metadata={"quality_score": 0.50}),
+            ChunkData(id="low", text="Bad text", metadata={"quality_score": 0.40}),
+        ]
+        filtered = pipeline._filter_by_quality_threshold(chunks)
+        assert len(filtered) == 2
+        assert [c.id for c in filtered] == ["high", "mid"]
+
+    def test_filter_removes_unscored_chunks(self):
+        """Chunks without quality_score are removed."""
+        pipeline = DataPipeline(
+            embedding_service=MagicMock(),
+            vector_store=MagicMock(),
+            quality_threshold=0.5,
+        )
+        chunks = [
+            ChunkData(id="scored", text="Good text", metadata={"quality_score": 0.75}),
+            ChunkData(id="unscored", text="No score", metadata={"source": "test.pdf"}),
+        ]
+        filtered = pipeline._filter_by_quality_threshold(chunks)
+        assert len(filtered) == 1
+        assert filtered[0].id == "scored"
+
+    def test_filter_keeps_exact_threshold(self):
+        """Chunks at exactly the threshold are kept."""
+        pipeline = DataPipeline(
+            embedding_service=MagicMock(),
+            vector_store=MagicMock(),
+            quality_threshold=0.5,
+        )
+        chunks = [
+            ChunkData(id="exact", text="Borderline", metadata={"quality_score": 0.5}),
+        ]
+        filtered = pipeline._filter_by_quality_threshold(chunks)
+        assert len(filtered) == 1
+
+    def test_enrichment_loads_scores(self, tmp_path):
+        """Quality enrichment adds scores to chunk metadata."""
+        import json
+
+        # Create mock scores file
+        scores_file = tmp_path / "chunk_quality_scores.json"
+        scores_file.write_text(json.dumps({
+            "summary": {},
+            "chunks": [
+                {"chunk_id": 0, "quality_score": 0.90},
+                {"chunk_id": 1, "quality_score": 0.75},
+            ],
+        }), encoding="utf-8")
+
+        pipeline = DataPipeline(
+            embedding_service=MagicMock(),
+            vector_store=MagicMock(),
+        )
+        chunks = [
+            ChunkData(id="c0", text="Text A", metadata={}),
+            ChunkData(id="c1", text="Text B", metadata={}),
+        ]
+
+        # Patch pathlib.Path inside the method's local import
+        from unittest.mock import MagicMock as MM
+        original_path = Path
+
+        class FakePath(type(Path())):
+            def __new__(cls, *args, **kwargs):
+                if args and "chunk_quality_scores" in str(args[0]):
+                    return original_path.__new__(cls, str(scores_file))
+                return original_path.__new__(cls, *args, **kwargs)
+
+        with patch("pathlib.Path", FakePath):
+            enriched = pipeline._enrich_quality_scores(chunks)
+
+        assert enriched[0].metadata["quality_score"] == 0.90
+        assert enriched[1].metadata["quality_score"] == 0.75

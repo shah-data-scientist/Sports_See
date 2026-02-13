@@ -1,4 +1,5 @@
 [server]
+port = 8501
 runOnSave = false
 fileWatcherType = "none"
 headless = true

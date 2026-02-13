@@ -8,6 +8,7 @@ MAINTAINER: Shahu
 
 import logging
 import re
+from dataclasses import dataclass
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,24 @@ class QueryType(Enum):
     STATISTICAL = "statistical"  # Use SQL tool
     CONTEXTUAL = "contextual"  # Use vector search
     HYBRID = "hybrid"  # Use both
+
+
+@dataclass
+class ClassificationResult:
+    """Rich classification result bundling query_type with metadata.
+
+    Eliminates duplicate analysis calls by computing all query properties
+    in a single classify() pass:
+    - query_type: routing decision (STATISTICAL, CONTEXTUAL, HYBRID)
+    - is_biographical: player/team info query (needs SQL stats + vector context)
+    - is_greeting: simple greeting (skip RAG entirely)
+    - complexity_k: adaptive retrieval depth (3=simple, 5=moderate, 7-9=complex)
+    """
+
+    query_type: QueryType
+    is_biographical: bool = False
+    is_greeting: bool = False
+    complexity_k: int = 5
 
 
 class QueryClassifier:
@@ -132,6 +151,8 @@ class QueryClassifier:
         r"\d+\+?\s*(points|rebounds|assists|steals|blocks|wins|games|percent)",
 
         # ── F. Player/team stat queries ───────────────────────────────
+        # REMOVED: "Who is [player]?" queries - these are biographical (CONTEXTUAL) not statistical
+        # These should use vector search for biographical/contextual data, not SQL stats
         # Best/better with stat terms
         r"\b(who\s+is|who.?s|which)\b.*\b(best|better|worst|worse)\b.*\b(scorer|rebounder|passer|defender|shooter|blocker|player)\b",
         r"\b(best|better|worst|worse)\b.*\b(at|in|for)\b.*\b(scoring|rebounding|assists|defense|shooting|blocking|stealing)\b",
@@ -154,7 +175,7 @@ class QueryClassifier:
         # ── H. Statistical verbs ──────────────────────────────────────
         r"\b(scored|averaging|shooting|recording|ranked|ranking)\b.*\d+",
         r"\b(ranks|ranking|ranked)\b.*\b(by|in)\b",
-        r"\b(scored|averaging|recording)\b",  # Without numbers too
+        r"\b(scored|averaging|scoring|recording)\b",  # Without numbers too
 
         # ── I. Possessive & pronoun stat queries ──────────────────────
         r"\bwhat is\b.*'s?\s+\b(\d-point|three.point|free.throw|field.goal|scoring|shooting|rebound|assist|block|steal)",
@@ -184,66 +205,105 @@ class QueryClassifier:
         r"\b(whats?|wuts|wat)\b.*\b(avg|average|stats?|pct|record|points?|assists?|rebounds?)\b",
         # "da league", "in da", "da nba" (slang)
         r"\bda\s+(league|nba)\b",
-        # "plz", "pls", "lol", "yo", "bruh" near stat terms
-        r"\b(plz|pls|lol|yo|bruh|bro|fam)\b",
+        # ── Fix 5: Slang only triggers stat when near a stat term ──────
+        # Previously: bare "bro", "yo", "lol" triggered stat for any query
+        # Now: require a stat keyword within the same query
+        r"\b(plz|pls|lol|yo|bruh|bro|fam)\b.*\b(stats?|points?|assists?|rebounds?|avg|pct|score|scorer|top\s+\d|record)\b",
+        r"\b(stats?|points?|assists?|rebounds?|avg|pct|score|scorer|top\s+\d|record)\b.*\b(plz|pls|lol|yo|bruh|bro|fam)\b",
     ]
 
     # Contextual query patterns (vector search)
     CONTEXTUAL_PATTERNS = [
+        # ── Phase 17: Biographical queries (vector search for player/team context) ───
+        # These should retrieve biographical data + statistics from vector search
+        # NOT routed to SQL database (SQL has only raw numbers, not narrative context)
+        # Exclude when stat terms present (e.g., "Tell me about LeBron's stats")
+        r"\b(who is|who\?s|who are|tell me about|gimme the scoop on|info on)\b(?!.*\b(stats?|statistics?|scoring|averages?|numbers?|efficient|efficiency|scorer|mvp)\b).*\b(player|lebron|jordan|kobe|curry|james|durant|lakers|celtics|heat|warriors|teams?|athletes?)\b",
+        # "Who is LeBron" (proper names) — exclude common words that IGNORECASE would falsely match
+        r"\b(who\s+is)\s+(?!the\b|their\b|a\b|an\b|more\b|most\b|less\b|least\b|your\b|my\b|our\b)([A-Z][a-z]+(\s+[A-Z][a-z]+)*)\b",
+        r"\b(about|background|history|biography|bio)\b.*\b(player|athlete|team|star)\b",
+
         # Why/how questions (qualitative) — exclude "how many", "how much", "how does X compare"
         r"\b(why|explain|what makes|what caused)\b",
         r"\bhow\b(?!.*\b(many|much)\b)(?!.*\bcompare\b)",
         # Opinions and discussions
         r"\b(think|believe|opinion|discussion|debate|argue)\b",
         r"\b(reddit|fans|people|community)\b.*\b(think|say|discuss)\b",
+        # ── Fix 3: Broader fan/community/opinion detection ───────────────
+        # Fan-related queries (even without explicit "think/say/discuss" verb)
+        r"\b(fans?|community|reddit|people)\b.*\b(about|love|hate|view|feel|consider|debate|say)\b",
+        r"\b(according\s+to|what\s+do)\b.*\b(fans?|reddit|people|community)\b",
+        r"\b(popular|discussed|controversial|trending)\s+(opinions?|topics?|debates?|discussions?)\b",
+        # Qualitative opinion verbs
+        r"\b(view|feel|consider|regard|perceive|expected?|surprising?|chances?|hopes?)\b",
+        # Subjective qualifiers (underrated, overrated, surprising, etc.)
+        r"\b(underrated|overrated|surprising|disappointing|impressive|controversial|valuable|worth)\b",
+        # "what does this mean/reveal/suggest" — qualitative interpretation
+        r"\bwhat\s+(does|do)\s+this\b.*\b(mean|reveal|suggest|tell|show|imply)\b",
         # Strategy and style
         r"\b(strategy|style|approach|technique|tactics)\b",
         # Historical context
         r"\b(history|evolution|changed|transformation)\b",
         # Qualitative assessments (exclude "better than [number]" = statistical threshold)
         r"\b(greatest|goat|best ever|all.time)\b(?!.*\bstats\b)",
-        r"\b(better|worse)\b(?!.*\bstats\b)(?!.*\bthan\s+\d)(?!.*\bcompare\b)",
+        r"\b(better|worse)\b(?!.*\bstats\b)(?!.*\bthan\s+\d)(?!.*\bcompare\b)(?!.*\b(from\s+3|from\s+three|shooting|scorer|scoring|field\s+goal|free\s+throw)\b)",
         # Impact and influence
         r"\b(impact|influence|effect|significance)\b",
         # Analysis and interpretation
-        r"\b(analysis|interpret|understand|insight)\b",
+        r"\b(analy[sz]e|analysis|interpret|understand|insight|correlation)\b",
+        # Quoted/reference requests
+        r"\b(quote|direct\s+quote|excerpt|what\s+did\s+\w+\s+say)\b",
     ]
 
     # Hybrid patterns (both sources needed)
     # Phase 12: Enhanced detection - catches "X statistic AND Y explanation" queries
     HYBRID_PATTERNS = [
         # Statistical + Explanation (most common hybrid pattern)
-        r"\b(who|which|what).*(most|top|best|highest|leading).*(and|then)\s*(explain|why|what makes|how)\b",
-        r"\b(top|most|best|highest|leading).*(and|then)\s*(why|explain|what makes|their|his|her)\b",
+        # ── Fix 4: Broader connectors: and, then, —, +, -, but, yet, while, comma ──
+        r"\b(who|which|what).*(most|top|best|highest|leading).*(and|then|but|yet|while|—|–)\s*(explain|why|what makes|how)\b",
+        r"\b(top|most|best|highest|leading).*(and|then|but|yet|—|–)\s*(why|explain|what makes|their|his|her)\b",
 
         # "What makes X effective/good/great" (stats + qualitative)
         r"\b(what makes|why is|why are).*(effective|good|great|successful|dominant|better)\b",
-        r"\b(who|which).*(and|then)\s*what makes\b",
+        r"\b(who|which).*(and|then|—|–)\s*what makes\b",
 
         # Impact/Effect queries (stats + context)
         r"\b(top|most|best|leading).*(impact|effect|influence|contribution)\b",
-        r"\b(who|which).*(and|then)\s*(impact|effect|influence)\b",
+        r"\b(who|which).*(and|then|—|–)\s*(impact|effect|influence)\b",
 
         # Style/Approach queries with stats
-        r"\b(scorer|player|rebounder).*(and|then)\s*(style|approach|playing|game)\b",
+        r"\b(scorer|player|rebounder).*(and|then|—|–)\s*(style|approach|playing|game)\b",
         r"\b(compare|comparison).*(style|approach|playing|strategies?)\b",
-        r"\b(who|which).*(and|then)\s*(style|playing|approach)\b",
+        r"\b(who|which).*(and|then|—|–)\s*(style|playing|approach)\b",
 
         # "X and explain/analyze Y" patterns
-        r"\b(compare|list|show|top).*(and|then)\s*(explain|analyze|discuss|describe)\b",
-        r"\b(stats?|statistics?|numbers?).*(and|then)\s*(why|explain|analysis|context)\b",
+        r"\b(compare|list|show|top).*(and|then|—|–)\s*(explain|analyze|discuss|describe)\b",
+        r"\b(stats?|statistics?|numbers?).*(and|then|—|–|,)\s*(why|explain|analysis|context)\b",
 
         # "Better/Best with reasoning" patterns
         r"\b(who is better|which is better|who's better).*(why|explain|because|based on)\b",
-        r"\b(best|better).*(and|then)\s*(why|explain|what makes)\b",
+        r"\b(best|better).*(and|then|—|–)\s*(why|explain|what makes)\b",
 
         # Performance/Efficiency with analysis
         r"\b(performance|efficiency|effectiveness).*(why|how|explain|what makes)\b",
-        r"\b(efficient|effective).*(and|then)\s*(why|explain|what)\b",
+        r"\b(efficient|effective).*(and|then|—|–)\s*(why|explain|what)\b",
 
         # Two-part questions (CRITICAL for fixing evaluation failures)
-        r"(who|which|what).+(\?|and).+(why|how|what makes|explain|style|impact)",
-        r"(most|top|best|highest).+(\?|and).+(why|how|explain|what makes|style)",
+        # Note: em-dash/en-dash already normalized to " - " in classify()
+        r"(who|which|what|are\s+there|analyze|find|show).+(\?|and|,|\s+-\s+).+(why|how|what makes|what does this|explain|reveal|suggest|style|impact|drive|winning|success)",
+        r"(most|top|best|highest|analyze|compare).+(\?|and|,|\s+-\s+).+(why|how|explain|what makes|what does this|reveal|suggest|style|drive|winning)",
+
+        # ── Fix 4b: Stat term + fan/opinion/community signal in same query ──
+        # Detects queries that combine data requests with fan discussion
+        r"\b(stats?|statistics?|numbers?|scoring|points?|assists?|rebounds?|efficiency|dominance)\b.*(fans?|reddit|opinions?|discuss|debate|overrated|underrated|viewed?|considered?|according)",
+        r"(fans?|reddit|opinions?|discuss|debate|overrated|underrated|viewed?|considered?|according).*\b(stats?|statistics?|numbers?|scoring|points?|assists?|rebounds?|efficiency|dominance)\b",
+        # "+", "AND" (caps), "nd" (slang) as hybrid connectors between stat + opinion segments
+        r"\b(stats?|numbers?|scoring)\s*(\+|AND)\s*(fan|opinions?|what\s+(do|does)\s+\w+\s+(think|say))\b",
+
+        # NEW: Biographical queries should be HYBRID (stats + context)
+        # Examples: "Who is LeBron?", "Tell me about Michael Jordan", "Who is Curry?"
+        # Exclude when stat terms present (e.g., "efficient goal maker", "LeBron's stats")
+        r"\b(who\s+(is|are)|tell\s+me\s+about|who.?s)\b(?!.*\b(stats?|statistics?|efficient|efficiency|scorer|scoring|averages?|numbers?|pct|percentage|goal\s+maker)\b).*\b(player|lebron|jordan|curry|jokic|embiid|luka|giannis|durant|harden|karim|magic|bird|kobe|wilt|chamberlain)\b",
     ]
 
     def __init__(self):
@@ -291,42 +351,208 @@ class QueryClassifier:
 
         return False
 
-    def classify(self, query: str) -> QueryType:
-        """Classify query type based on patterns.
+    @staticmethod
+    def _is_greeting(query: str) -> bool:
+        """Detect if query is a simple greeting/non-question.
 
-        Phase 12 improvements:
-        - Enhanced hybrid detection (15 patterns vs 4)
-        - Promote to HYBRID when both stat and context patterns match strongly
-        - Better tie-breaking logic
+        Greetings should NOT be processed through RAG search.
+        Examples: "hi", "hello", "hey", "thanks", "goodbye"
+        These should get simple responses, not database searches.
+        """
+        q = query.strip().lower()
 
-        Phase 13 (Vector remediation):
-        - CRITICAL: Check definitional queries FIRST (override stat keywords)
+        # Simple greetings (very short, single word or 2 words)
+        greeting_patterns = [
+            r"^(hi|hello|hey|howdy|greetings|sup|yo|thanks?|thank you|goodbye|bye|see you|farewell|welcome)$",
+            r"^(hi|hello)\s+(there|there!|everyone|all|guys|friends?)$",
+            r"^(how\s+(are|r)\s+you|how's\s+it\s+going|what's\s+up|wassup|watsup)$",
+            r"^(good\s+(morning|afternoon|evening|night)|good\s+day)$",
+        ]
+
+        return any(re.search(p, q) for p in greeting_patterns)
+
+    @staticmethod
+    def _is_biographical(query: str) -> bool:
+        """Detect if query is asking for player/team biographical information.
+
+        Biographical queries should use HYBRID routing to get both:
+        - SQL stats (player statistics)
+        - Vector context (biographical narratives, player profiles)
+        Then synthesize them together.
+
+        Examples: "Who is LeBron?", "Tell me about Kobe", "Who is Michael Jordan?"
+        These should route to HYBRID to synthesize stats + biographical context.
+        """
+        q = query.strip().lower()
+
+        # Biographical query patterns
+        biographical_patterns = [
+            # "Who is [player]?" patterns
+            r"\b(who is|who\?s|who are|tell me about|gimme the scoop on|info on|about)\b.*\b(player|athlete|star|team|squad|lebron|jordan|kobe|curry|james|durant|lakers|celtics|heat|warriors|mavericks|bulls|cavaliers)\b",
+            # Capitalized name patterns (e.g., "Who is LeBron")
+            r"\b(who is|who\?s|tell me about)\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)*)\b",
+            # "Background/history/biography of [player]" patterns
+            r"\b(background|history|biography|bio|career|rise of|story of)\b.*\b(player|athlete|team)\b",
+        ]
+
+        return any(re.search(p, q, re.IGNORECASE) for p in biographical_patterns)
+
+    @staticmethod
+    def _estimate_question_complexity(query: str) -> int:
+        """Estimate question complexity and return adaptive k value.
+
+        Complexity levels:
+        - Simple (k=3): Straightforward stats, single player/team lookups
+        - Moderate (k=5): Multiple stats, top N queries, contextual analysis
+        - Complex (k=7-9): Multi-step analysis, comparative analysis, strategic insights
 
         Args:
             query: User query string
 
         Returns:
-            QueryType (STATISTICAL, CONTEXTUAL, or HYBRID)
+            Adaptive k value (3, 5, 7, or 9)
         """
+        query_lower = query.lower()
+        word_count = len(query.split())
+
+        # Calculate complexity score
+        complexity_score = 0
+
+        # Length indicators
+        if word_count < 5:
+            complexity_score += 1  # Very short = likely simple
+        elif word_count > 15:
+            complexity_score += 2  # Long = likely complex
+
+        # Query type indicators (simple)
+        simple_patterns = [
+            "how many", "what is", "who is", "who scored", "who has",
+            "count", "how much", "what does", "player stats",
+        ]
+        for pattern in simple_patterns:
+            if pattern in query_lower:
+                complexity_score += 0  # Simple queries don't add to score
+
+        # Query type indicators (moderate)
+        moderate_patterns = [
+            "top ", "best ", "compare", "versus", "most", "least",
+            "ranking", "average", "leaders", "leaders in",
+        ]
+        for pattern in moderate_patterns:
+            if pattern in query_lower:
+                complexity_score += 1
+
+        # Query type indicators (complex)
+        complex_patterns = [
+            "explain", "analyze", "impact", "effect", "why", "how does",
+            "strategy", "style", "strengths", "weakness", "capability",
+            "tendency", "pattern", "role", "system", "philosophy",
+            "efficient", "effectiveness", "defense", "offense",
+        ]
+        for pattern in complex_patterns:
+            if pattern in query_lower:
+                complexity_score += 2
+
+        # Multiple data sources indicators
+        if " and " in query_lower:
+            complexity_score += 1
+        if query_lower.count(",") > 0:
+            complexity_score += 1
+
+        # Determine k based on complexity score
+        if complexity_score <= 1:
+            return 3  # Simple: single player/stat lookup
+        elif complexity_score <= 3:
+            return 5  # Moderate: comparisons, multiple stats
+        elif complexity_score <= 5:
+            return 7  # Complex: multi-step analysis
+        else:
+            return 9  # Very complex: deep analytical queries
+
+    def classify(self, query: str) -> ClassificationResult:
+        """Classify query type based on patterns and return rich metadata.
+
+        Returns a ClassificationResult bundling the routing decision with
+        pre-computed metadata (is_biographical, is_greeting, complexity_k).
+        This eliminates duplicate analysis calls in the chat pipeline.
+
+        Args:
+            query: User query string
+
+        Returns:
+            ClassificationResult with query_type, is_biographical, is_greeting, complexity_k
+        """
+        # ── Pre-compute metadata (all depend only on query text) ──────────
+        is_greeting = self._is_greeting(query)
+        is_biographical = self._is_biographical(query)
+        complexity_k = self._estimate_question_complexity(query)
+
+        def _result(qt: QueryType) -> ClassificationResult:
+            return ClassificationResult(qt, is_biographical, is_greeting, complexity_k)
+
         query_normalized = query.strip().lower()
+
+        # ── Normalize dashes: treat em-dash (—), en-dash (–), and hyphen (-) equivalently ──
+        # Ensures two-part connector patterns work regardless of dash type
+        query_normalized = query_normalized.replace("—", " - ").replace("–", " - ")
+        # Collapse any resulting double spaces from replacement
+        while "  " in query_normalized:
+            query_normalized = query_normalized.replace("  ", " ")
+
+        # ──── PHASE 14: Detect opinion/quality-based queries (subjective assessments) ────
+        # These should be CONTEXTUAL even if they contain "who/which" + "most/best"
+        # Examples: "most exciting", "best player" (bare), "most fun", "coolest moment"
+        opinion_quality_patterns = [
+            # ── Fix 6: Expanded opinion adjectives ───────────────────────
+            # Opinion adjectives (exciting, fun, interesting, wild, etc.)
+            r"\b(most|best|worst|greatest|coolest|most\s+\w+ful)\b.*\b(exciting|fun|interesting|dramatic|impressive|thrilling|boring|memorable|legendary|iconic|entertaining|wild|crazy|insane|clutch)\b",
+            r"\b(which|who)\b.*\b(most|best|worst)\b.*\b(exciting|fun|interesting|impressive|thrilling|iconic|memorable|entertaining|wild|surprising|disappointing)\b",
+            r"\b(most|best|worst)\s+(exciting|fun|interesting|impressive|thrilling|memorable|entertaining|dramatic|boring|wild|surprising|disappointing|clutch)\b",
+            # Bare superlatives without stat qualifiers: "best player", "most exciting team"
+            # Rule: (who|which) + (best|most) + (player|team|athlete|star) WITHOUT a stat term nearby
+            r"\b(who|which)\b.*\b(best|most)\b.*\b(player|team|athlete|star)\b(?!.*\b(scorer|rebounder|passer|defender|shooter|blocker|handler)\b)",
+            # "wild this year", "crazy season" (no stat intent)
+            r"\b(wild|crazy|insane|nuts)\s+(this\s+year|this\s+season|right\s+now)\b",
+        ]
+        if any(re.search(p, query_normalized) for p in opinion_quality_patterns):
+            logger.info(f"Query is opinion/quality-based (subjective assessment), routing to CONTEXTUAL")
+            return _result(QueryType.CONTEXTUAL)
+
+        # ── PHASE 17: Biographical queries always route to HYBRID ─────────────
+        # Biographical queries (e.g., "Who is LeBron?", "Tell me about the Lakers")
+        # always need BOTH SQL stats + vector context for a complete answer.
+        # SQL provides raw numbers; vector provides narrative, opinions, background.
+        if is_biographical:
+            logger.info(f"Query is biographical (player/team info), routing to HYBRID")
+            return _result(QueryType.HYBRID)
 
         # CRITICAL: Check definitional queries FIRST (override stat keywords)
         # Examples: "Define TS%", "What is a triple-double?" should be CONTEXTUAL not SQL
         if self._is_definitional(query):
             logger.info(f"Query is definitional, routing to CONTEXTUAL")
-            return QueryType.CONTEXTUAL
+            return _result(QueryType.CONTEXTUAL)
 
-        # Check for glossary terms (basketball reference/definitional terms)
-        # Examples: "triple-double", "pick and roll", "first option"
+        # ── Fix 1: Glossary check only for definitional context ──────────
+        # Only route to CONTEXTUAL if the query is definitional (asking what a term means)
+        # NOT if asking for data using that term (e.g., "highest true shooting percentage?")
         if self._has_glossary_term(query):
-            logger.info(f"Query references glossary term, routing to CONTEXTUAL")
-            return QueryType.CONTEXTUAL
+            # Check for statistical intent: numbers, "who has", "top", "highest", "how many"
+            stat_intent = re.search(
+                r"\b(who\s+has|top|highest|lowest|most|fewest|how\s+many|over|above|below|under"
+                r"|find|list|show|get|compare|averaging|players?\s+averaging)\b|\d+",
+                query_normalized,
+            )
+            if not stat_intent:
+                logger.info(f"Query references glossary term (definitional), routing to CONTEXTUAL")
+                return _result(QueryType.CONTEXTUAL)
+            else:
+                logger.info(f"Query has glossary term but also stat intent, continuing classification")
 
         # Check hybrid patterns first (most specific)
         hybrid_matches = sum(1 for pattern in self.hybrid_regex if pattern.search(query_normalized))
         if hybrid_matches > 0:
             logger.info(f"Query classified as HYBRID (matched {hybrid_matches} hybrid patterns)")
-            return QueryType.HYBRID
+            return _result(QueryType.HYBRID)
 
         # Check statistical patterns
         stat_matches = sum(1 for pattern in self.statistical_regex if pattern.search(query_normalized))
@@ -334,15 +560,16 @@ class QueryClassifier:
         # Check contextual patterns
         context_matches = sum(1 for pattern in self.contextual_regex if pattern.search(query_normalized))
 
-        # NEW: If both stat and context patterns match strongly → HYBRID
-        # Requires context >= 2 to avoid false positives (e.g., "shoots better from 3"
-        # where "better" triggers 1 contextual match but the query is purely statistical)
-        if stat_matches >= 2 and context_matches >= 2:
+        # Auto-promote to HYBRID when both stat and context patterns match
+        # Threshold: stat >= 2 AND context >= 1
+        # HYBRID routing is safe (queries both sources), so over-promoting to
+        # HYBRID is less harmful than misrouting to wrong single source
+        if stat_matches >= 2 and context_matches >= 1:
             logger.info(
                 f"Query classified as HYBRID (stat: {stat_matches}, context: {context_matches}) "
                 "- both components detected"
             )
-            return QueryType.HYBRID
+            return _result(QueryType.HYBRID)
 
         # Classify based on match counts
         if stat_matches > context_matches:
@@ -350,21 +577,21 @@ class QueryClassifier:
                 f"Query classified as STATISTICAL "
                 f"(stat: {stat_matches}, context: {context_matches})"
             )
-            return QueryType.STATISTICAL
+            return _result(QueryType.STATISTICAL)
 
         if context_matches > stat_matches:
             logger.info(
                 f"Query classified as CONTEXTUAL "
                 f"(stat: {stat_matches}, context: {context_matches})"
             )
-            return QueryType.CONTEXTUAL
+            return _result(QueryType.CONTEXTUAL)
 
         # Default to contextual if no strong match or tie
         logger.info(
             f"Query classified as CONTEXTUAL (default) "
             f"(stat: {stat_matches}, context: {context_matches})"
         )
-        return QueryType.CONTEXTUAL
+        return _result(QueryType.CONTEXTUAL)
 
 
 # Example usage
@@ -399,9 +626,9 @@ if __name__ == "__main__":
     correct = 0
     for query, expected in test_queries:
         result = classifier.classify(query)
-        match = "OK" if result == expected else "FAIL"
-        print(f"{match:4} {result.value:15} | Expected: {expected.value:15} | {query}")
-        if result == expected:
+        match = "OK" if result.query_type == expected else "FAIL"
+        print(f"{match:4} {result.query_type.value:15} | Expected: {expected.value:15} | {query}")
+        if result.query_type == expected:
             correct += 1
 
     print("=" * 80)

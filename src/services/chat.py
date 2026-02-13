@@ -19,6 +19,7 @@ ClientError = None
 EmbeddingService = None
 QueryClassifier = None
 QueryType = None
+ClassificationResult = None
 QueryExpander = None
 VisualizationService = None
 NBAGSQLTool = None
@@ -27,7 +28,7 @@ NBAGSQLTool = None
 def _initialize_lazy_imports():
     """Initialize all heavy imports on first use."""
     global _lazy_imports_initialized, genai, ClientError, EmbeddingService
-    global QueryClassifier, QueryType, QueryExpander, VisualizationService, NBAGSQLTool
+    global QueryClassifier, QueryType, ClassificationResult, QueryExpander, VisualizationService, NBAGSQLTool
 
     if _lazy_imports_initialized:
         return
@@ -36,6 +37,7 @@ def _initialize_lazy_imports():
     from google import genai as genai_module
     from google.genai.errors import ClientError as ClientErrorModule
     from src.services.embedding import EmbeddingService as EmbeddingServiceModule
+    from src.services.query_classifier import ClassificationResult as ClassificationResultModule
     from src.services.query_classifier import QueryClassifier as QueryClassifierModule
     from src.services.query_classifier import QueryType as QueryTypeModule
     from src.services.query_expansion import QueryExpander as QueryExpanderModule
@@ -47,6 +49,7 @@ def _initialize_lazy_imports():
     EmbeddingService = EmbeddingServiceModule
     QueryClassifier = QueryClassifierModule
     QueryType = QueryTypeModule
+    ClassificationResult = ClassificationResultModule
     QueryExpander = QueryExpanderModule
     VisualizationService = VisualizationServiceModule
     NBAGSQLTool = NBAGSQLToolModule
@@ -139,7 +142,7 @@ def retry_with_exponential_backoff(
 # Default prompt (fallback for general queries)
 # Phase 12C: Answer relevancy fix - direct, focused instructions
 # Phase 13: Add source grounding to prevent hallucination
-SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+SYSTEM_PROMPT_TEMPLATE = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional yet personable voice—insightful, authoritative, but never boring.
 
 {conversation_history}
 
@@ -151,28 +154,38 @@ CONTEXT:
 USER QUESTION:
 {question}
 
-CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
+CRITICAL INSTRUCTIONS - SYNTHESIS & VOICE:
 
 **MANDATORY: You MUST ONLY answer based on the provided CONTEXT above.**
 
-1. Read the USER QUESTION carefully - understand what they're asking for
-2. Find the answer in the CONTEXT above - extract specific facts, numbers, or names
-3. Provide a DIRECT answer to the question
-4. Cite sources for ALL claims: [Source: document name] or [SQL] for database results
-5. If conversation history exists, use it to resolve pronouns (he, his, them)
-6. If no relevant data exists, say: "The available data doesn't contain this information"
+1. **SYNTHESIZE, don't list**: Weave facts together into flowing paragraphs. Use transitions (however, moreover, interestingly, etc.). Paint a picture, don't create a shopping list.
+
+2. **Add personality**: Be professional but approachable. A touch of wit is welcome—help readers connect with the content. Show enthusiasm for the sport.
+
+3. **Remove inline citations**: NO "[Source: X]" within text. Write naturally. List all sources ONCE at the very end of your message.
+
+4. **Structure for clarity**:
+   - Start with the key insight or answer
+   - Build with supporting details
+   - Use transitions between ideas
+   - End with interesting implications or takeaways
+
+5. **Citation format at message end**:
+   (Place on separate line at bottom, smaller text style)
+   Sources: Source1, Source2, Source3
+
+6. Resolve pronouns using conversation history (he, his, them)
+
 7. Respond in English
 
 FORBIDDEN: Do NOT provide information from general knowledge not in the CONTEXT above.
-
-Keep your answer focused and concise. Only use provided sources.
 
 ANSWER:"""
 
 # SQL-only prompt: Force extraction of statistical data
 # Phase 12C: Answer relevancy fix - clear, direct extraction
 # Phase 13: Add source grounding for statistical context
-SQL_ONLY_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+SQL_ONLY_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional yet engaging voice. You excel at making statistics tell a story.
 
 {conversation_history}
 
@@ -184,31 +197,40 @@ STATISTICAL DATA (FROM SQL DATABASE):
 USER QUESTION:
 {question}
 
-CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
+CRITICAL INSTRUCTIONS - SYNTHESIS & PRESENTATION:
 
-**ANSWER THE EXACT QUESTION USING THE STATISTICAL DATA ABOVE - CITE ALL SOURCES**
+**ANSWER THE QUESTION USING THE STATISTICAL DATA ABOVE**
 
-1. The STATISTICAL DATA contains the exact answer from the database
-2. Extract the relevant data:
-   - "COUNT Result: X" → answer with the number X
-   - "AVERAGE Result: X" → answer with X
-   - "Found N records" → list/summarize those records
-3. Provide a DIRECT answer to the question with citations [SQL]
-4. Format clearly - present numbers in a readable way
-5. If conversation history exists, resolve pronouns (he, his, them)
+1. **Tell the story with data**: Don't just list numbers. Synthesize them. "The top 5 scorers..." not "1. Player A scored X, 2. Player B scored Y..."
+
+2. **Add context & perspective**:
+   - What do these numbers mean?
+   - Why do they matter?
+   - What's the bigger picture?
+   - Use professional analysis tone with light wit where appropriate
+
+3. **Format for readability**:
+   - Present numbers clearly (bullet points or flowing text)
+   - Use transitions between ideas
+   - Build toward insights, not just facts
+
+4. **Citation format**:
+   - NO inline citations in text
+   - List sources ONCE at the very end on separate line:
+   - "Sources: Database Name, Source2, Source3"
+
+5. Resolve pronouns using conversation history (he, his, them)
 6. Respond in English
 
-MANDATORY: Only use the STATISTICAL DATA provided above.
-Do NOT add information from general knowledge or sources not provided.
+MANDATORY: Only use the STATISTICAL DATA provided.
+Do NOT add general knowledge or information not provided.
 
-CRITICAL: The STATISTICAL DATA above ALWAYS contains the answer.
-Do NOT say "data not available" if data is clearly shown above.
-Only if the section says "No results found" should you state data is unavailable.
+If data is shown above, present it confidently. Only say "data not available" if section explicitly says "No results found".
 
 ANSWER:"""
 
 # Hybrid prompt: Mandate blending of SQL + vector
-HYBRID_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with two data sources:
+HYBRID_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional, engaging voice. You synthesize statistics and insights into compelling narratives.
 
 {conversation_history}
 
@@ -227,45 +249,51 @@ USER QUESTION:
 
 CRITICAL INSTRUCTIONS FOR HYBRID ANSWERS:
 
-**YOU MUST USE BOTH DATA SOURCES ABOVE - THIS IS MANDATORY**
+**YOU MUST USE BOTH DATA SOURCES ABOVE - SYNTHESIZE THEM, DON'T SEPARATE THEM**
 
-1. **START with the STATISTICAL answer** from SQL data (WHAT the numbers are)
-   - Extract exact numbers, names, and stats from the SQL section above
+1. **Weave together naturally**: Don't say "Stat X" then "Context Y". Blend them into flowing, coherent paragraphs.
+   - Stats answer the WHAT and numbers
+   - Context explains the WHY, HOW, and implications
 
-2. **THEN ADD CONTEXTUAL ANALYSIS** from the contextual knowledge (WHY/HOW it matters)
-   - Use the contextual knowledge section to explain styles, strategies, impact, or qualitative insights
-   - **DO NOT skip this step** - the contextual knowledge is provided for a reason
-   - Look for playing styles, strategic analysis, expert opinions, or qualitative assessments
+2. **Add personality & transitions**:
+   - Use connecting phrases: "Interestingly", "Moreover", "However", "This is partly because", "What's particularly notable..."
+   - Be authoritative but approachable
+   - A touch of wit is welcome where appropriate
 
-3. **BLEND both components** seamlessly:
-   - Connect stats to analysis with transition words ("because", "which", "making", "due to", "this")
-   - Create a cohesive answer that combines WHAT (SQL) with WHY/HOW (context)
+3. **Structure for impact**:
+   - Open with the key insight (stat + context combined)
+   - Build supporting details
+   - Close with implications or takeaways
+   - Use transitions between ideas
 
-4. **CITE sources** for transparency:
-   - [SQL] for statistics
-   - [Source: document name] for contextual insights
+4. **Citation format - MOVE TO END**:
+   - NO inline "[Source: X]" in the text
+   - Write naturally, then list all sources once at the bottom:
+   - "Sources: Source1, Source2, Source3"
 
-5. **If conversation history is provided**, use it to resolve pronouns (he, his, them, etc.)
+5. Resolve pronouns using conversation history (he, his, them)
 
-6. ALWAYS respond in English
+6. Respond in English
 
-**FAILURE TO USE CONTEXTUAL KNOWLEDGE IS UNACCEPTABLE**
-If contextual knowledge is provided above, you MUST incorporate it into your answer.
-Do not ignore it or say "data not available" when contextual information clearly exists.
+**FAILURE TO SYNTHESIZE IS UNACCEPTABLE**
+Do not list facts separately. Weave them together seamlessly. If both data sources are provided, use them together, not in isolation.
 
-EXAMPLE FORMAT:
-"LeBron James scored 1,708 points this season [SQL]. His scoring comes from a mix of drives to the basket and perimeter shooting, making him a versatile offensive threat [Context: ESPN Analysis]. This inside-outside combination keeps defenses guessing and creates opportunities for his teammates [Context: Reddit Discussion]."
+EXAMPLE (GOOD - Synthesized):
+"LeBron James scored 1,708 points this season, continuing his role as one of the league's elite scorers. His offensive toolkit is remarkably diverse—he attacks the basket with power, but also possesses an underrated three-point shot. This versatility keeps defenders guessing and creates opportunities for his teammates. The consistency he brings year after year is a testament to his professionalism and basketball IQ.
 
-YOUR ANSWER (MUST combine both SQL stats + contextual analysis):"""
+Sources: NBA Statistics, ESPN Analysis, Basketball Community Discussion"
 
-# Contextual prompt: For qualitative analysis
+YOUR ANSWER (MUST blend both sources into natural, synthesized narrative):"""
+
+# Contextual prompt: For qualitative analysis and biographical info
 # Phase 12C: Answer relevancy fix - focused qualitative analysis
 # Phase 13: Add source grounding to prevent hallucination
-CONTEXTUAL_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant.
+# Phase 17: Enhanced for biographical queries to synthesize stats + context
+CONTEXTUAL_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional, personable voice. You excel at synthesizing opinions, insights, and biographical information into engaging narratives.
 
 {conversation_history}
 
-CONTEXTUAL KNOWLEDGE:
+CONTEXTUAL KNOWLEDGE (Opinions, Analysis, Discussions, Biographical Info):
 ---
 {context}
 ---
@@ -273,29 +301,39 @@ CONTEXTUAL KNOWLEDGE:
 USER QUESTION:
 {question}
 
-CRITICAL INSTRUCTIONS - SOURCE GROUNDING:
+CRITICAL INSTRUCTIONS - SYNTHESIS & ANALYSIS:
 
 **MANDATORY: You MUST ONLY answer based on the provided CONTEXTUAL KNOWLEDGE above.**
 **FORBIDDEN: Do NOT use information from general knowledge not in the sources.**
 
-1. Read the question - understand what qualitative insight they want
-2. Find the answer in the CONTEXTUAL KNOWLEDGE - look for playing styles, strategies, expert opinions, analysis
-3. For EACH fact you state:
-   - Either cite the source: [Source: document name]
-   - Or explicitly say: "The sources indicate..." or "According to the sources..."
-4. If information is NOT in the contextual knowledge:
-   - YOU MUST SAY: "Based on the provided sources, I cannot find information about [topic]."
+1. **Synthesize, don't list**: Weave facts and opinions together. Don't say "Opinion 1: X, Opinion 2: Y, Opinion 3: Z". Create a cohesive narrative.
+   - For biographical queries: Include both biographical narrative AND relevant statistics if available in the context.
+
+2. **Add personality & perspective**:
+   - Use transitions: "Interestingly", "Moreover", "However", "Some argue...", "What's particularly noteworthy..."
+   - Be authoritative but approachable
+   - Show enthusiasm for the subject matter
+   - Light wit is welcome where appropriate
+
+3. **Build a compelling narrative**:
+   - Start with a key insight or main theme
+   - Support with details and perspectives from sources
+   - Use transitions between ideas
+   - Close with implications or takeaways
+
+4. **Citation format - MOVE TO END**:
+   - NO inline [Source: X] citations in text
+   - List all sources ONCE at the very end:
+   - "Sources: Source1, Source2, Source3"
+
+5. If information is NOT in the contextual knowledge:
+   - Say: "Based on the sources available, I cannot find information about [topic]."
    - Do NOT provide information from your general knowledge
-5. Focus on qualitative analysis (WHY/HOW, not statistics)
-6. If conversation history exists, resolve pronouns (he, his, them)
+
+6. Resolve pronouns using conversation history (he, his, them)
 7. Respond in English
 
-FORBIDDEN BEHAVIORS:
-- Do NOT state facts from general knowledge if not in sources
-- Do NOT infer beyond what sources explicitly state
-- Do NOT answer if sources lack the information
-
-Keep your answer focused on what was asked. Only use provided sources.
+FORBIDDEN: Do NOT list facts separately. Synthesize them into flowing prose.
 
 ANSWER:"""
 
@@ -475,76 +513,40 @@ class ChatService:
         return "\n".join(history_lines)
 
     @staticmethod
-    def _estimate_question_complexity(query: str) -> int:
-        """Estimate question complexity and return adaptive k value.
+    @staticmethod
+    def _rewrite_biographical_for_sql(query: str) -> str:
+        """Rewrite biographical queries to fetch comprehensive player stats.
 
-        Complexity levels:
-        - Simple (k=3): Straightforward stats, single player/team lookups, direct comparisons
-        - Moderate (k=5): Multiple stats, top N queries, contextual analysis
-        - Complex (k=7-9): Multi-step analysis, comparative analysis, strategic insights
+        "Who is LeBron?" → "Show name, team, age, points, rebounds, assists,
+        steals, blocks, field goal percentage, games played for LeBron"
 
-        Args:
-            query: User query string
-
-        Returns:
-            Adaptive k value (3, 5, 7, or 9)
+        This ensures the SQL tool generates a query that fetches full stats
+        instead of just SELECT name.
         """
-        query_lower = query.lower()
-        word_count = len(query.split())
+        import re
 
-        # Calculate complexity score
-        complexity_score = 0
+        # Extract player/team name from query
+        q = query.strip()
+        name = None
 
-        # Length indicators
-        if word_count < 5:
-            complexity_score += 1  # Very short = likely simple
-        elif word_count > 15:
-            complexity_score += 2  # Long = likely complex
+        # Pattern: "Who is [Name]?" or "Tell me about [Name]"
+        for pattern in [
+            r"(?:who is|who's|tell me about|info on|about)\s+(.+?)[\?\.]?$",
+        ]:
+            match = re.search(pattern, q, re.IGNORECASE)
+            if match:
+                name = match.group(1).strip().rstrip("?.")
+                break
 
-        # Query type indicators (simple)
-        simple_patterns = [
-            "how many", "what is", "who is", "who scored", "who has",
-            "count", "how much", "what does", "player stats",
-        ]
-        for pattern in simple_patterns:
-            if pattern in query_lower:
-                complexity_score += 0  # Simple queries don't add to score
+        if not name:
+            # Fallback: use the whole query
+            name = q
 
-        # Query type indicators (moderate)
-        moderate_patterns = [
-            "top ", "best ", "compare", "versus", "most", "least",
-            "ranking", "average", "leaders", "leaders in",
-        ]
-        for pattern in moderate_patterns:
-            if pattern in query_lower:
-                complexity_score += 1
-
-        # Query type indicators (complex)
-        complex_patterns = [
-            "explain", "analyze", "impact", "effect", "why", "how does",
-            "strategy", "style", "strengths", "weakness", "capability",
-            "tendency", "pattern", "role", "system", "philosophy",
-            "efficient", "effectiveness", "defense", "offense",
-        ]
-        for pattern in complex_patterns:
-            if pattern in query_lower:
-                complexity_score += 2
-
-        # Multiple data sources indicators
-        if " and " in query_lower:
-            complexity_score += 1
-        if query_lower.count(",") > 0:
-            complexity_score += 1
-
-        # Determine k based on complexity score
-        if complexity_score <= 1:
-            return 3  # Simple: single player/stat lookup
-        elif complexity_score <= 3:
-            return 5  # Moderate: comparisons, multiple stats
-        elif complexity_score <= 5:
-            return 7  # Complex: multi-step analysis
-        else:
-            return 9  # Very complex: deep analytical queries
+        return (
+            f"Show name, team, age, games played, points, rebounds, assists, "
+            f"steals, blocks, field goal percentage, three point percentage, "
+            f"free throw percentage for {name}"
+        )
 
     @staticmethod
     def _is_followup_query(query: str) -> bool:
@@ -812,56 +814,6 @@ class ChatService:
             for chunk, score in results
         ]
 
-    @staticmethod
-    def _format_context_for_complex_queries(sources: list) -> str:
-        """Format context specifically for complex multi-source queries (Phase 3 Step 4).
-
-        Complex queries require careful synthesis of multiple sources.
-        This formatter:
-        - Limits to top 5 sources (avoid overwhelming LLM)
-        - Adds explicit relevance markers
-        - Includes source citations for attribution
-        - Structures for easy synthesis
-
-        Args:
-            sources: List of SearchResult objects
-
-        Returns:
-            Formatted context string optimized for complex analysis
-        """
-        if not sources:
-            return "No sources available."
-
-        # Limit to top 5 for complex queries
-        top_sources = sources[:5]
-
-        formatted_parts = ["CONTEXT (organized by relevance):\n"]
-
-        for i, source in enumerate(top_sources, 1):
-            # Format: [Source N: name] (Relevance: score%)
-            source_name = source.source if hasattr(source, "source") else str(source)
-            score = source.score if hasattr(source, "score") else 0
-
-            formatted_parts.append(f"[Source {i}: {source_name}] (Relevance: {score:.0f}%)")
-
-            # Get text (handle both SearchResult and dict)
-            text = source.text if hasattr(source, "text") else str(source)
-
-            # Truncate to 500 chars to avoid overwhelming
-            if len(text) > 500:
-                text = text[:500] + "..."
-
-            formatted_parts.append(text)
-            formatted_parts.append("")  # Blank line between sources
-
-        # Add synthesis instruction
-        formatted_parts.append(
-            "\n⚠️ SYNTHESIS NOTE: Only state facts that are supported by the sources above. "
-            "If a claim appears in only one source, mark it as [Source X only]."
-        )
-
-        return "\n".join(formatted_parts)
-
     @logfire.instrument("ChatService.generate_response")
     def generate_response(
         self,
@@ -1001,6 +953,36 @@ class ChatService:
         # Sanitize query
         query = sanitize_query(request.query)
 
+        # ──── PHASE 15: Detect simple greetings (don't need RAG search) ────
+        # Examples: "hi", "hello", "thanks", etc. should get simple responses
+        if self.query_classifier._is_greeting(query):
+            processing_time = (time.time() - start_time) * 1000
+            greeting_responses = {
+                "hi": "Hi there! Ask me anything about basketball stats, teams, or players.",
+                "hello": "Hello! What would you like to know about basketball?",
+                "hey": "Hey! Feel free to ask me basketball questions.",
+                "thanks": "You're welcome! Feel free to ask more questions.",
+                "thank you": "Happy to help! What else can I answer for you?",
+                "goodbye": "Goodbye! See you next time!",
+                "bye": "See you later!",
+            }
+            # Find best matching greeting response
+            query_lower = query.strip().lower()
+            response_text = next(
+                (v for k, v in greeting_responses.items() if k in query_lower),
+                "Hi! Ask me about basketball!"
+            )
+            logger.info(f"Detected greeting: '{query}' - returning simple response")
+            return ChatResponse(
+                answer=response_text,
+                query=query,
+                sources=[],
+                processing_time_ms=int(processing_time),
+                model=self.model,
+                conversation_id=None,
+                turn_number=1
+            )
+
         # Build conversation context if conversation_id provided
         conversation_history = ""
         if request.conversation_id:
@@ -1017,12 +999,19 @@ class ChatService:
         if conversation_history and self._is_followup_query(query):
             effective_query = self._rewrite_followup_query(query, conversation_history)
 
-        # Classify query to determine routing (use effective_query for better classification)
-        query_type = self.query_classifier.classify(effective_query) if self._enable_sql else QueryType.CONTEXTUAL
+        # ── Single classify() call returns all query metadata ─────────────────
+        # ClassificationResult bundles: query_type, is_biographical, is_greeting, complexity_k
+        # This eliminates duplicate _is_biographical() and _estimate_question_complexity() calls.
+        if self._enable_sql:
+            classification = self.query_classifier.classify(effective_query)
+        else:
+            classification = ClassificationResult(QueryType.CONTEXTUAL)
 
-        # Phase 13 Step 9: Adaptive k selection based on question complexity
-        # Override default k if request.k not explicitly set (use 0 as indicator)
-        adaptive_k = request.k if request.k and request.k > 0 else self._estimate_question_complexity(effective_query)
+        query_type = classification.query_type
+        is_biographical = classification.is_biographical
+
+        # Adaptive k: use request.k if explicitly set, otherwise use classifier's complexity estimate
+        adaptive_k = request.k if request.k and request.k > 0 else classification.complexity_k
         logger.info(f"Using k={adaptive_k} (complexity-based: simple=3, moderate=5, complex=7-9)")
 
         # Route to appropriate data source(s)
@@ -1038,8 +1027,14 @@ class ChatService:
         if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
             if self.sql_tool:
                 try:
+                    # For biographical queries, rewrite to fetch comprehensive stats
+                    sql_query_text = effective_query
+                    if is_biographical:
+                        sql_query_text = self._rewrite_biographical_for_sql(effective_query)
+                        logger.info(f"Biographical SQL rewrite: '{effective_query}' → '{sql_query_text}'")
+
                     logger.info(f"Routing to SQL tool (query_type: {query_type.value})")
-                    sql_result = self.sql_tool.query(effective_query)
+                    sql_result = self.sql_tool.query(sql_query_text)
 
                     # Capture generated SQL for evaluation/analysis
                     if sql_result["sql"]:

@@ -463,109 +463,32 @@
                         <div class="subsection">
                             <div class="subsection-title" onclick="toggleSubsection(this)">
                                 <span class="toggle-icon">▶</span>
-                                Phase 1: Data Preparation (Once during Setup)
-                            </div>
-                            <div class="step-list">
-                                <div class="step data-check">
-                                    <div class="step-number">1</div>
-                                    <div class="step-name">📥 Load Source Documents</div>
-                                    <div class="step-description">Read PDFs and Excel files from data/inputs/</div>
-                                    <div class="step-analysis"><strong>File Analysis:</strong> Format detection, encoding validation, file size checks</div>
-                                </div>
-                                <div class="step data-check">
-                                    <div class="step-number">2</div>
-                                    <div class="step-name">🔄 Extract & Preprocess Content</div>
-                                    <div class="step-description">OCR for PDFs, parse Excel sheets, clean text</div>
-                                    <div class="step-analysis"><strong>Content Quality:</strong> Text coherence, character encoding, metadata extraction</div>
-                                </div>
-                                <div class="step data-check">
-                                    <div class="step-number">3</div>
-                                    <div class="step-name">✂️ Chunk Documents</div>
-                                    <div class="step-description">Split into semantic chunks using RedditThreadChunker (domain-aware)</div>
-                                    <div class="step-analysis"><strong>Chunking Metrics:</strong> Chunk size, overlap, semantic coherence, structure preservation</div>
-                                </div>
-                                <div class="step quality-metric">
-                                    <div class="step-number">4</div>
-                                    <div class="step-name">⭐ Phase 3 Step 1: Document Quality Assessment</div>
-                                    <div class="step-description">Score document quality (text coherence, metadata, Reddit authority)</div>
-                                    <div class="step-analysis"><strong>Quality Scoring:</strong> Coherence score, metadata completeness, source authority (0-1 scale)</div>
-                                </div>
-                                <div class="step data-check">
-                                    <div class="step-number">5</div>
-                                    <div class="step-name">🔢 Vectorize & Index (FAISS)</div>
-                                    <div class="step-description">Convert chunks to embeddings using Mistral, build FAISS index</div>
-                                    <div class="step-analysis"><strong>Vector Metrics:</strong> Embedding dimension (1024D), index type, similarity distribution</div>
-                                </div>
-                                <div class="step data-check">
-                                    <div class="step-number">6</div>
-                                    <div class="step-name">💾 Store SQL Database</div>
-                                    <div class="step-description">Import NBA stats and reference data into SQLite</div>
-                                    <div class="step-analysis"><strong>Database Validation:</strong> Record counts, schema integrity, index efficiency</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="subsection">
-                            <div class="subsection-title" onclick="toggleSubsection(this)">
-                                <span class="toggle-icon">▶</span>
-                                Phase 2: Query Processing (Per User Query)
+                                Production System Components
                             </div>
                             <div class="step-list">
                                 <div class="step">
                                     <div class="step-number">1</div>
-                                    <div class="step-name">📨 Receive Query from UI</div>
-                                    <div class="step-description">User enters question in Streamlit interface</div>
-                                    <div class="step-analysis"><strong>Input Validation:</strong> Length check, character validation, encoding verification</div>
+                                    <div class="step-name">📊 Data Pipeline</div>
+                                    <div class="step-description">Current production data preparation and indexing</div>
+                                    <div class="step-analysis"><strong>What Runs:</strong> Document loading, chunking, vectorization, SQL database</div>
                                 </div>
                                 <div class="step">
                                     <div class="step-number">2</div>
-                                    <div class="step-name">💬 Check Conversation Context</div>
-                                    <div class="step-description">Load previous messages if follow-up query detected</div>
-                                    <div class="step-analysis"><strong>Context Analysis:</strong> Follow-up indicators (pronouns, references), context window size</div>
+                                    <div class="step-name">🔍 RAG Query Pipeline</div>
+                                    <div class="step-description">Current production query processing and response generation</div>
+                                    <div class="step-analysis"><strong>What Runs:</strong> Classification, SQL/Vector routing, LLM synthesis, output formatting</div>
                                 </div>
-                                <div class="step decision-point">
+                                <div class="step">
                                     <div class="step-number">3</div>
-                                    <div class="step-name">🎯 Query Classification</div>
-                                    <div class="step-description">Classify query type: SQL, Contextual, or Hybrid with confidence scoring</div>
-                                    <div class="step-analysis">
-                                        <strong>Classification Signals:</strong>
-                                        <br/>• Pattern matching (definitional, stats, glossary)
-                                        <br/>• LLM classification with confidence
-                                        <br/>• Threshold routing (≥80%→SQL, ≥75%→Contextual, 50-70%→Hybrid, &lt;50%→fallback)
-                                    </div>
+                                    <div class="step-name">📈 Analysis & Quality Checks</div>
+                                    <div class="step-description">Current metrics and quality verification in production</div>
+                                    <div class="step-analysis"><strong>What Runs:</strong> Response validation, source quality, performance tracking</div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="subsection">
-                            <div class="subsection-title" onclick="toggleSubsection(this)">
-                                <span class="toggle-icon">▶</span>
-                                Phase 3: Optimizations & Enhancements
-                            </div>
-                            <div class="step-list">
-                                <div class="step quality-metric">
-                                    <div class="step-number">1</div>
-                                    <div class="step-name">🏆 Step 1: Quality Filtering</div>
-                                    <div class="step-description">Filter low-quality documents at query time based on scores</div>
-                                    <div class="step-analysis"><strong>Filter Logic:</strong> Coherence ≥0.7, metadata score ≥0.6, authority threshold applied</div>
-                                </div>
-                                <div class="step quality-metric">
-                                    <div class="step-number">2</div>
-                                    <div class="step-name">📊 Step 2: Recall-Aware K Selection</div>
-                                    <div class="step-description">Adaptive K value based on query complexity and category</div>
-                                    <div class="step-analysis"><strong>K Calculation:</strong> Base K + complexity bonus, category-specific adjustments (3-20 range)</div>
-                                </div>
-                                <div class="step quality-metric">
-                                    <div class="step-number">3</div>
-                                    <div class="step-name">🔄 Step 3: Category-Aware Query Expansion</div>
-                                    <div class="step-description">Smart expansion for contextual/complex queries</div>
-                                    <div class="step-analysis"><strong>Expansion Strategy:</strong> Synonym addition, entity extraction, relationship expansion</div>
-                                </div>
-                                <div class="step quality-metric">
+                                <div class="step">
                                     <div class="step-number">4</div>
-                                    <div class="step-name">📝 Step 4: Complex Query Context Formatting</div>
-                                    <div class="step-description">Structured formatting for LLM comprehension</div>
-                                    <div class="step-analysis"><strong>Format Rules:</strong> Numbered list (SQL data), bullet format (single), result count headers, 20-result limit</div>
+                                    <div class="step-name">🎯 Decision Points</div>
+                                    <div class="step-description">Current routing and fallback logic in production</div>
+                                    <div class="step-analysis"><strong>What Runs:</strong> Query classification thresholds, fallback triggers, quality gates</div>
                                 </div>
                             </div>
                         </div>
@@ -575,12 +498,12 @@
                 <!-- DATA PIPELINE TAB -->
                 <div id="data-pipeline-tab" class="view-tab hidden">
                     <div class="section">
-                        <div class="section-title">📊 Data Pipeline - From Raw Documents to Indexes</div>
+                        <div class="section-title">📊 Production Data Pipeline</div>
 
                         <div class="subsection">
                             <div class="subsection-title" onclick="toggleSubsection(this)">
                                 <span class="toggle-icon">▶</span>
-                                Step 1: Document Loading & Format Detection
+                                Step 1: Load & Process Documents
                             </div>
                             <div class="step-list">
                                 <div class="step">
@@ -673,7 +596,7 @@
 
                                 <div class="step quality-metric">
                                     <div class="step-number">2</div>
-                                    <div class="step-name">📊 Phase 3 Step 1: Document Quality Assessment</div>
+                                    <div class="step-name">📊  Document Quality Assessment</div>
                                     <div class="step-description">Score each chunk for coherence and metadata quality</div>
                                     <div class="step-analysis">
                                         <strong>Quality Metrics (0-1 scale):</strong>
@@ -918,7 +841,7 @@
                         <div class="subsection">
                             <div class="subsection-title" onclick="toggleSubsection(this)">
                                 <span class="toggle-icon">▶</span>
-                                Stage 3: Query Enhancement (Phase 3)
+                                Stage 3: Query Enhancement & Optimization
                             </div>
                             <div class="step-list">
                                 <div class="step quality-metric">
@@ -1048,7 +971,7 @@
 
                                 <div class="step">
                                     <div class="step-number">2</div>
-                                    <div class="step-name">⚖️ Hybrid Scoring (Phase 2)</div>
+                                    <div class="step-name">⚖️ Hybrid Scoring - 3 Signal Combination</div>
                                     <div class="step-description">Combine cosine, BM25, and metadata scores</div>
                                     <div class="step-analysis">
                                         <strong>Score Weights:</strong>
@@ -1110,7 +1033,7 @@
 
                                 <div class="step quality-metric">
                                     <div class="step-number">2</div>
-                                    <div class="step-name">📝 Phase 3 Step 4: Context Formatting</div>
+                                    <div class="step-name">📝  Context Formatting</div>
                                     <div class="step-description">Structure complex query context for LLM understanding</div>
                                     <div class="step-analysis">
                                         <strong>Formatting for LLM:</strong>
@@ -1230,7 +1153,7 @@
                                 <div class="step quality-metric">
                                     <div class="step-number">1</div>
                                     <div class="step-name">Document Quality Assessment</div>
-                                    <div class="step-description">Phase 3 Step 1: Score documents at query time</div>
+                                    <div class="step-description"> Score documents at query time</div>
                                     <div class="step-analysis">
                                         <strong>Metrics:</strong> Coherence (0-1), Metadata Score (0-1), Authority (0-1)
                                         <br/><strong>Files:</strong> src/repositories/vector_store.py
@@ -1386,7 +1309,7 @@
                                 </div>
                                 <div class="step quality-metric">
                                     <div class="step-number">2</div>
-                                    <div class="step-name">Hybrid Scoring Analysis (Phase 2)</div>
+                                    <div class="step-name">Hybrid Scoring Analysis - 3 Signal Combination</div>
                                     <div class="step-description">Analyze weighted combination of 3 scoring signals</div>
                                     <div class="step-analysis">
                                         <strong>Weights:</strong> Cosine 50%, BM25 35%, Metadata 15%
@@ -1406,7 +1329,7 @@
                                 </div>
                                 <div class="step quality-metric">
                                     <div class="step-number">4</div>
-                                    <div class="step-name">Phase 3 Step 2: Recall-Aware K Selection</div>
+                                    <div class="step-name"> Recall-Aware K Selection</div>
                                     <div class="step-description">Analyze adaptive K value selection</div>
                                     <div class="step-analysis">
                                         <strong>Logic:</strong> Base K (5) + complexity bonus (0-5) = final K (3-20)
@@ -1671,7 +1594,7 @@
                                     <div class="step-number">Decision</div>
                                     <div class="step-name">Should low-quality documents be filtered from results?</div>
                                     <div class="step-analysis">
-                                        <strong>Quality Thresholds (Phase 3 Step 1):</strong>
+                                        <strong>Quality Thresholds ( 1):</strong>
                                         <br/>• Coherence score ≥ 0.70 (text quality)
                                         <br/>• Metadata score ≥ 0.60 (author, timestamp present)
                                         <br/>• Authority score applied (Reddit karma)
@@ -1695,7 +1618,7 @@
                                     <div class="step-number">Decision</div>
                                     <div class="step-name">How many sources should we retrieve?</div>
                                     <div class="step-analysis">
-                                        <strong>K Selection Logic (Phase 3 Step 2):</strong>
+                                        <strong>K Selection Logic ( 2):</strong>
                                         <br/>1. Assess query complexity: simple/moderate/complex/very_complex
                                         <br/>2. Base K value: 5 (default for most queries)
                                         <br/>3. Complexity bonus: +2-5 for complex queries
@@ -1718,7 +1641,7 @@
                                     <div class="step-number">Decision</div>
                                     <div class="step-name">Should query be expanded with synonyms?</div>
                                     <div class="step-analysis">
-                                        <strong>Expansion Logic (Phase 3 Step 3):</strong>
+                                        <strong>Expansion Logic ( 3):</strong>
                                         <br/>1. Contextual/Complex queries: YES expand
                                         <br/>2. SQL queries: NO (exact matching)
                                         <br/>3. Expansion types:

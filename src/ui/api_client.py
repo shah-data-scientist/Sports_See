@@ -94,7 +94,7 @@ class APIClient:
         return self._make_request(
             "POST",
             "/api/v1/chat",
-            json=asdict(request),
+            json={k: v for k, v in asdict(request).items() if v is not None},
         )
 
     def search(

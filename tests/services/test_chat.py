@@ -1,8 +1,8 @@
 """
-FILE: test_chat_service.py
+FILE: test_chat.py
 STATUS: Active
 RESPONSIBILITY: Unit tests for ChatService RAG pipeline orchestration
-LAST MAJOR UPDATE: 2026-02-07
+LAST MAJOR UPDATE: 2026-02-13
 MAINTAINER: Shahu
 """
 
@@ -275,3 +275,78 @@ class TestChatServiceChat:
 
         call_kwargs = mock_vector_store.search.call_args.kwargs
         assert call_kwargs["k"] == 3
+
+
+class TestGreetingHandling:
+    """Tests for greeting detection and early return in chat() (Phase 15)."""
+
+    def test_greeting_returns_without_rag_search(self, chat_service, mock_vector_store):
+        request = ChatRequest(query="hi")
+        response = chat_service.chat(request)
+
+        assert isinstance(response, ChatResponse)
+        mock_vector_store.search.assert_not_called()
+        assert "hi" in response.answer.lower() or "hello" in response.answer.lower() or "ask" in response.answer.lower()
+
+    def test_greeting_returns_empty_sources(self, chat_service, mock_vector_store):
+        request = ChatRequest(query="hello")
+        response = chat_service.chat(request)
+
+        assert response.sources == []
+        mock_vector_store.search.assert_not_called()
+
+    def test_thanks_greeting_response(self, chat_service, mock_vector_store):
+        request = ChatRequest(query="thanks")
+        response = chat_service.chat(request)
+
+        assert "welcome" in response.answer.lower() or "help" in response.answer.lower()
+        mock_vector_store.search.assert_not_called()
+
+    def test_non_greeting_proceeds_to_search(self, chat_service, mock_vector_store, mock_client):
+        from src.models.document import DocumentChunk
+
+        chunk = DocumentChunk(id="0_0", text="NBA info", metadata={"source": "nba.pdf"})
+        mock_vector_store.search.return_value = [(chunk, 90.0)]
+
+        request = ChatRequest(query="Who are the top 5 scorers?")
+        chat_service.chat(request)
+
+        mock_vector_store.search.assert_called_once()
+
+
+class TestBiographicalRewrite:
+    """Tests for ChatService._rewrite_biographical_for_sql() static method (Phase 17)."""
+
+    def test_rewrite_who_is_lebron(self):
+        result = ChatService._rewrite_biographical_for_sql("Who is LeBron?")
+        assert "name" in result.lower()
+        assert "team" in result.lower()
+        assert "age" in result.lower()
+        assert "LeBron" in result
+
+    def test_rewrite_tell_me_about(self):
+        result = ChatService._rewrite_biographical_for_sql("Tell me about Kobe")
+        assert "name" in result.lower()
+        assert "points" in result.lower()
+        assert "Kobe" in result
+
+    def test_rewrite_preserves_player_name(self):
+        result = ChatService._rewrite_biographical_for_sql("Who is Stephen Curry?")
+        assert "Stephen Curry" in result
+
+    def test_rewrite_fallback_uses_full_query(self):
+        result = ChatService._rewrite_biographical_for_sql("random query")
+        assert "random query" in result
+
+
+class TestQuestionComplexity:
+    """Tests verifying _estimate_question_complexity moved to QueryClassifier.
+
+    Full tests are in test_query_classifier.py::TestEstimateQuestionComplexity.
+    This test confirms the method is accessible via QueryClassifier.
+    """
+
+    def test_method_moved_to_classifier(self):
+        from src.services.query_classifier import QueryClassifier
+        assert hasattr(QueryClassifier, "_estimate_question_complexity")
+        assert QueryClassifier._estimate_question_complexity("How many teams?") == 3

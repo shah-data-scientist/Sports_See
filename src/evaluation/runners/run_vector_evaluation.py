@@ -1,15 +1,14 @@
 """
 FILE: run_vector_evaluation.py
 STATUS: Active
-RESPONSIBILITY: Consolidated vector evaluation system with API-only processing, checkpointing, RAGAS metrics
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Execute vector evaluation tests via API; delegate analysis to vector_quality_analysis module
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 
 Runs comprehensive vector evaluation:
 - API-only processing via TestClient (no direct service calls)
 - Checkpoint after each query for recovery from failures/rate limits
-- RAGAS metrics integration (faithfulness, answer relevancy, context precision/recall)
-- 5 comprehensive analysis functions
+- Analysis delegated to vector_quality_analysis module
 - 2-file output: JSON (raw data) + MD (comprehensive report)
 """
 
@@ -25,13 +24,14 @@ from starlette.testclient import TestClient
 from src.api.main import create_app
 from src.api.dependencies import get_chat_service
 from src.evaluation.test_cases.vector_test_cases import EVALUATION_TEST_CASES
-from src.evaluation.models import TestCategory
+from src.evaluation.models.vector_models import TestCategory
 from src.evaluation.analysis.vector_quality_analysis import (
     analyze_category_performance,
     analyze_ragas_metrics,
     analyze_response_patterns,
     analyze_retrieval_performance,
     analyze_source_quality,
+    analyze_results,  # NEW: Unified interface
 )
 from src.models.feedback import ChatInteractionCreate
 from src.core.config import settings
@@ -152,7 +152,7 @@ def _is_followup_question(question: str) -> bool:
     return any(indicator in question_lower for indicator in followup_indicators)
 
 
-def run_vector_evaluation(resume: bool = True) -> tuple[list[dict], str]:
+def run_vector_evaluation(resume: bool = True, test_indices: list[int] | None = None) -> tuple[list[dict], str]:
     """Run vector evaluation with API-only processing and checkpointing.
 
     Features:
@@ -166,6 +166,7 @@ def run_vector_evaluation(resume: bool = True) -> tuple[list[dict], str]:
 
     Args:
         resume: Whether to resume from checkpoint (default: True)
+        test_indices: Optional list of test case indices to run (for mini mode)
 
     Returns:
         Tuple of (results list, json_path string)
@@ -179,6 +180,10 @@ def run_vector_evaluation(resume: bool = True) -> tuple[list[dict], str]:
 
     # Step 1: Use all test cases (vector_test_cases.py contains ONLY vector-appropriate cases)
     test_cases = EVALUATION_TEST_CASES
+
+    if test_indices is not None:
+        test_cases = [EVALUATION_TEST_CASES[i] for i in test_indices if i < len(EVALUATION_TEST_CASES)]
+        logger.info(f"Mini mode: running {len(test_cases)} of {len(EVALUATION_TEST_CASES)} test cases")
 
     logger.info(f"Vector evaluation: {len(test_cases)} test cases")
 
@@ -620,9 +625,9 @@ def generate_comprehensive_report(
         ])
 
         for i, r in enumerate(failed_results[:10], 1):  # Top 10
-            question = r.get("question", "")[:60]
-            error = str(r.get("error", ""))[:100]
-            report_lines.append(f"| {i} | {question}... | {error}... |")
+            question = r.get("question", "")
+            error = str(r.get("error", ""))
+            report_lines.append(f"| {i} | {question} | {error} |")
 
         report_lines.extend(["", ""])
 
@@ -636,12 +641,12 @@ def generate_comprehensive_report(
         ])
 
         for i, misc in enumerate(misclassifications[:10], 1):  # Top 10
-            question = misc.get("question", "")[:40]
+            question = misc.get("question", "")
             category = misc.get("category", "unknown")
             expected = misc.get("expected", "")
             actual = misc.get("actual", "")
-            preview = misc.get("response_preview", "")[:60]
-            report_lines.append(f"| {i} | {question}... | {category} | {expected} | {actual} | {preview}... |")
+            preview = misc.get("response_preview", "")
+            report_lines.append(f"| {i} | {question} | {category} | {expected} | {actual} | {preview} |")
 
         report_lines.extend(["", ""])
 
@@ -656,10 +661,10 @@ def generate_comprehensive_report(
         ])
 
         for i, q in enumerate(low_scoring[:10], 1):  # Top 10
-            question = q.get("question", "")[:50]
+            question = q.get("question", "")
             min_score = q.get("min_score", 0)
             category = q.get("category", "unknown")
-            report_lines.append(f"| {i} | {question}... | {min_score:.3f} | {category} |")
+            report_lines.append(f"| {i} | {question} | {min_score:.3f} | {category} |")
 
         report_lines.extend(["", "---", ""])
 
@@ -936,6 +941,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Vector evaluation with API-only processing and checkpointing")
     parser.add_argument("--no-resume", action="store_true", help="Start fresh (ignore checkpoint)")
+    parser.add_argument("--mini", action="store_true", help="Run mini evaluation with 4 diverse test cases")
     args = parser.parse_args()
 
     # Fix Windows charmap encoding
@@ -948,9 +954,16 @@ if __name__ == "__main__":
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
+    test_indices = None
+    if args.mini:
+        # Select 4 diverse cases: simple(0), noisy(3), conversational(5), complex(22)
+        test_indices = [0, 3, 5, 22]
+        print(f"Mini mode: running indices {test_indices}")
+
     try:
-        results, json_path = run_vector_evaluation(resume=not args.no_resume)
-        print(f"\n✅ Evaluation complete! Results saved to:")
+        results, json_path = run_vector_evaluation(resume=not args.no_resume, test_indices=test_indices)
+        mode_label = " (MINI)" if args.mini else ""
+        print(f"\n✅ Evaluation complete{mode_label}! Results saved to:")
         print(f"   - JSON: {json_path}")
         print(f"   - Report: {json_path.replace('.json', '_report.md')}")
     except KeyboardInterrupt:

@@ -1,8 +1,8 @@
 """
 FILE: vector_quality_analysis.py
 STATUS: Active
-RESPONSIBILITY: Vector evaluation quality analysis with 5 comprehensive analysis functions
-LAST MAJOR UPDATE: 2026-02-11
+RESPONSIBILITY: Vector evaluation analysis coordination - unified interface analyze_results(), 5 comprehensive analysis functions, RAGAS metrics
+LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 
 Provides quality analysis for vector evaluation results:
@@ -698,3 +698,36 @@ def analyze_category_performance(results: list[dict]) -> dict[str, Any]:
         "comparative_analysis": comparative_analysis,
         "recommendations": recommendations
     }
+
+
+# ============================================================================
+# UNIFIED INTERFACE: Wrapper function for consistent runner patterns
+# ============================================================================
+
+def analyze_results(results: list[dict], test_cases: list) -> dict[str, Any]:
+    """Unified interface: Analyze vector evaluation results.
+
+    Calls all analysis functions to match the pattern used by SQL and Hybrid runners.
+
+    Args:
+        results: List of evaluation result dictionaries
+        test_cases: List of test case objects
+
+    Returns:
+        Dictionary with comprehensive analysis
+    """
+    analysis = {
+        "overall": {
+            "total_queries": len(results),
+            "successful": sum(1 for r in results if r.get("success", False)),
+        }
+    }
+
+    # Add all detailed analysis
+    analysis["ragas_metrics"] = analyze_ragas_metrics(results)
+    analysis["source_quality"] = analyze_source_quality(results)
+    analysis["response_patterns"] = analyze_response_patterns(results)
+    analysis["retrieval_performance"] = analyze_retrieval_performance(results)
+    analysis["category_performance"] = analyze_category_performance(results)
+
+    return analysis

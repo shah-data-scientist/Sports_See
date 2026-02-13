@@ -1,7 +1,7 @@
 """
 FILE: hybrid_quality_analysis.py
 STATUS: Active
-RESPONSIBILITY: Analyze hybrid evaluation results (SQL + Vector combination quality)
+RESPONSIBILITY: Hybrid evaluation analysis coordination - unified interface analyze_results(), SQL+Vector combination analysis, report generation
 LAST MAJOR UPDATE: 2026-02-12
 MAINTAINER: Shahu
 
@@ -813,13 +813,11 @@ def _generate_detailed_results(lines: list[str], results: list[dict]) -> None:
 
             generated_sql = result.get("generated_sql")
             if generated_sql:
-                sql_preview = generated_sql.replace("\n", " ")[:150]
-                lines.append(f"- **Generated SQL:** `{sql_preview}...`")
+                lines.append(f"- **Generated SQL:**\n```sql\n{generated_sql}\n```")
 
             response = result.get("response", "")
             if response:
-                response_preview = response.replace("\n", " ")[:200]
-                lines.append(f"- **Response:** {response_preview}...")
+                lines.append(f"- **Response:**\n{response}")
 
             sources = result.get("sources", [])
             if sources:
@@ -835,3 +833,17 @@ def _generate_detailed_results(lines: list[str], results: list[dict]) -> None:
                 lines.append("")
 
             lines.append("")
+
+
+# ============================================================================
+# UNIFIED INTERFACE: Alias for consistency with SQL and Vector runners
+# ============================================================================
+
+def analyze_results(results: list[dict], test_cases: list) -> dict[str, Any]:
+    """Unified interface: Alias for analyze_hybrid_results() for consistency.
+
+    All three runners (SQL, Vector, Hybrid) can now call:
+        from analysis_module import analyze_results
+        analysis = analyze_results(results, test_cases)
+    """
+    return analyze_hybrid_results(results, test_cases)

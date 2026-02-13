@@ -126,6 +126,14 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
+markers = [
+    "conversation: Conversation management E2E tests",
+    "error_handling: Error handling E2E tests",
+    "feedback: Feedback workflow E2E tests",
+    "greeting: Greeting handling E2E tests",
+    "chat_workflow: Chat workflow E2E tests",
+    "api: API endpoint tests",
+]
 
 [tool.coverage.run]
 source = ["src"]

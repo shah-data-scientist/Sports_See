@@ -31,29 +31,29 @@ logger = logging.getLogger(__name__)
 
 
 @st.cache_data(ttl=60)
-def get_cached_feedback_stats(client: APIClient) -> dict:
+def get_cached_feedback_stats(_client: APIClient) -> dict:
     """Get cached feedback statistics (refreshes every 60 seconds).
 
     Args:
-        client: API client
+        _client: API client (prefixed with _ so Streamlit doesn't hash it)
 
     Returns:
         Feedback statistics dictionary
     """
-    return client.get_feedback_stats()
+    return _client.get_feedback_stats()
 
 
 @st.cache_data(ttl=30)
-def get_cached_health_status(client: APIClient) -> dict:
+def get_cached_health_status(_client: APIClient) -> dict:
     """Get cached health status (refreshes every 30 seconds).
 
     Args:
-        client: API client
+        _client: API client (prefixed with _ so Streamlit doesn't hash it)
 
     Returns:
         Health status dictionary
     """
-    return client.health_check()
+    return _client.health_check()
 
 
 @st.cache_resource
@@ -78,25 +78,43 @@ def render_message(role: str, content: str) -> None:
         st.write(content)
 
 
-def render_sources(sources: list) -> None:
-    """Render source documents in an expander.
+def render_sources(sources: list, compact: bool = True) -> None:
+    """Render source documents.
 
     Args:
         sources: List of source dicts with 'source', 'score', 'text'
+        compact: If True, show compact format at bottom. If False, show expander with full details.
     """
     if not sources:
         return
 
-    with st.expander(f"Sources ({len(sources)})"):
-        for i, source in enumerate(sources, 1):
-            # Handle both dict and object responses
-            source_name = source.get("source") if isinstance(source, dict) else getattr(source, "source", "Unknown")
-            score = source.get("score", 0) if isinstance(source, dict) else getattr(source, "score", 0)
-            text = source.get("text", "") if isinstance(source, dict) else getattr(source, "text", "")
+    # Extract unique source names (handles duplicates)
+    source_names = []
+    seen = set()
+    for source in sources:
+        source_name = source.get("source") if isinstance(source, dict) else getattr(source, "source", "Unknown")
+        # Clean up source name (remove .pdf, file paths, etc.)
+        clean_name = source_name.replace(".pdf", "").replace("_", " ").strip()
+        if clean_name and clean_name not in seen:
+            source_names.append(clean_name)
+            seen.add(clean_name)
 
-            st.markdown(f"**{i}. {source_name}** (Score: {score:.1f}%)")
-            st.caption(text[:300] + "..." if len(text) > 300 else text)
-            st.divider()
+    if compact:
+        # Compact format: single line with small text at bottom
+        sources_text = ", ".join(source_names)
+        st.caption(f"📚 Sources: {sources_text}")
+    else:
+        # Detailed format: expander with full information
+        with st.expander(f"📚 Sources ({len(sources)})"):
+            for i, source in enumerate(sources, 1):
+                # Handle both dict and object responses
+                source_name = source.get("source") if isinstance(source, dict) else getattr(source, "source", "Unknown")
+                score = source.get("score", 0) if isinstance(source, dict) else getattr(source, "score", 0)
+                text = source.get("text", "") if isinstance(source, dict) else getattr(source, "text", "")
+
+                st.markdown(f"**{i}. {source_name}** (Score: {score:.1f}%)")
+                st.caption(text[:300] + "..." if len(text) > 300 else text)
+                st.divider()
 
 
 def get_user_friendly_error_message(error: Exception) -> str:
@@ -455,14 +473,49 @@ def main() -> None:
                     answer = response.get("answer", "") if isinstance(response, dict) else getattr(response, "answer", "")
                     sources = response.get("sources", []) if isinstance(response, dict) else getattr(response, "sources", [])
                     processing_time_ms = response.get("processing_time_ms", 0) if isinstance(response, dict) else getattr(response, "processing_time_ms", 0)
+                    visualization = response.get("visualization") if isinstance(response, dict) else getattr(response, "visualization", None)
 
                     logger.info(f"[UI-DEBUG] Response answer length: {len(answer)}")
                     logger.info(f"[UI-DEBUG] Response sources count: {len(sources)}")
+                    logger.info(f"[UI-DEBUG] Has visualization: {visualization is not None}")
 
                     # Display answer
                     logger.info(f"[UI-DEBUG] About to display answer")
                     st.write(answer)
                     logger.info(f"[UI-DEBUG] Answer displayed successfully")
+
+                    # Display visualization if available (statistical queries)
+                    if visualization:
+                        logger.info(f"[UI-DEBUG] Displaying visualization")
+                        try:
+                            viz_data = visualization if isinstance(visualization, dict) else {
+                                "plot_json": getattr(visualization, "plot_json", None),
+                                "plot_html": getattr(visualization, "plot_html", None),
+                                "pattern": getattr(visualization, "pattern", "unknown"),
+                                "viz_type": getattr(visualization, "viz_type", "unknown"),
+                            }
+
+                            # Try to display interactive Plotly chart
+                            if viz_data.get("plot_json"):
+                                import plotly.io as pio
+                                import json
+
+                                # Parse JSON if it's a string
+                                plot_data = viz_data["plot_json"]
+                                if isinstance(plot_data, str):
+                                    plot_data = json.loads(plot_data)
+
+                                # Create and display Plotly figure
+                                fig = pio.from_json(json.dumps(plot_data))
+                                st.plotly_chart(fig, use_container_width=True)
+                                logger.info(f"[UI-DEBUG] Visualization displayed successfully ({viz_data.get('viz_type', 'unknown')})")
+                            elif viz_data.get("plot_html"):
+                                # Fallback: display as HTML
+                                st.components.v1.html(viz_data["plot_html"], height=500)
+                                logger.info(f"[UI-DEBUG] Visualization (HTML) displayed successfully")
+                        except Exception as e:
+                            logger.warning(f"[UI-DEBUG] Could not display visualization: {e}")
+                            # Continue without visualization - don't break the response
 
                     # Display sources
                     logger.info(f"[UI-DEBUG] About to render sources")

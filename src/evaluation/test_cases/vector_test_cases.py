@@ -13,7 +13,7 @@ NOTES:
 - Ground truth established from actual vector DB contents
 """
 
-from src.evaluation.models import EvaluationTestCase, TestCategory
+from src.evaluation.models.vector_models import EvaluationTestCase, TestCategory
 
 # ==============================================================================
 # REDDIT DISCUSSION QUERIES (Based on actual 4 Reddit posts in vector store)
