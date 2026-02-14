@@ -60,6 +60,10 @@ def chat(request: ChatRequest) -> ChatResponse:
             len(response.sources),
         )
 
+        print(f"[API-DEBUG] response.query_type = {response.query_type}")
+        print(f"[API-DEBUG] response dict keys = {list(response.model_dump().keys())}")
+        print(f"[API-DEBUG] query_type in dict = {'query_type' in response.model_dump()}")
+
         return response
     except Exception as e:
         logger.exception(f"Chat error for query '{request.query[:50]}': {type(e).__name__}: {e}")

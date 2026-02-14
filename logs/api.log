@@ -1,0 +1,559 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\shahu\\Documents\\OneDrive\\OPEN CLASSROOMS\\PROJET 10\\Sports_See']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [33300] using WatchFiles
+INFO:     Started server process [40248]
+INFO:     Waiting for application startup.
+INFO - src.api.main - Starting up application...
+C:\Users\shahu\.venvs\sports-see-6edxFlmh-py3.11\Lib\site-packages\langchain_google_genai\chat_models.py:47: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  from google.generativeai.caching import CachedContent  # type: ignore[import]
+INFO - src.repositories.vector_store - Loading FAISS index from data\vector\faiss_index.idx
+INFO - src.repositories.vector_store - Loading chunks from data\vector\document_chunks.pkl
+INFO - src.repositories.vector_store - Loaded index with 375 vectors and 375 chunks
+INFO - src.api.main - Vector index loaded successfully
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63922 - "GET /health HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:60256 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.feedback - Database initialized at data\sql\interactions.db
+INFO:     127.0.0.1:60258 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO - src.services.conversation - Started new conversation: 0675335b-ac0e-4416-9f0b-d1bba4f4703e
+INFO:     127.0.0.1:60262 - "POST /api/v1/conversations HTTP/1.1" 201 Created
+INFO - src.api.routes.chat - Chat request received: hi
+C:\Users\shahu\Documents\OneDrive\OPEN CLASSROOMS\PROJET 10\Sports_See\src\api\routes\chat.py:46: LogfireNotConfiguredWarning: No logs or spans will be created until `logfire.configure()` has been called. Set the environment variable LOGFIRE_IGNORE_NO_CONFIG=1 or add ignore_no_config=true in pyproject.toml to suppress this warning.
+  response = service.chat(request)
+INFO - src.repositories.feedback - Database initialized at data\sql\interactions.db
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 2/4), retrying in 4.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 13596.62ms with 5 sources
+INFO:     127.0.0.1:60264 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 4e968d55-ffd3-437c-b75b-f4300ff6027c
+INFO:     127.0.0.1:51583 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51586 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51591 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: top 5 scores
+INFO - src.services.chat - Including conversation history (1 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 1, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.tools.sql_tool - NBA SQL Tool initialized with database: data\sql\nba_stats.db (45 dictionary entries loaded)
+INFO - src.services.chat - SQL tool initialized successfully
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: top 5 scores
+INFO - src.tools.sql_tool - Generated SQL: SELECT name, pts FROM players JOIN player_stats ON players.id = player_stats.player_id ORDER BY pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT name, pts FROM players JOIN player_stats ON players.id = player_stats.player_id ORDER BY pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Query returned 5 rows
+INFO - src.services.chat - SQL query returned 5 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: top_n
+INFO - src.services.chat - Visualization generated: horizontal_bar (top_n)
+INFO - src.api.routes.chat - Chat response generated in 7097.57ms with 0 sources
+INFO:     127.0.0.1:51593 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 20d99f81-66a1-4c9c-8624-6179959a1961
+INFO:     127.0.0.1:51601 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51608 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62432 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: who is the best player ?
+INFO - src.services.chat - Including conversation history (2 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 4, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: who is the best player ?
+INFO - src.tools.sql_tool - Generated SQL: SELECT name FROM players ORDER BY age DESC LIMIT 1
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT name FROM players ORDER BY age DESC LIMIT 1
+INFO - src.tools.sql_tool - Query returned 1 rows
+INFO - src.services.chat - SQL query returned 1 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: single_entity
+INFO - src.services.chat - Visualization generated: stat_card (single_entity)
+INFO - src.api.routes.chat - Chat response generated in 5816.01ms with 0 sources
+INFO:     127.0.0.1:62435 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 82f7e198-8cd2-43f1-ab26-7f7538fd172e
+INFO:     127.0.0.1:62438 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:62441 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62443 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: second best ?
+INFO - src.services.chat - Including conversation history (3 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 1, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: second best ?
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+WARNING - src.tools.sql_tool - SQL generation rate limit (attempt 1/4), retrying in 2.0s
+INFO - src.tools.sql_tool - Generated SQL: This query is incomplete. Please provide more context. "Second best" what?
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): This query is incomplete. Please provide more context. "Second best" what?
+ERROR - src.tools.sql_tool - SQL execution error: (sqlite3.OperationalError) near "This": syntax error
+[SQL: This query is incomplete. Please provide more context. "Second best" what?]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR - src.tools.sql_tool - Query failed: (sqlite3.OperationalError) near "This": syntax error
+[SQL: This query is incomplete. Please provide more context. "Second best" what?]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+WARNING - src.services.chat - SQL query failed: (sqlite3.OperationalError) near "This": syntax error
+[SQL: This query is incomplete. Please provide more context. "Second best" what?]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) - falling back to vector search
+INFO - src.services.chat - SQL fallback activated - using vector search for statistical query
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Visualization skipped: SQL query failed, used vector fallback. Visualizations require structured data from SQL results.
+INFO - src.api.routes.chat - Chat response generated in 11019.27ms with 5 sources
+INFO:     127.0.0.1:62445 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 68572e09-24f3-48be-b9bc-e0c17663c2e5
+INFO:     127.0.0.1:51033 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51035 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: which team was the most exciting ?
+INFO - src.services.chat - Including conversation history (4 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 2, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: which team was the most exciting ?
+INFO - src.tools.sql_tool - Generated SQL: SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Query returned 1 rows
+INFO - src.services.chat - SQL query returned 1 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: single_entity
+INFO - src.services.chat - Visualization generated: stat_card (single_entity)
+INFO - src.api.routes.chat - Chat response generated in 5481.77ms with 0 sources
+INFO:     127.0.0.1:51039 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 7f1103b1-0c44-4e32-a8bc-d405d6ec78a6
+INFO:     127.0.0.1:53814 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:65404 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65407 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src\services\query_classifier.py'. Reloading...
+ INFO:     127.0.0.1:61920 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: which team was the most exciting ?
+INFO - src.services.chat - Including conversation history (5 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 2, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: which team was the most exciting ?
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+INFO - src.tools.sql_tool - Generated SQL: SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Query returned 1 rows
+INFO - src.services.chat - SQL query returned 1 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: single_entity
+INFO - src.services.chat - Visualization generated: stat_card (single_entity)
+INFO - src.api.routes.chat - Chat response generated in 8999.86ms with 0 sources
+INFO:     127.0.0.1:54394 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 7371a6dc-6f9e-4721-bf60-dc508671840c
+INFO:     127.0.0.1:51710 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51712 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51714 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51719 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: what is your opinion? About, the Detroit team
+INFO - src.services.chat - Including conversation history (6 previous turns)
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (stat: 0, context: 1)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.chat - Expanded query: 'what is your opinion? About, the Detroit team' -> 'what is your opinion? About, the Detroit team squad franchise club...'
+INFO - src.services.chat -   (using contextual-aware expansion)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 6432.12ms with 5 sources
+INFO:     127.0.0.1:51721 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 311c34d8-635b-4294-9d07-1af609d4f90b
+INFO:     127.0.0.1:51726 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51729 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63866 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: Who is LeBron?
+INFO - src.services.chat - Including conversation history (7 previous turns)
+INFO - src.services.chat - Rewriting follow-up query using conversation context
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Query rewritten: 'Who is LeBron?' \u2192 'Who is LeBron James?'
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.chat - Expanded query: 'Who is LeBron James?' -> 'Who is LeBron James? LeBron James King James...'
+INFO - src.services.chat -   (using contextual-aware expansion)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 6725.50ms with 5 sources
+INFO:     127.0.0.1:55327 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 1a8bb284-5432-4141-bea0-19e178107f00
+INFO:     127.0.0.1:62442 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:62444 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62446 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57649 - "GET /health HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:57651 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57653 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO - src.services.conversation - Started new conversation: b76e71a0-ef50-431c-9419-42169d676bdc
+INFO:     127.0.0.1:58856 - "POST /api/v1/conversations HTTP/1.1" 201 Created
+INFO - src.api.routes.chat - Chat request received: hi
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 3572.31ms with 5 sources
+INFO:     127.0.0.1:58858 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 76a5e909-d5f5-447d-87cd-9da9388d9d7e
+INFO:     127.0.0.1:58863 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:58865 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:55059 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:55060 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55071 - "GET /health HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:55073 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO - src.services.conversation - Started new conversation: ef1ca61b-2e90-472d-9982-200552006ecf
+INFO:     127.0.0.1:55075 - "POST /api/v1/conversations HTTP/1.1" 201 Created
+INFO - src.api.routes.chat - Chat request received: hi
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 8076.77ms with 5 sources
+INFO:     127.0.0.1:55077 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 61fc56e1-c083-4f50-9588-5670f1d387c1
+INFO:     127.0.0.1:55082 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:55084 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58014 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: Who is LeBron?
+INFO - src.services.chat - Including conversation history (1 previous turns)
+INFO - src.services.chat - Rewriting follow-up query using conversation context
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 2/4), retrying in 4.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 3/4), retrying in 8.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+ERROR - src.services.chat - Rate limit error after 3 retries: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+WARNING - src.services.chat - Query rewriting failed (Rate limit exceeded after 3 retries. Please try again in a few moments.), using original query
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.chat - Expanded query: 'Who is LeBron?' -> 'Who is LeBron? LeBron James King James...'
+INFO - src.services.chat -   (using contextual-aware expansion)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 25378.18ms with 5 sources
+INFO:     127.0.0.1:58017 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction e2c67a2c-7f05-42b8-950c-1d3efd3ea7dc
+INFO:     127.0.0.1:58742 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:58744 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58746 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58748 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: top 5 scorers
+INFO - src.services.chat - Including conversation history (2 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 1, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: top 5 scorers
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+WARNING - src.tools.sql_tool - SQL generation rate limit (attempt 1/4), retrying in 2.0s
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+WARNING - src.tools.sql_tool - SQL generation rate limit (attempt 2/4), retrying in 4.0s
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+WARNING - src.tools.sql_tool - SQL generation rate limit (attempt 3/4), retrying in 8.0s
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+ERROR - src.tools.sql_tool - SQL generation rate limit after 3 retries
+ERROR - src.tools.sql_tool - Query failed: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.
+WARNING - src.services.chat - SQL query failed: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details. - falling back to vector search
+INFO - src.services.chat - SQL fallback activated - using vector search for statistical query
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Visualization skipped: SQL query failed, used vector fallback. Visualizations require structured data from SQL results.
+INFO - src.api.routes.chat - Chat response generated in 41551.12ms with 5 sources
+INFO:     127.0.0.1:58752 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 023a6c9e-2b05-442b-8a63-1b64a05f856c
+INFO:     127.0.0.1:63718 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:63720 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52665 - "GET /health HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52667 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52670 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO - src.services.conversation - Started new conversation: 1da19bdb-d0fa-4322-a9ad-f59c600cfe36
+INFO:     127.0.0.1:52672 - "POST /api/v1/conversations HTTP/1.1" 201 Created
+INFO - src.api.routes.chat - Chat request received: hi
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 3525.27ms with 5 sources
+INFO:     127.0.0.1:52674 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 1d338eeb-4226-499f-841c-aa6a4ba526b5
+INFO:     127.0.0.1:52678 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52680 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:59601 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO - src.services.conversation - Started new conversation: 85a9585b-32ef-4a61-bc04-9ceeb509fa15
+INFO:     127.0.0.1:59604 - "POST /api/v1/conversations HTTP/1.1" 201 Created
+INFO - src.api.routes.chat - Chat request received: hi
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 2230.39ms with 5 sources
+INFO:     127.0.0.1:59607 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 56f46729-fc4a-45bc-83d5-b3d171908256
+INFO:     127.0.0.1:59611 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:59613 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63940 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: Who is LeBron?
+INFO - src.services.chat - Including conversation history (1 previous turns)
+INFO - src.services.chat - Rewriting follow-up query using conversation context
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Query rewritten: 'Who is LeBron?' \u2192 'Who is LeBron James?'
+INFO - src.services.query_classifier - Query classified as CONTEXTUAL (default) (stat: 0, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to vector search (query_type: contextual)
+INFO - src.services.chat - Expanded query: 'Who is LeBron James?' -> 'Who is LeBron James? LeBron James King James...'
+INFO - src.services.chat -   (using contextual-aware expansion)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.api.routes.chat - Chat response generated in 12756.27ms with 5 sources
+INFO:     127.0.0.1:63942 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 070c2396-2067-48e9-8cb7-463ec5ce0b5e
+INFO:     127.0.0.1:63946 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:63948 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: top 5 scorers
+INFO - src.services.chat - Including conversation history (2 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 1, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: top 5 scorers
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+WARNING - src.tools.sql_tool - SQL generation rate limit (attempt 1/4), retrying in 2.0s
+INFO - src.tools.sql_tool - Generated SQL: SELECT p.name, ps.pts FROM players AS p INNER JOIN player_stats AS ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT p.name, ps.pts FROM players AS p INNER JOIN player_stats AS ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Query returned 5 rows
+INFO - src.services.chat - SQL query returned 5 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: top_n
+INFO - src.services.chat - Visualization generated: horizontal_bar (top_n)
+INFO - src.api.routes.chat - Chat response generated in 12386.82ms with 0 sources
+INFO:     127.0.0.1:63952 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction a122c7b5-4529-42a5-90dd-74d5fb3d2656
+INFO:     127.0.0.1:62129 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:62131 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62134 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62135 - "GET /health HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: which team was the most exciting?
+INFO - src.services.chat - Including conversation history (3 previous turns)
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 2, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: which team was the most exciting?
+WARNING - langchain_google_genai.chat_models - Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details..
+INFO - src.tools.sql_tool - Generated SQL: SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT team_abbr FROM player_stats ORDER BY pie DESC LIMIT 1
+INFO - src.tools.sql_tool - Query returned 1 rows
+INFO - src.services.chat - SQL query returned 1 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: single_entity
+INFO - src.services.chat - Visualization generated: stat_card (single_entity)
+INFO - src.api.routes.chat - Chat response generated in 6497.10ms with 0 sources
+INFO:     127.0.0.1:62137 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction c1faf250-acec-4a9b-b028-8d896abeaf9e
+INFO:     127.0.0.1:62143 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:62145 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:51287 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52637 - "GET /health HTTP/1.1" 200 OK
+INFO - src.services.feedback - Submitted negative feedback for interaction c1faf250-acec-4a9b-b028-8d896abeaf9e
+INFO:     127.0.0.1:52639 - "POST /api/v1/feedback HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52641 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: What about Lakers?
+INFO - src.services.chat - Including conversation history (4 previous turns)
+INFO - src.services.chat - Rewriting follow-up query using conversation context
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Query rewritten: 'What about Lakers?' \u2192 'Which team is the Lakers?'
+INFO - src.services.query_classifier - Query classified as STATISTICAL (stat: 1, context: 0)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: statistical)
+INFO - src.tools.sql_tool - Generating SQL for question: Which team is the Lakers?
+INFO - src.tools.sql_tool - Generated SQL: SELECT team FROM players WHERE team_abbr = 'LAL' LIMIT 1;
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT team FROM players WHERE team_abbr = 'LAL' LIMIT 1;
+INFO - src.tools.sql_tool - Query returned 1 rows
+INFO - src.services.chat - SQL query returned 1 rows
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: single_entity
+INFO - src.services.chat - Visualization generated: stat_card (single_entity)
+INFO - src.api.routes.chat - Chat response generated in 3681.80ms with 0 sources
+INFO:     127.0.0.1:52645 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction f4a0e99a-49f3-45a5-b486-a376aefa0310
+INFO:     127.0.0.1:52648 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52650 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52652 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52655 - "GET /api/v1/feedback/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52657 - "GET /health HTTP/1.1" 200 OK
+INFO - src.services.feedback - Submitted negative feedback for interaction f4a0e99a-49f3-45a5-b486-a376aefa0310
+INFO:     127.0.0.1:52659 - "POST /api/v1/feedback HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52662 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK
+INFO - src.api.routes.chat - Chat request received: top 5 scorers and explain their styles
+INFO - src.services.chat - Including conversation history (5 previous turns)
+INFO - src.services.chat - Rewriting follow-up query using conversation context
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 1/4), retrying in 2.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 2/4), retrying in 4.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+WARNING - src.services.chat - Rate limit hit (attempt 3/4), retrying in 8.0s: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again lat
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Query rewritten: 'top 5 scorers and explain their styles' \u2192 'Who are the top 5 scorers and what are the playing styles of the top 5 scorers?'
+INFO - src.services.query_classifier - Query classified as HYBRID (matched 2 hybrid patterns)
+INFO - src.services.chat - Using k=5 (complexity-based: simple=3, moderate=5, complex=7-9)
+INFO - src.services.chat - Routing to SQL tool (query_type: hybrid)
+INFO - src.tools.sql_tool - Generating SQL for question: Who are the top 5 scorers and what are the playing styles of the top 5 scorers?
+INFO - src.tools.sql_tool - Generated SQL: SELECT T1.name, T2.pts FROM players AS T1 INNER JOIN player_stats AS T2 ON T1.id = T2.player_id ORDER BY T2.pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Executing SQL (timeout: 15s): SELECT T1.name, T2.pts FROM players AS T1 INNER JOIN player_stats AS T2 ON T1.id = T2.player_id ORDER BY T2.pts DESC LIMIT 5
+INFO - src.tools.sql_tool - Query returned 5 rows
+INFO - src.services.chat - SQL query returned 5 rows
+INFO - src.services.chat - Routing to vector search (query_type: hybrid)
+INFO - src.services.embedding - Generating embeddings for 1 texts in 1 batches
+INFO - httpx - HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO - src.services.embedding - Generated embeddings with shape (1, 1024)
+INFO - src.services.chat - Calling Gemini LLM with model gemini-2.0-flash (hybrid query)
+INFO - google_genai.models - AFC is enabled with max remote calls: 10.
+INFO - httpx - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 200 OK"
+INFO - src.services.chat - Generating visualization for SQL results
+INFO - src.services.visualization_service - Generating visualization for pattern: top_n
+INFO - src.services.chat - Visualization generated: horizontal_bar (top_n)
+INFO - src.api.routes.chat - Chat response generated in 28464.45ms with 5 sources
+INFO:     127.0.0.1:52663 - "POST /api/v1/chat HTTP/1.1" 200 OK
+INFO - src.services.feedback - Logged interaction 2be27088-58a5-4ec4-ae28-e33c447331d1
+INFO:     127.0.0.1:52671 - "POST /api/v1/feedback/log-interaction HTTP/1.1" 201 Created
+INFO - src.repositories.conversation - Initialized conversation database at data\sql\interactions.db
+INFO:     127.0.0.1:52673 - "GET /api/v1/conversations?limit=20&offset=0&status=active HTTP/1.1" 200 OK

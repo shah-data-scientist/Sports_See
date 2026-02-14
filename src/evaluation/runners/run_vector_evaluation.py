@@ -200,8 +200,8 @@ def run_vector_evaluation(resume: bool = True, test_indices: list[int] | None = 
 
     total_cases = len(test_cases)
 
-    # Step 3: Initialize tracking statistics
-    routing_stats = {"sql_only": 0, "vector_only": 0, "hybrid": 0, "unknown": 0}
+    # Step 3: Initialize tracking statistics (Phase 18: added greeting category)
+    routing_stats = {"sql_only": 0, "vector_only": 0, "hybrid": 0, "unknown": 0, "greeting": 0}
     misclassifications = []
 
     if start_index >= total_cases:
@@ -220,6 +220,7 @@ def run_vector_evaluation(resume: bool = True, test_indices: list[int] | None = 
 
             current_conversation_id = None
             current_turn_number = 0
+            current_thread = None  # Track conversation thread
 
             for i in range(start_index, total_cases):
                 test_case = test_cases[i]
@@ -236,25 +237,25 @@ def run_vector_evaluation(resume: bool = True, test_indices: list[int] | None = 
                     logger.info(f"  Rate limit delay: {RATE_LIMIT_DELAY}s...")
                     time.sleep(RATE_LIMIT_DELAY)
 
-                # Handle conversational test cases
-                if test_case.category == TestCategory.CONVERSATIONAL:
-                    if _is_followup_question(test_case.question):
-                        if current_conversation_id is None:
-                            # Create new conversation
-                            conv_resp = client.post("/api/v1/conversations", json={})
-                            current_conversation_id = conv_resp.json()["id"]
-                            current_turn_number = 1
-                        else:
-                            current_turn_number += 1
-                    else:
-                        # New conversation
+                # Handle conversational test cases using conversation_thread field
+                if hasattr(test_case, 'conversation_thread') and test_case.conversation_thread:
+                    # Check if thread changed (new conversation needed)
+                    if test_case.conversation_thread != current_thread:
+                        # Start new conversation for new thread
                         conv_resp = client.post("/api/v1/conversations", json={})
                         current_conversation_id = conv_resp.json()["id"]
                         current_turn_number = 1
+                        current_thread = test_case.conversation_thread
+                        logger.info(f"  → New conversation thread: {current_thread} (conversation_id: {current_conversation_id})")
+                    else:
+                        # Continue same conversation thread
+                        current_turn_number += 1
+                        logger.info(f"  → Continue thread: {current_thread} (turn {current_turn_number})")
                 else:
-                    # Non-conversational queries don't need conversation context
+                    # Isolated query (no conversation)
                     current_conversation_id = None
                     current_turn_number = 0
+                    current_thread = None
 
                 try:
                     # Build API request payload
@@ -291,21 +292,35 @@ def run_vector_evaluation(resume: bool = True, test_indices: list[int] | None = 
                         )
                         chat_service.feedback_repository.save_interaction(interaction)
 
-                    # Determine actual routing based on response characteristics
-                    has_sql_data = any(
-                        kw in api_result.get("answer", "").lower()
-                        for kw in ["pts", "reb", "ast", "points", "rebounds", "assists", "ppg", "rpg", "apg"]
-                    )
-                    has_vector_context = len(api_result.get("sources", [])) > 0
+                    # Phase 18: Use actual routing from API response (2026-02-13)
+                    # This is more accurate than inferring from response characteristics
+                    query_type = api_result.get("query_type", "unknown")
 
-                    if has_sql_data and has_vector_context:
-                        actual_routing = "hybrid"
-                    elif has_sql_data:
+                    # Map query_type to evaluation categories
+                    if query_type == "statistical":
                         actual_routing = "sql_only"
-                    elif has_vector_context:
+                    elif query_type == "contextual":
                         actual_routing = "vector_only"
+                    elif query_type == "hybrid":
+                        actual_routing = "hybrid"
+                    elif query_type == "greeting":
+                        actual_routing = "greeting"
                     else:
-                        actual_routing = "unknown"
+                        # Fallback: infer from response characteristics (for backward compatibility)
+                        has_sql_data = any(
+                            kw in api_result.get("answer", "").lower()
+                            for kw in ["pts", "reb", "ast", "points", "rebounds", "assists", "ppg", "rpg", "apg"]
+                        )
+                        has_vector_context = len(api_result.get("sources", [])) > 0
+
+                        if has_sql_data and has_vector_context:
+                            actual_routing = "hybrid"
+                        elif has_sql_data:
+                            actual_routing = "sql_only"
+                        elif has_vector_context:
+                            actual_routing = "vector_only"
+                        else:
+                            actual_routing = "unknown"
 
                     routing_stats[actual_routing] += 1
 

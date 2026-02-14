@@ -175,6 +175,10 @@ class ChatResponse(BaseModel):
         default=None,
         description="Visualization data for statistical queries",
     )
+    query_type: str | None = Field(
+        default=None,
+        description="Query routing type: statistical/contextual/hybrid/greeting",
+    )
 
     model_config = {"json_schema_extra": {"example": {
         "answer": "The Denver Nuggets won the 2023 NBA Championship.",

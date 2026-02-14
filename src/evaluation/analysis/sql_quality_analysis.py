@@ -320,7 +320,7 @@ def analyze_query_structure(results: list[dict[str, Any]]) -> dict[str, Any]:
             # Check if query actually needs player names (SELECT p.name, WHERE p.name)
             # Aggregate queries on player_stats alone (AVG, COUNT, MAX, etc.) don't need JOIN
             needs_player_name = any(
-                kw in sql_lower for kw in ["p.name", "players.name", "p.team"]
+                kw in sql_lower for kw in ["p.name", "players.name"]
             )
             question = result.get("question", "").lower()
             asks_about_player = any(

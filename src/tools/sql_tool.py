@@ -2,7 +2,7 @@
 FILE: sql_tool.py
 STATUS: Active
 RESPONSIBILITY: LangChain SQL agent for querying NBA statistics database
-LAST MAJOR UPDATE: 2026-02-11
+LAST MAJOR UPDATE: 2026-02-13
 MAINTAINER: Shahu
 """
 
@@ -210,13 +210,42 @@ LIMIT 1;""",
     },
     {
         "input": "Which teams have at least 3 players with more than 1000 points?",
-        "query": """SELECT p.team, COUNT(*) AS player_count
+        "query": """SELECT p.team_abbr, COUNT(*) AS player_count
 FROM players p
 JOIN player_stats ps ON p.id = ps.player_id
 WHERE ps.pts > 1000
-GROUP BY p.team
+GROUP BY p.team_abbr
 HAVING COUNT(*) >= 3
 ORDER BY player_count DESC;""",
+    },
+    {
+        "input": "Show me Lakers team statistics",
+        "query": """SELECT t.name, SUM(ps.pts) as total_pts, SUM(ps.reb) as total_reb, SUM(ps.ast) as total_ast
+FROM teams t
+JOIN players p ON t.abbreviation = p.team_abbr
+JOIN player_stats ps ON p.id = ps.player_id
+WHERE t.abbreviation = 'LAL'
+GROUP BY t.name;""",
+    },
+    {
+        "input": "Compare Celtics and Lakers stats",
+        "query": """SELECT t.name, SUM(ps.pts) as total_pts, SUM(ps.reb) as total_reb
+FROM teams t
+JOIN players p ON t.abbreviation = p.team_abbr
+JOIN player_stats ps ON p.id = ps.player_id
+WHERE t.abbreviation IN ('BOS', 'LAL')
+GROUP BY t.name
+ORDER BY total_pts DESC;""",
+    },
+    {
+        "input": "Which team has the most assists?",
+        "query": """SELECT t.name, SUM(ps.ast) as total_ast
+FROM teams t
+JOIN players p ON t.abbreviation = p.team_abbr
+JOIN player_stats ps ON p.id = ps.player_id
+GROUP BY t.name
+ORDER BY total_ast DESC
+LIMIT 1;""",
     },
 ]
 
@@ -267,10 +296,53 @@ class NBAGSQLTool:
             prefix=f"""You are an NBA statistics SQL expert. Generate SIMPLE, DIRECT SQLite queries.
 
 DATABASE SCHEMA:
-- players(id, name, team, team_abbr, age)
-- player_stats(id, player_id, team_abbr, gp, w, l, min, pts, fgm, fga, fg_pct, three_pm, three_pa, three_pct, ftm, fta, ft_pct, oreb, dreb, reb, ast, tov, stl, blk, pf, fp, dd2, td3, plus_minus, off_rtg, def_rtg, net_rtg, ast_pct, ast_to, ast_ratio, oreb_pct, dreb_pct, reb_pct, to_ratio, efg_pct, ts_pct, usg_pct, pace, pie, poss)
+- teams(id, abbreviation, name)
+- players(id, name, team_abbr, age) [team_abbr → teams.abbreviation]
+- player_stats(id, player_id, gp, w, l, min, pts, fgm, fga, fg_pct, three_pm, three_pa, three_pct, ftm, fta, ft_pct, oreb, dreb, reb, ast, tov, stl, blk, pf, fp, dd2, td3, plus_minus, off_rtg, def_rtg, net_rtg, ast_pct, ast_to, ast_ratio, oreb_pct, dreb_pct, reb_pct, to_ratio, efg_pct, ts_pct, usg_pct, pace, pie, poss)
+
+NOTE: The teams table contains team names but NO statistics. Team stats must be aggregated from player_stats.
 
 {abbreviations_block}
+
+CRITICAL TEAM QUERY RULES:
+⚠️  TEAM STATISTICS REQUIRE AGGREGATION - Teams table has NO stats columns!
+
+Pattern for team queries:
+  SELECT t.name, SUM(ps.[stat]) as total_[stat]
+  FROM teams t
+  JOIN players p ON t.abbreviation = p.team_abbr
+  JOIN player_stats ps ON p.id = ps.player_id
+  WHERE t.abbreviation = '[ABBR]'
+  GROUP BY t.name
+
+Examples:
+  "Show me Lakers stats" →
+    SELECT t.name, SUM(ps.pts) as total_pts, SUM(ps.reb) as total_reb, SUM(ps.ast) as total_ast
+    FROM teams t
+    JOIN players p ON t.abbreviation = p.team_abbr
+    JOIN player_stats ps ON p.id = ps.player_id
+    WHERE t.abbreviation = 'LAL'
+    GROUP BY t.name
+
+  "Compare Celtics and Warriors" →
+    SELECT t.name, SUM(ps.pts) as total_pts
+    FROM teams t
+    JOIN players p ON t.abbreviation = p.team_abbr
+    JOIN player_stats ps ON p.id = ps.player_id
+    WHERE t.abbreviation IN ('BOS', 'GSW')
+    GROUP BY t.name
+    ORDER BY total_pts DESC
+
+  "Top 5 teams by rebounds" →
+    SELECT t.name, SUM(ps.reb) as total_reb
+    FROM teams t
+    JOIN players p ON t.abbreviation = p.team_abbr
+    JOIN player_stats ps ON p.id = ps.player_id
+    GROUP BY t.name
+    ORDER BY total_reb DESC
+    LIMIT 5
+
+Team abbreviations: ATL, BOS, BKN, CHA, CHI, CLE, DAL, DEN, DET, GSW, HOU, IND, LAC, LAL, MEM, MIA, MIL, MIN, NOP, NYK, OKC, ORL, PHI, PHX, POR, SAC, SAS, TOR, UTA, WAS
 
 IMPORTANT RULES:
 1. Each player has EXACTLY ONE stats record (1:1 relationship)
@@ -348,7 +420,92 @@ EXAMPLES:""",
 
         logger.info(f"Generated SQL: {sql}")
 
+        # Validate and fix SQL structure (Issue #3: Missing JOINs)
+        sql = self._validate_sql_structure(sql, question)
+
         return sql
+
+    def _validate_sql_structure(self, sql: str, question: str) -> str:
+        """Validate SQL structure and auto-correct missing JOINs.
+
+        Issue #3 Remediation: Ensures queries include necessary JOINs when
+        they reference players.
+
+        Args:
+            sql: Generated SQL query
+            question: Original user question
+
+        Returns:
+            Validated/corrected SQL query
+        """
+        import re
+
+        sql_lower = sql.lower()
+        question_lower = question.lower()
+
+        # Rule: If question mentions "players" and query only touches player_stats, add JOIN
+        if 'player' in question_lower or any(kw in question_lower for kw in ['who', 'name']):
+            if 'player_stats' in sql_lower and 'join' not in sql_lower:
+                # Skip auto-correction for queries with subqueries (too complex to handle safely)
+                select_count = sql_lower.count('select')
+                if select_count > 1:
+                    logger.debug("Skipping JOIN auto-correction: query contains subqueries")
+                    return sql
+
+                # Auto-correct: add JOIN
+                logger.warning("Missing JOIN detected - auto-correcting")
+
+                # Step 1: Replace FROM clause
+                sql = sql.replace(
+                    'FROM player_stats',
+                    'FROM players p INNER JOIN player_stats ps ON p.id = ps.player_id'
+                )
+
+                # Step 2: Update table aliases from explicit table names
+                sql = sql.replace('player_stats.', 'ps.')
+
+                # Step 3: Prefix bare column names with ps. (player_stats columns)
+                # List of common player_stats columns
+                # NOTE: 'id' is included because in COUNT(id) context after JOIN, it's ambiguous
+                stat_columns = [
+                    'id',  # Ambiguous after JOIN - prefix with ps. for player_stats.id
+                    'gp', 'pts', 'reb', 'ast', 'stl', 'blk',
+                    'fg_pct', 'three_pct', 'ft_pct', 'ts_pct',
+                    'usg_pct', 'per', 'pie', 'ortg', 'drtg',
+                    'ast_pct', 'reb_pct', 'to_pct', 'efg_pct',
+                ]
+
+                # Prefix these columns if they appear as bare column names (not already prefixed)
+                for col in stat_columns:
+                    # Match bare column name (word boundary, not preceded by . or table prefix)
+                    # Patterns: COUNT(col), WHERE col, SELECT col, etc.
+                    pattern = r'\b(?<!\.)({})\b'.format(col)
+                    # Only replace if not already prefixed (negative lookbehind for p. or ps.)
+                    sql = re.sub(pattern, r'ps.\1', sql, flags=re.IGNORECASE)
+
+        return sql
+
+    @staticmethod
+    def normalize_player_name(name: str) -> str:
+        """Normalize player name for matching (Issue #10: Special characters).
+
+        Removes accents/diacritics for fuzzy matching.
+
+        Args:
+            name: Player name with potential special characters
+
+        Returns:
+            Normalized name (ASCII only)
+
+        Example:
+            >>> normalize_player_name("Jokić")
+            "Jokic"
+        """
+        import unicodedata
+        return ''.join(
+            c for c in unicodedata.normalize('NFD', name)
+            if unicodedata.category(c) != 'Mn'
+        )
 
     def execute_sql(self, sql: str, timeout_seconds: int = 15) -> list[dict]:
         """Execute SQL query with timeout protection.

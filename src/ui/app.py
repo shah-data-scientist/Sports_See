@@ -479,9 +479,9 @@ def main() -> None:
                     logger.info(f"[UI-DEBUG] Response sources count: {len(sources)}")
                     logger.info(f"[UI-DEBUG] Has visualization: {visualization is not None}")
 
-                    # Display answer
+                    # Display answer (Phase 18: Use markdown to render superscript citations)
                     logger.info(f"[UI-DEBUG] About to display answer")
-                    st.write(answer)
+                    st.markdown(answer, unsafe_allow_html=True)
                     logger.info(f"[UI-DEBUG] Answer displayed successfully")
 
                     # Display visualization if available (statistical queries)

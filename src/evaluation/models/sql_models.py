@@ -31,6 +31,10 @@ class SQLEvaluationTestCase(BaseModel):
         default=None, description="Expected SQL results (for verification, can be dict or list)"
     )
     category: str = Field(description="Category (simple/complex/comparison/aggregation)")
+    conversation_thread: str | None = Field(
+        default=None,
+        description="Conversation thread ID (queries with same ID belong to same conversation)"
+    )
 
 
 class SQLExecutionResult(BaseModel):

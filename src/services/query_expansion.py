@@ -181,3 +181,29 @@ class QueryExpander:
             return self.expand_smart(query)
 
         return self.expand(query, max_expansions=max_exp)
+
+    def expand_weighted(self, query: str, max_expansions: int = 4) -> str:
+        """Smart expansion using pre-computed max_expansions from QueryClassifier.
+
+        NOTE: max_expansions is now computed by QueryClassifier._compute_max_expansions()
+        using a weighted formula combining category + word count. This method simply
+        uses the pre-computed value for consistent expansion.
+
+        Formula (computed in QueryClassifier):
+            max_expansions = clamp(category_base + word_count_adjustment, 1, 5)
+
+        Examples:
+        - "yo best team lol" (4 words, NOISY) → max_exp=2
+        - "Who are the top 5 scorers?" (6 words, SIMPLE) → max_exp=4
+        - "What about his assists?" (4 words, CONVERSATIONAL) → max_exp=5
+        - "Analyze patterns in playoff efficiency discussions" (6 words, COMPLEX) → max_exp=2
+        - "Can you provide comprehensive detailed analysis..." (17 words, COMPLEX) → max_exp=1
+
+        Args:
+            query: Original user query
+            max_expansions: Pre-computed expansion limit from ClassificationResult
+
+        Returns:
+            Expanded or original query
+        """
+        return self.expand(query, max_expansions=max_expansions)

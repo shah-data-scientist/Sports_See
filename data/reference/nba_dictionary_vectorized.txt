@@ -1,0 +1,183 @@
+NBA Statistics Glossary
+================================================================================
+
+METRIC: Player
+Description: Nom du joueur
+--------------------------------------------------------------------------------
+
+METRIC: Team
+Description: Équipe du joueur (code à 3 lettres)
+--------------------------------------------------------------------------------
+
+METRIC: Age
+Description: Âge du joueur
+--------------------------------------------------------------------------------
+
+METRIC: GP
+Description: Nombre de matchs joués (Games Played)
+--------------------------------------------------------------------------------
+
+METRIC: W
+Description: Nombre de victoires de l'équipe lors des matchs joués
+--------------------------------------------------------------------------------
+
+METRIC: L
+Description: Nombre de défaites
+--------------------------------------------------------------------------------
+
+METRIC: Min
+Description: Minutes moyennes jouées par match
+--------------------------------------------------------------------------------
+
+METRIC: PTS
+Description: Points marqués en moyenne par match
+--------------------------------------------------------------------------------
+
+METRIC: FGM
+Description: Tirs réussis par match (Field Goals Made)
+--------------------------------------------------------------------------------
+
+METRIC: FGA
+Description: Tirs tentés par match (Field Goals Attempted)
+--------------------------------------------------------------------------------
+
+METRIC: FG%
+Description: Pourcentage de réussite aux tirs
+--------------------------------------------------------------------------------
+
+METRIC: 15:00:00
+Description: Minutes jouées après 15:00 de jeu
+--------------------------------------------------------------------------------
+
+METRIC: 3PA
+Description: Tirs à 3 points tentés par match
+--------------------------------------------------------------------------------
+
+METRIC: 3P%
+Description: Pourcentage de réussite à 3 points
+--------------------------------------------------------------------------------
+
+METRIC: FTM
+Description: Lancers francs réussis (Free Throws Made)
+--------------------------------------------------------------------------------
+
+METRIC: FTA
+Description: Lancers francs tentés
+--------------------------------------------------------------------------------
+
+METRIC: FT%
+Description: Pourcentage de réussite aux lancers francs
+--------------------------------------------------------------------------------
+
+METRIC: OREB
+Description: Rebonds offensifs
+--------------------------------------------------------------------------------
+
+METRIC: DREB
+Description: Rebonds défensifs
+--------------------------------------------------------------------------------
+
+METRIC: REB
+Description: Rebonds totaux
+--------------------------------------------------------------------------------
+
+METRIC: AST
+Description: Passes décisives (Assists)
+--------------------------------------------------------------------------------
+
+METRIC: TOV
+Description: Balles perdues (Turnovers)
+--------------------------------------------------------------------------------
+
+METRIC: STL
+Description: Interceptions (Steals)
+--------------------------------------------------------------------------------
+
+METRIC: BLK
+Description: Contres (Blocks)
+--------------------------------------------------------------------------------
+
+METRIC: PF
+Description: Fautes personnelles
+--------------------------------------------------------------------------------
+
+METRIC: FP
+Description: Fantasy Points
+--------------------------------------------------------------------------------
+
+METRIC: DD2
+Description: Double-doubles (≥10 dans deux catégories principales)
+--------------------------------------------------------------------------------
+
+METRIC: TD3
+Description: Triple-doubles (≥10 dans trois catégories principales)
+--------------------------------------------------------------------------------
+
+METRIC: + / -
+Description: Plus-Minus (écart de score lorsque le joueur est sur le terrain)
+--------------------------------------------------------------------------------
+
+METRIC: OFFRTG
+Description: Offensive Rating (points marqués par 100 possessions)
+--------------------------------------------------------------------------------
+
+METRIC: DEFRTG
+Description: Defensive Rating (points encaissés par 100 possessions)
+--------------------------------------------------------------------------------
+
+METRIC: NETRTG
+Description: Net Rating = OFFRTG - DEFRTG
+--------------------------------------------------------------------------------
+
+METRIC: AST%
+Description: Pourcentage d'assists – implication dans les passes décisives
+--------------------------------------------------------------------------------
+
+METRIC: AST/TO
+Description: Ratio passes / pertes de balle
+--------------------------------------------------------------------------------
+
+METRIC: AST RATIO
+Description: Ratio d’assists pour 100 possessions
+--------------------------------------------------------------------------------
+
+METRIC: OREB%
+Description: Pourcentage de rebonds offensifs parmi ceux disponibles
+--------------------------------------------------------------------------------
+
+METRIC: DREB%
+Description: Idem en défensif
+--------------------------------------------------------------------------------
+
+METRIC: REB%
+Description: Pourcentage de rebonds totaux parmi ceux disponibles
+--------------------------------------------------------------------------------
+
+METRIC: TO RATIO
+Description: Turnover Ratio – pertes de balle par 100 possessions
+--------------------------------------------------------------------------------
+
+METRIC: EFG%
+Description: Effective Field Goal % (pondère les 3 points)
+--------------------------------------------------------------------------------
+
+METRIC: TS%
+Description: True Shooting % (inclut FG et FT dans l'efficacité)
+--------------------------------------------------------------------------------
+
+METRIC: USG%
+Description: Usage Rate – % des actions utilisées par le joueur
+--------------------------------------------------------------------------------
+
+METRIC: PACE
+Description: Rythme de jeu (possessions par 48 minutes)
+--------------------------------------------------------------------------------
+
+METRIC: PIE
+Description: Player Impact Estimate – évaluation globale de l’impact
+--------------------------------------------------------------------------------
+
+METRIC: POSS
+Description: Nombre total de possessions jouées
+--------------------------------------------------------------------------------
+

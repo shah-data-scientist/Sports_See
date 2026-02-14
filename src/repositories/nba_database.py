@@ -47,7 +47,6 @@ class TeamModel(Base):
 
     # Relationships
     players = relationship("PlayerModel", back_populates="team_rel", cascade="all, delete-orphan")
-    stats = relationship("PlayerStatsModel", back_populates="team_rel", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         """String representation."""
@@ -61,7 +60,6 @@ class PlayerModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, index=True)
-    team = Column(String(100), nullable=False, comment="Full team name (e.g., 'Los Angeles Lakers')")
     team_abbr = Column(String(5), ForeignKey("teams.abbreviation"), nullable=False)
     age = Column(Integer, nullable=False)
 
@@ -97,7 +95,6 @@ class PlayerStatsModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
-    team_abbr = Column(String(5), ForeignKey("teams.abbreviation"), nullable=False, index=True)
 
     # Games
     gp = Column(Integer, nullable=False, comment="Games played")
@@ -163,7 +160,6 @@ class PlayerStatsModel(Base):
 
     # Relationships
     player_rel = relationship("PlayerModel", back_populates="stats")
-    team_rel = relationship("TeamModel", back_populates="stats")
 
     def __repr__(self) -> str:
         """String representation."""
@@ -234,20 +230,19 @@ class NBADatabase:
         session.add(team)
         return team
 
-    def add_player(self, session: Session, name: str, team: str, team_abbr: str, age: int) -> PlayerModel:
+    def add_player(self, session: Session, name: str, team_abbr: str, age: int) -> PlayerModel:
         """Add a player to the database.
 
         Args:
             session: Database session
             name: Player name
-            team: Full team name (e.g., 'Los Angeles Lakers')
             team_abbr: Team abbreviation (e.g., 'LAL')
             age: Player age
 
         Returns:
             Created PlayerModel instance
         """
-        player = PlayerModel(name=name, team=team, team_abbr=team_abbr, age=age)
+        player = PlayerModel(name=name, team_abbr=team_abbr, age=age)
         session.add(player)
         return player
 

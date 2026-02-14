@@ -199,6 +199,7 @@ def run_sql_evaluation(test_indices: list[int] | None = None) -> tuple[list[dict
     with TestClient(app) as client:
         current_conversation_id = None
         current_turn_number = 0
+        current_thread = None  # Track conversation thread
 
         for i, test_case in enumerate(selected_cases, 1):
             # Skip already-completed cases (checkpoint resume)
@@ -216,22 +217,25 @@ def run_sql_evaluation(test_indices: list[int] | None = None) -> tuple[list[dict
                     time.sleep(BATCH_COOLDOWN_SECONDS)
                 time.sleep(RATE_LIMIT_DELAY_SECONDS)
 
-            # Handle conversational test cases
-            if _is_conversational_case(test_case):
-                if _is_followup_question(test_case.question):
-                    if current_conversation_id is None:
-                        conv_resp = client.post("/api/v1/conversations", json={})
-                        current_conversation_id = conv_resp.json()["id"]
-                        current_turn_number = 1
-                    else:
-                        current_turn_number += 1
-                else:
+            # Handle conversational test cases using conversation_thread field
+            if hasattr(test_case, 'conversation_thread') and test_case.conversation_thread:
+                # Check if thread changed (new conversation needed)
+                if test_case.conversation_thread != current_thread:
+                    # Start new conversation for new thread
                     conv_resp = client.post("/api/v1/conversations", json={})
                     current_conversation_id = conv_resp.json()["id"]
                     current_turn_number = 1
+                    current_thread = test_case.conversation_thread
+                    logger.info(f"  → New conversation thread: {current_thread} (conversation_id: {current_conversation_id})")
+                else:
+                    # Continue same conversation thread
+                    current_turn_number += 1
+                    logger.info(f"  → Continue thread: {current_thread} (turn {current_turn_number})")
             else:
+                # Isolated query (no conversation)
                 current_conversation_id = None
                 current_turn_number = 0
+                current_thread = None
 
             try:
                 # Build API request payload

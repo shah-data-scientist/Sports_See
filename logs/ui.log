@@ -1,0 +1,342 @@
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://0.0.0.0:8501
+
+2026-02-12 20:19:16,112 - INFO - __main__ - Initializing API client...
+2026-02-12 20:19:16,115 - INFO - src.ui.api_client - APIClient initialized with base_url: http://localhost:8000
+2026-02-12 20:19:16,118 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:19:16,118 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:19:19,683 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:19:19,683 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:19:21,767 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:19:21,767 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:19:30,256 - INFO - src.ui.api_client - Creating new conversation...
+2026-02-12 20:19:30,256 - INFO - src.ui.api_client - POST /api/v1/conversations
+2026-02-12 20:19:32,295 - INFO - __main__ - Created new conversation: 0675335b-ac0e-4416-9f0b-d1bba4f4703e
+2026-02-12 20:19:32,295 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'hi'
+2026-02-12 20:19:32,295 - INFO - src.ui.api_client - Chat request: hi...
+2026-02-12 20:19:32,296 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:19:48,993 - INFO - __main__ - [UI-DEBUG] API /chat returned in 16.70s
+2026-02-12 20:19:48,993 - INFO - __main__ - [UI-DEBUG] Response answer length: 82
+2026-02-12 20:19:48,993 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:19:48,993 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:19:48,994 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:19:48,994 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:19:49,003 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:19:49,003 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:19:49,003 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:19:49,003 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:19:49,003 - INFO - src.ui.api_client - Logging interaction: hi...
+2026-02-12 20:19:49,003 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:19:51,064 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 4e968d55-ffd3-437c-b75b-f4300ff6027c
+2026-02-12 20:19:51,067 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 2
+2026-02-12 20:19:51,067 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:19:51,067 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:19:51,067 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:19:51,069 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:19:51,072 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:19:51,073 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:20:31,058 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:20:31,058 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:20:33,111 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'top 5 scores '
+2026-02-12 20:20:33,111 - INFO - src.ui.api_client - Chat request: top 5 scores ...
+2026-02-12 20:20:33,112 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:20:42,672 - INFO - __main__ - [UI-DEBUG] API /chat returned in 9.56s
+2026-02-12 20:20:42,672 - INFO - __main__ - [UI-DEBUG] Response answer length: 186
+2026-02-12 20:20:42,672 - INFO - __main__ - [UI-DEBUG] Response sources count: 0
+2026-02-12 20:20:42,672 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:20:42,673 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:20:42,673 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:20:42,673 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:20:42,673 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:20:42,673 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:20:42,674 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:20:42,674 - INFO - src.ui.api_client - Logging interaction: top 5 scores ...
+2026-02-12 20:20:42,674 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:20:44,722 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 20d99f81-66a1-4c9c-8624-6179959a1961
+2026-02-12 20:20:44,722 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 3
+2026-02-12 20:20:44,722 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:20:44,723 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:20:44,723 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:20:44,724 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:20:44,726 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:20:44,726 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:20:46,801 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:20:46,801 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:20:54,566 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'who is the best player ? '
+2026-02-12 20:20:54,566 - INFO - src.ui.api_client - Chat request: who is the best player ? ...
+2026-02-12 20:20:54,566 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] API /chat returned in 7.99s
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] Response answer length: 39
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] Response sources count: 0
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:21:02,555 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:21:02,563 - INFO - src.ui.api_client - Logging interaction: who is the best player ? ...
+2026-02-12 20:21:02,563 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:21:04,634 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 82f7e198-8cd2-43f1-ab26-7f7538fd172e
+2026-02-12 20:21:04,634 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 4
+2026-02-12 20:21:04,634 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:21:04,634 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:21:04,634 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:21:04,637 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:21:04,641 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:21:04,641 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:21:11,562 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:21:11,563 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:21:13,622 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'second best ? '
+2026-02-12 20:21:13,622 - INFO - src.ui.api_client - Chat request: second best ? ...
+2026-02-12 20:21:13,624 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:21:26,700 - INFO - __main__ - [UI-DEBUG] API /chat returned in 13.08s
+2026-02-12 20:21:26,700 - INFO - __main__ - [UI-DEBUG] Response answer length: 53
+2026-02-12 20:21:26,700 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:21:26,700 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:21:26,701 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:21:26,701 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:21:26,707 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:21:26,707 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:21:26,708 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:21:26,708 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:21:26,708 - INFO - src.ui.api_client - Logging interaction: second best ? ...
+2026-02-12 20:21:26,708 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:21:28,761 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 68572e09-24f3-48be-b9bc-e0c17663c2e5
+2026-02-12 20:21:28,762 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 5
+2026-02-12 20:21:28,762 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:21:28,762 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:21:28,762 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:21:28,763 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:21:28,765 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:21:28,765 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:21:40,252 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'which team was the most exciting ? '
+2026-02-12 20:21:40,252 - INFO - src.ui.api_client - Chat request: which team was the most exciting ? ...
+2026-02-12 20:21:40,252 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:21:47,822 - INFO - __main__ - [UI-DEBUG] API /chat returned in 7.57s
+2026-02-12 20:21:47,822 - INFO - __main__ - [UI-DEBUG] Response answer length: 80
+2026-02-12 20:21:47,822 - INFO - __main__ - [UI-DEBUG] Response sources count: 0
+2026-02-12 20:21:47,822 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:21:47,824 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:21:47,824 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:21:47,824 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:21:47,824 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:21:47,825 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:21:47,825 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:21:47,826 - INFO - src.ui.api_client - Logging interaction: which team was the most exciting ? ...
+2026-02-12 20:21:47,826 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:21:49,859 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 7f1103b1-0c44-4e32-a8bc-d405d6ec78a6
+2026-02-12 20:21:49,859 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 6
+2026-02-12 20:21:49,859 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:21:49,859 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:21:49,859 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:21:49,870 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:21:49,873 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:21:49,874 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:21:51,924 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:21:51,924 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:29:23,399 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:29:23,399 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:29:25,448 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'which team was the most exciting ?
+
+'
+2026-02-12 20:29:25,448 - INFO - src.ui.api_client - Chat request: which team was the most exciting ?
+
+...
+2026-02-12 20:29:25,448 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:29:36,526 - INFO - __main__ - [UI-DEBUG] API /chat returned in 11.08s
+2026-02-12 20:29:36,526 - INFO - __main__ - [UI-DEBUG] Response answer length: 80
+2026-02-12 20:29:36,526 - INFO - __main__ - [UI-DEBUG] Response sources count: 0
+2026-02-12 20:29:36,526 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:29:36,527 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:29:36,527 - INFO - src.ui.api_client - Logging interaction: which team was the most exciting ?
+
+...
+2026-02-12 20:29:36,527 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:29:38,568 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 7371a6dc-6f9e-4721-bf60-dc508671840c
+2026-02-12 20:29:38,569 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 7
+2026-02-12 20:29:38,569 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:29:38,569 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:29:38,569 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:29:38,570 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:29:38,572 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:29:38,572 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:29:40,650 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:29:40,650 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:30:02,353 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:30:02,353 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:30:04,425 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'what is your opinion? About, the Detroit team'
+2026-02-12 20:30:04,425 - INFO - src.ui.api_client - Chat request: what is your opinion? About, the Detroit team...
+2026-02-12 20:30:04,425 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:30:12,893 - INFO - __main__ - [UI-DEBUG] API /chat returned in 8.47s
+2026-02-12 20:30:12,893 - INFO - __main__ - [UI-DEBUG] Response answer length: 532
+2026-02-12 20:30:12,893 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:30:12,893 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:30:12,894 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:30:12,894 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:30:12,898 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:30:12,898 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:30:12,899 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:30:12,899 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:30:12,899 - INFO - src.ui.api_client - Logging interaction: what is your opinion? About, the Detroit team...
+2026-02-12 20:30:12,899 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:30:14,942 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 311c34d8-635b-4294-9d07-1af609d4f90b
+2026-02-12 20:30:14,942 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 8
+2026-02-12 20:30:14,942 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:30:14,942 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:30:14,942 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:30:14,946 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:30:14,950 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:30:14,950 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:33:13,012 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:33:13,012 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:33:15,101 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'Who is LeBron?'
+2026-02-12 20:33:15,101 - INFO - src.ui.api_client - Chat request: Who is LeBron?...
+2026-02-12 20:33:15,101 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:33:23,896 - INFO - __main__ - [UI-DEBUG] API /chat returned in 8.80s
+2026-02-12 20:33:23,896 - INFO - __main__ - [UI-DEBUG] Response answer length: 71
+2026-02-12 20:33:23,896 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:33:23,896 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:33:23,897 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:33:23,897 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:33:23,901 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:33:23,901 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:33:23,905 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:33:23,905 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:33:23,905 - INFO - src.ui.api_client - Logging interaction: Who is LeBron?...
+2026-02-12 20:33:23,905 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:33:25,967 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 1a8bb284-5432-4141-bea0-19e178107f00
+2026-02-12 20:33:25,967 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 9
+2026-02-12 20:33:25,967 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:33:25,967 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:33:25,967 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:33:25,973 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:33:25,977 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:33:25,977 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:33:28,058 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:33:28,058 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:35:19,674 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:35:19,674 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:35:21,687 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:35:21,687 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:35:23,794 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:35:23,794 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:35:29,980 - INFO - src.ui.api_client - Creating new conversation...
+2026-02-12 20:35:29,980 - INFO - src.ui.api_client - POST /api/v1/conversations
+2026-02-12 20:35:32,030 - INFO - __main__ - Created new conversation: b76e71a0-ef50-431c-9419-42169d676bdc
+2026-02-12 20:35:32,031 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'hi'
+2026-02-12 20:35:32,031 - INFO - src.ui.api_client - Chat request: hi...
+2026-02-12 20:35:32,031 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:35:37,658 - INFO - __main__ - [UI-DEBUG] API /chat returned in 5.63s
+2026-02-12 20:35:37,658 - INFO - __main__ - [UI-DEBUG] Response answer length: 82
+2026-02-12 20:35:37,658 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:35:37,658 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:35:37,659 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:35:37,659 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:35:37,662 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:35:37,662 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:35:37,663 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:35:37,663 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:35:37,663 - INFO - src.ui.api_client - Logging interaction: hi...
+2026-02-12 20:35:37,663 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:35:39,711 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 76a5e909-d5f5-447d-87cd-9da9388d9d7e
+2026-02-12 20:35:39,711 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 2
+2026-02-12 20:35:39,712 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:35:39,712 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:35:39,712 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:35:39,715 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:35:39,719 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:35:39,719 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:35:46,143 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:35:46,143 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:35:47,786 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:35:47,787 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:35:54,743 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:35:54,744 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:35:56,789 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:35:56,789 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:36:00,316 - INFO - src.ui.api_client - Creating new conversation...
+2026-02-12 20:36:00,317 - INFO - src.ui.api_client - POST /api/v1/conversations
+2026-02-12 20:36:02,373 - INFO - __main__ - Created new conversation: ef1ca61b-2e90-472d-9982-200552006ecf
+2026-02-12 20:36:02,373 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'hi'
+2026-02-12 20:36:02,373 - INFO - src.ui.api_client - Chat request: hi...
+2026-02-12 20:36:02,373 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:36:12,492 - INFO - __main__ - [UI-DEBUG] API /chat returned in 10.12s
+2026-02-12 20:36:12,492 - INFO - __main__ - [UI-DEBUG] Response answer length: 72
+2026-02-12 20:36:12,492 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:36:12,492 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:36:12,493 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:36:12,493 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:36:12,498 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:36:12,498 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:36:12,498 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:36:12,499 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:36:12,499 - INFO - src.ui.api_client - Logging interaction: hi...
+2026-02-12 20:36:12,499 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:36:14,557 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 61fc56e1-c083-4f50-9588-5670f1d387c1
+2026-02-12 20:36:14,557 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 2
+2026-02-12 20:36:14,557 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:36:14,557 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:36:14,557 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:36:14,564 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:36:14,564 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:36:14,564 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:41:05,670 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:41:05,670 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:41:07,720 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'Who is LeBron?'
+2026-02-12 20:41:07,720 - INFO - src.ui.api_client - Chat request: Who is LeBron?...
+2026-02-12 20:41:07,720 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:41:35,144 - INFO - __main__ - [UI-DEBUG] API /chat returned in 27.42s
+2026-02-12 20:41:35,145 - INFO - __main__ - [UI-DEBUG] Response answer length: 71
+2026-02-12 20:41:35,145 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:41:35,145 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:41:35,145 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:41:35,145 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:41:35,149 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:41:35,149 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:41:35,149 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:41:35,150 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:41:35,150 - INFO - src.ui.api_client - Logging interaction: Who is LeBron?...
+2026-02-12 20:41:35,151 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:41:37,227 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: e2c67a2c-7f05-42b8-950c-1d3efd3ea7dc
+2026-02-12 20:41:37,228 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 3
+2026-02-12 20:41:37,228 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:41:37,228 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:41:37,228 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:41:37,229 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:41:37,231 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:41:37,231 - INFO - src.ui.api_client - GET /api/v1/conversations
+2026-02-12 20:41:39,298 - INFO - src.ui.api_client - Getting feedback statistics...
+2026-02-12 20:41:39,298 - INFO - src.ui.api_client - GET /api/v1/feedback/stats
+2026-02-12 20:41:42,986 - INFO - src.ui.api_client - Health check...
+2026-02-12 20:41:42,987 - INFO - src.ui.api_client - GET /health
+2026-02-12 20:41:45,054 - INFO - __main__ - [UI-DEBUG] Calling API /chat for query: 'top 5 scorers'
+2026-02-12 20:41:45,055 - INFO - src.ui.api_client - Chat request: top 5 scorers...
+2026-02-12 20:41:45,055 - INFO - src.ui.api_client - POST /api/v1/chat
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] API /chat returned in 43.59s
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] Response answer length: 185
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] Response sources count: 5
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] About to display answer
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] Answer displayed successfully
+2026-02-12 20:42:28,646 - INFO - __main__ - [UI-DEBUG] About to render sources
+2026-02-12 20:42:28,655 - INFO - __main__ - [UI-DEBUG] Sources rendered successfully
+2026-02-12 20:42:28,655 - INFO - __main__ - [UI-DEBUG] About to display processing time
+2026-02-12 20:42:28,655 - INFO - __main__ - [UI-DEBUG] Processing time displayed successfully
+2026-02-12 20:42:28,655 - INFO - __main__ - [UI-DEBUG] About to log interaction to database
+2026-02-12 20:42:28,655 - INFO - src.ui.api_client - Logging interaction: top 5 scorers...
+2026-02-12 20:42:28,655 - INFO - src.ui.api_client - POST /api/v1/feedback/log-interaction
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] Interaction logged with id: 023a6c9e-2b05-442b-8a63-1b64a05f856c
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] Turn number incremented to 4
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] About to add message to session state
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] Message added to session state
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] About to render feedback buttons
+2026-02-12 20:42:30,714 - INFO - __main__ - [UI-DEBUG] Feedback buttons rendered successfully
+2026-02-12 20:42:30,714 - INFO - src.ui.api_client - Listing conversations (limit=20, offset=0)
+2026-02-12 20:42:30,714 - INFO - src.ui.api_client - GET /api/v1/conversations

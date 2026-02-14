@@ -495,6 +495,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "of conversation - establishes context for follow-ups."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="lakers_discussion",
     ),
     EvaluationTestCase(
         question="What are their biggest strengths?",
@@ -504,6 +505,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "attributes. Similarity: 70-80%. Tests context maintenance across turns. NOTE: Evaluation should provide Turn 1 question as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="lakers_discussion",
     ),
     EvaluationTestCase(
         question="And their weaknesses?",
@@ -513,6 +515,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "68-78%. Tests multi-turn context maintenance. NOTE: Evaluation should provide Turn 1 AND Turn 2 as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="lakers_discussion",
     ),
 
     # Conversation Thread 2: Playoff teams
@@ -524,6 +527,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "2-4 chunks from Reddit 1.pdf. Similarity: 78-86%. Tests retrieval of surprising teams. NOTE: FIRST turn - establishes team context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="playoff_surprises",
     ),
     EvaluationTestCase(
         question="Why were they surprising?",
@@ -534,6 +538,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "maintenance. NOTE: Evaluation should provide Turn 1 as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="playoff_surprises",
     ),
     EvaluationTestCase(
         question="Compare them to the top-seeded teams.",
@@ -544,6 +549,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "NOTE: Evaluation should provide Turn 1 AND Turn 2 as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="playoff_surprises",
     ),
 
     # Conversation Thread 3: Efficiency discussion
@@ -555,6 +561,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "explaining efficiency metrics. Similarity: 76-86%. Tests efficiency concept retrieval. NOTE: FIRST turn - establishes efficiency context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="efficiency_metrics",
     ),
     EvaluationTestCase(
         question="Who is the most efficient according to fans?",
@@ -564,6 +571,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "Miller with 115 TS%. Similarity: 82-92%. Tests context maintenance + boosting. NOTE: Evaluation should provide Turn 1 as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="efficiency_metrics",
     ),
     EvaluationTestCase(
         question="What do people debate about his efficiency?",
@@ -574,6 +582,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "maintenance. NOTE: Evaluation should provide Turn 1 AND Turn 2 as context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="efficiency_metrics",
     ),
 
     # Conversation Thread 4: Topic switching
@@ -586,6 +595,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "home court context."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="topic_switching",
     ),
     EvaluationTestCase(
         question="Going back to efficiency, who else is considered efficient?",
@@ -596,6 +606,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "Tests topic switching and explicit 'going back to' handling."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="topic_switching",
     ),
     EvaluationTestCase(
         question="Returning to home court, which teams historically lacked it?",
@@ -606,6 +617,7 @@ EVALUATION_TEST_CASES: list[EvaluationTestCase] = [
             "flow and explicit topic switching."
         ),
         category=TestCategory.CONVERSATIONAL,
+        conversation_thread="topic_switching",
     ),
 
     # ==========================================================================

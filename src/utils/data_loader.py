@@ -290,7 +290,9 @@ def load_and_parse_files(input_dir: str) -> List[Dict[str, any]]:
             elif ext == ".csv":
                 extracted_content = extract_text_from_csv(str(file_path))
             elif ext in [".xlsx", ".xls"]:
-                extracted_content = extract_text_from_excel(str(file_path))
+                # Phase 18: Skip Excel files - they belong in SQL database only, not vector store (2026-02-13)
+                logging.info(f"Skipping Excel file (SQL only): {relative_path}")
+                continue
             # Suppression de la gestion des fichiers HTML
             else:
                 logging.warning(f"Type de fichier non supporté ignoré: {relative_path}")

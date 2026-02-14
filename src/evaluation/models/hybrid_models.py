@@ -10,7 +10,16 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.evaluation.models.sql_models import QueryType, SQLAccuracyMetrics, SQLExecutionResult
+from src.evaluation.models.sql_models import QueryType, SQLAccuracyMetrics, SQLEvaluationTestCase, SQLExecutionResult
+
+
+class HybridEvaluationTestCase(SQLEvaluationTestCase):
+    """Test case for Hybrid evaluation (inherits from SQLEvaluationTestCase).
+
+    Hybrid queries require both SQL and Vector components, but share the same
+    test case structure as SQL queries (question, expected_sql, ground_truth, etc.).
+    """
+    pass
 
 
 class VectorRetrievalResult(BaseModel):

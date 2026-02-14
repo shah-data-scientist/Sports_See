@@ -57,16 +57,23 @@ def configure_observability() -> None:
     try:
         from src.core.config import settings
 
+        # Check if Logfire is enabled and token is present
         if not getattr(settings, "logfire_enabled", False):
             logger.debug("Logfire disabled in settings")
             return
 
+        if not settings.logfire_token:
+            logger.debug("Logfire token not provided, skipping configuration")
+            return
+
+        # Configure Logfire with token and project settings
         logfire.configure(
+            token=settings.logfire_token,
             service_name="sports-see",
             service_version="0.1.0",
         )
         logfire.instrument_pydantic_ai()
-        logger.info("Logfire observability configured")
+        logger.info("✓ Logfire observability configured successfully")
 
     except Exception as e:
         logger.warning("Failed to configure Logfire: %s", e)

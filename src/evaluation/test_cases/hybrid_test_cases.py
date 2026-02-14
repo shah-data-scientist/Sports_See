@@ -2,11 +2,12 @@
 FILE: hybrid_test_cases.py
 STATUS: Active
 RESPONSIBILITY: Hybrid test cases requiring both SQL and Vector search (51 curated cases)
-LAST MAJOR UPDATE: 2026-02-12
+LAST MAJOR UPDATE: 2026-02-13
 MAINTAINER: Shahu
 """
 
-from src.evaluation.models.sql_models import QueryType, SQLEvaluationTestCase
+from src.evaluation.models.hybrid_models import HybridEvaluationTestCase
+from src.evaluation.models.sql_models import QueryType
 
 # ============================================================================
 # HYBRID QUERIES (SQL + Vector Integration)
@@ -17,7 +18,7 @@ from src.evaluation.models.sql_models import QueryType, SQLEvaluationTestCase
 
 HYBRID_TEST_CASES = [
     # Tier 1: Simple stat + basic context (4 cases)
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who scored the most points this season and what makes them an effective scorer?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
@@ -25,7 +26,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485},
         category="tier1_stat_plus_context",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare LeBron James and Kevin Durant's scoring this season and explain their scoring styles.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.fg_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('LeBron James', 'Kevin Durant')",
@@ -36,7 +37,7 @@ HYBRID_TEST_CASES = [
         ],
         category="tier1_comparison_plus_context",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What is Nikola Jokić's scoring average and why is he considered an elite offensive player?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%Jokić%'",
@@ -44,7 +45,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Nikola Jokić", "pts": 2072, "gp": 70},
         category="tier1_stat_plus_explanation",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who are the top 3 rebounders and what impact do they have on their teams?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.reb FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.reb DESC LIMIT 3",
@@ -58,7 +59,7 @@ HYBRID_TEST_CASES = [
     ),
 
     # Tier 2: Moderate complexity with multi-stat analysis (4 cases)
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare Jokić and Embiid's stats and explain which one is more valuable based on their playing style.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Nikola Jokić', 'Joel Embiid')",
@@ -69,7 +70,7 @@ HYBRID_TEST_CASES = [
         ],
         category="tier2_comparison_advanced",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who are the most efficient scorers by true shooting percentage and what makes them efficient?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.ts_pct, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 50 ORDER BY ps.ts_pct DESC LIMIT 5",
@@ -77,7 +78,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data=None,
         category="tier2_efficiency_analysis",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare Giannis and Anthony Davis's rebounds and explain how their rebounding styles differ.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.reb, ps.gp FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name IN ('Giannis Antetokounmpo', 'Anthony Davis')",
@@ -88,7 +89,7 @@ HYBRID_TEST_CASES = [
         ],
         category="tier2_style_comparison",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who has the best assist-to-turnover ratio among high-volume passers and why is this important?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.ast, ps.tov, ROUND(ps.ast*1.0/ps.tov, 2) as ratio FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ast >= 300 AND ps.tov > 0 ORDER BY (ps.ast*1.0/ps.tov) DESC LIMIT 5",
@@ -98,7 +99,7 @@ HYBRID_TEST_CASES = [
     ),
 
     # Tier 3: Complex multi-dimensional analysis (4 cases)
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Find players averaging triple-double stats and explain what makes this achievement so rare and valuable.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ROUND(ps.pts*1.0/ps.gp,1) as ppg, ROUND(ps.reb*1.0/ps.gp,1) as rpg, ROUND(ps.ast*1.0/ps.gp,1) as apg FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.gp > 0 AND ps.pts*1.0/ps.gp >= 10 AND ps.reb*1.0/ps.gp >= 10 AND ps.ast*1.0/ps.gp >= 10",
@@ -106,7 +107,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data=[{"name": "Nikola Jokić", "ppg": 29.6, "rpg": 12.7, "apg": 10.2}],
         category="tier3_rare_achievement",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which players have high scoring but low efficiency, and why might teams still rely on them?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.fg_pct, ps.ts_pct FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts > 1500 AND ps.fg_pct < 45 ORDER BY ps.pts DESC",
@@ -114,7 +115,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data=None,
         category="tier3_strategic_tradeoff",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare the top defensive players by blocks and steals and explain different defensive styles.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.stl, ps.blk, (ps.stl + ps.blk) as def_actions FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY (ps.stl + ps.blk) DESC LIMIT 5",
@@ -128,7 +129,7 @@ HYBRID_TEST_CASES = [
         ],
         category="tier3_defensive_styles",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Analyze players with 1500+ points and 400+ assists - what does this dual threat mean strategically?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts >= 1500 AND ps.ast >= 300 ORDER BY ps.pts DESC LIMIT 5",
@@ -144,7 +145,7 @@ HYBRID_TEST_CASES = [
     ),
 
     # Tier 4: Advanced synthesis with league-wide trends (4 cases)
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What's the relationship between three-point shooting volume and efficiency, and how has this changed the modern NBA?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT AVG(three_pct) as avg_3p, COUNT(*) as player_count FROM player_stats WHERE three_pct IS NOT NULL",
@@ -152,7 +153,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"avg_3p": 29.9},
         category="tier4_league_trend_analysis",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare advanced efficiency metrics (PIE, TS%) for MVP candidates and explain what these metrics reveal about player impact.",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pie, ps.ts_pct, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.pts > 1800 ORDER BY ps.pie DESC LIMIT 5",
@@ -160,7 +161,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data=None,
         category="tier4_advanced_metrics_interpretation",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="How do young players (high stats) compare to established stars, and what does this suggest about the league's future?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, p.age, ps.pts, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.age IS NOT NULL ORDER BY ps.pts DESC LIMIT 10",
@@ -168,7 +169,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data=None,
         category="tier4_generational_shift",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Analyze the correlation between assists and team success - which high-assist players drive winning?",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.ast, ps.pie FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE ps.ast > 500 ORDER BY ps.ast DESC LIMIT 5",
@@ -184,7 +185,7 @@ HYBRID_TEST_CASES = [
     ),
 
     # Tier 2 additions: Team aggregation + correction comparison
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What is the average scoring for the Warriors and how is their team culture described by fans?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -196,7 +197,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"avg_pts": 487.5, "player_count": 17},
         category="tier2_team_aggregation",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Actually, compare Giannis to Jokić instead and explain who fans think is better",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -220,13 +221,16 @@ HYBRID_TEST_CASES = [
     # PLAYER PROFILE HYBRID (4 cases)
     # Full player stats + fan perception / analysis
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who is LeBron?",
         query_type=QueryType.HYBRID,
         expected_sql=(
-            "SELECT p.name, p.team, p.age, ps.gp, ps.pts, ps.reb, ps.ast, ps.stl, ps.blk, "
+            "SELECT p.name, t.name as team, p.age, ps.gp, ps.pts, ps.reb, ps.ast, ps.stl, ps.blk, "
             "ps.fg_pct, ps.three_pct, ps.ft_pct "
-            "FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'"
+            "FROM players p "
+            "JOIN player_stats ps ON p.id = ps.player_id "
+            "JOIN teams t ON p.team_abbr = t.abbreviation "
+            "WHERE p.name LIKE '%LeBron%'"
         ),
         ground_truth_answer=(
             "LeBron James (age 40, Los Angeles Lakers): 1708 PTS, 546 REB, 574 AST, "
@@ -253,7 +257,7 @@ HYBRID_TEST_CASES = [
         },
         category="hybrid_player_profile",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Tell me about Anthony Edwards' season stats and what makes him such an exciting player to watch",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -264,7 +268,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Anthony Edwards", "age": 23, "pts": 2180, "reb": 450, "ast": 356, "gp": 79, "ppg": 27.6},
         category="hybrid_player_profile",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What are Victor Wembanyama's stats and why are fans so excited about his potential?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -275,7 +279,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Victor Wembanyama", "age": 21, "pts": 1118, "reb": 506, "blk": 175, "gp": 46},
         category="hybrid_player_profile",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Show me Trae Young's stats — is he underrated or overrated according to fans?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -286,7 +290,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Trae Young", "pts": 1839, "ast": 882, "fg_pct": 41.1, "tov": 357},
         category="hybrid_player_profile",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What are Cade Cunningham's numbers this season and what do fans think about his development?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -302,7 +306,7 @@ HYBRID_TEST_CASES = [
     # TEAM COMPARISON HYBRID (4 cases)
     # Team-level stats + fan perception / analysis
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare the Celtics and Lakers stats and how fans view each team's championship hopes",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -317,7 +321,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_team_comparison",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="How do the Thunder and Nuggets compare statistically, and what do fans say about their playoff chances?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -332,7 +336,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_team_comparison",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which team plays the best defense by stats, and how do fans describe their defensive identity?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -344,7 +348,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"team_abbr": "OKC", "def_actions": 1298, "total_stl": 840, "total_blk": 458},
         category="hybrid_team_defense",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Show me the Pacers' team stats — why have fans found them impressive this season?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -361,7 +365,7 @@ HYBRID_TEST_CASES = [
     # YOUNG TALENT HYBRID (3 cases)
     # Age-filtered stats + fan expectations / generational analysis
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which young players under 25 are putting up the best numbers, and what do fans expect from the next generation?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -378,7 +382,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_young_talent",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Tell me about the youngest stars under 22 and how fans rate their potential",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -395,7 +399,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_young_talent",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="How do veteran players over 35 compare to young talent, and what do fans debate about the NBA's generational shift?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -417,7 +421,7 @@ HYBRID_TEST_CASES = [
     # HISTORICAL CROSSOVER HYBRID (3 cases)
     # Current stats vs Reddit historical discussions
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="How do this season's 2000+ point scorers compare to the playoff efficiency legends that fans debate on Reddit?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -434,7 +438,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_historical",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Fans debate about Reggie Miller's playoff efficiency — how do current top shooters' true shooting compare?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -451,7 +455,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_historical",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which current players match the historical playoff dominance that fans discuss on Reddit?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -467,7 +471,7 @@ HYBRID_TEST_CASES = [
     # NEGATION / CONTRAST HYBRID (3 cases)
     # Stats that contrast with expectations + fan debate
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which high-volume scorers have poor shooting efficiency, and are they still considered valuable by fans?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -484,7 +488,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_contrast",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who leads in assists but also in turnovers — do fans think high usage is worth the mistakes?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -495,7 +499,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Trae Young", "ast": 882, "tov": 357},
         category="hybrid_contrast",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Are there players with modest scoring but exceptional all-around impact, and what does this reveal about value?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -512,7 +516,7 @@ HYBRID_TEST_CASES = [
     # Multi-turn hybrid queries testing context maintenance
     # ======================================================================
     # --- Thread: MVP Discussion (3 turns) ---
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What are Shai Gilgeous-Alexander's full stats this season?",
         query_type=QueryType.SQL_ONLY,  # Standalone: purely statistical (no contextual signal)
         expected_sql=(
@@ -522,8 +526,9 @@ HYBRID_TEST_CASES = [
         ground_truth_answer="Shai Gilgeous-Alexander: 2485 PTS, 380 REB, 486 AST, 51.9% FG in 76 GP.",
         ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485, "reb": 380, "ast": 486, "fg_pct": 51.9, "gp": 76},
         category="hybrid_conversational_mvp",
+        conversation_thread="mvp_sga_discussion",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Why do fans on Reddit consider him an MVP favorite?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -533,8 +538,9 @@ HYBRID_TEST_CASES = [
         ground_truth_answer="SGA's combination of elite scoring (2485 PTS), efficiency (51.9% FG), and team success makes him a top MVP candidate. Fan discussions highlight his complete game and leadership.",
         ground_truth_data=None,
         category="hybrid_conversational_mvp",
+        conversation_thread="mvp_sga_discussion",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="How does his efficiency compare to the historical playoff scorers that fans debate about?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -544,10 +550,11 @@ HYBRID_TEST_CASES = [
         ground_truth_answer="SGA: 63.7% TS, 56.9% EFG, 19.9 PIE. Reddit debates about historical playoff efficiency (Reggie Miller 115 TS%, Kawhi 112%) provide context — SGA's efficiency is elite by any era's standards.",
         ground_truth_data={"name": "Shai Gilgeous-Alexander", "ts_pct": 63.7, "efg_pct": 56.9, "pie": 19.9},
         category="hybrid_conversational_mvp",
+        conversation_thread="mvp_sga_discussion",
     ),
 
     # --- Thread: Team Deep Dive (3 turns) ---
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Show me the Celtics' team statistics this season",
         query_type=QueryType.SQL_ONLY,  # Standalone: purely statistical (no contextual signal)
         expected_sql=(
@@ -559,8 +566,9 @@ HYBRID_TEST_CASES = [
         ground_truth_answer="Celtics: 9551 total PTS (561.8 avg), 3723 REB, 2147 AST across 17 players.",
         ground_truth_data={"team_abbr": "BOS", "total_pts": 9551, "avg_pts": 561.8, "total_reb": 3723, "total_ast": 2147},
         category="hybrid_conversational_team",
+        conversation_thread="team_celtics_deepdive",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What do fans think about their chances of repeating as champions?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -570,8 +578,9 @@ HYBRID_TEST_CASES = [
         ground_truth_answer="Fan discussions weigh the Celtics' depth and balanced scoring. With Tatum, Brown, and White leading, fans debate whether their roster continuity gives them an edge in repeating.",
         ground_truth_data=None,
         category="hybrid_conversational_team",
+        conversation_thread="team_celtics_deepdive",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare their stats to the Nuggets — which team is statistically better?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -585,13 +594,14 @@ HYBRID_TEST_CASES = [
             {"team_abbr": "BOS", "total_pts": 9551, "avg_pts": 561.8},
         ],
         category="hybrid_conversational_team",
+        conversation_thread="team_celtics_deepdive",
     ),
 
     # ======================================================================
     # NOISY / INFORMAL HYBRID (3 cases)
     # Typos and slang requiring both SQL data + contextual analysis
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="yo whos got da best stats AND what do ppl think about them on reddit",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts FROM players p JOIN player_stats ps ON p.id = ps.player_id ORDER BY ps.pts DESC LIMIT 1",
@@ -599,7 +609,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Shai Gilgeous-Alexander", "pts": 2485},
         category="hybrid_noisy",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="lebron stats + fan opinions plzzz",
         query_type=QueryType.HYBRID,
         expected_sql="SELECT p.name, ps.pts, ps.reb, ps.ast FROM players p JOIN player_stats ps ON p.id = ps.player_id WHERE p.name LIKE '%LeBron%'",
@@ -607,7 +617,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "LeBron James", "pts": 1708, "reb": 546, "ast": 574},
         category="hybrid_noisy",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="compare curry n jokic stats nd tell me who fans like more",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -626,7 +636,7 @@ HYBRID_TEST_CASES = [
     # DEFENSIVE / ADVANCED METRICS HYBRID (3 cases)
     # Defensive stats + PIE + fan discussion about intangibles
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who leads the league in blocks and what makes them elite defenders according to fans?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -637,7 +647,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"name": "Victor Wembanyama", "blk": 175, "pts": 1118, "reb": 506},
         category="hybrid_defensive",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Which players have the highest PIE and what does this metric reveal about their value according to fan discussions?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -654,7 +664,7 @@ HYBRID_TEST_CASES = [
         ],
         category="hybrid_advanced_metrics",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Compare the top 3 assist leaders and explain what fans think about playmaking in modern basketball",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -674,7 +684,7 @@ HYBRID_TEST_CASES = [
     # TEAM CULTURE HYBRID (3 cases)
     # Team stats + fan description of team identity
     # ======================================================================
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="What are the Thunder's stats this season and how do fans describe their team identity?",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -687,7 +697,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"team_abbr": "OKC", "total_pts": 9880, "avg_pts": 548.9, "total_reb": 3660, "total_ast": 2195},
         category="hybrid_team_culture",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Show me the Timberwolves' numbers and what fans call their 'young and hungry' identity",
         query_type=QueryType.HYBRID,
         expected_sql=(
@@ -700,7 +710,7 @@ HYBRID_TEST_CASES = [
         ground_truth_data={"team_abbr": "MIN", "total_pts": 9523, "avg_pts": 476.1, "total_reb": 3656, "total_ast": 2175},
         category="hybrid_team_culture",
     ),
-    SQLEvaluationTestCase(
+    HybridEvaluationTestCase(
         question="Who are the top 3-point shooters by volume and how has the three-point revolution changed the game according to fans?",
         query_type=QueryType.HYBRID,
         expected_sql=(
