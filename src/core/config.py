@@ -118,8 +118,8 @@ class Settings(BaseSettings):
     )
 
     # Observability
-    logfire_token: str | None = Field(default=None, description="Logfire API token")
-    logfire_enabled: bool = Field(default=False, description="Enable Logfire tracing")
+    logfire_token: str | None = Field(default=None, description="Logfire API token (requires project:write scope)")
+    logfire_enabled: bool = Field(default=True, description="Enable Logfire tracing (auto-disabled if token missing)")
 
     @field_validator("chunk_overlap")
     @classmethod

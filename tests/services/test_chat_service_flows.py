@@ -249,7 +249,7 @@ class TestE2EHybridFlow:
 
         # Mock SQL results
         mock_sql.query.return_value = {
-            "question": "Compare Jokić and Embiid stats",
+            "question": "Compare Jokić and Embiid stats and explain why they're effective",
             "sql": "SELECT name, pts, reb, ast FROM player_stats WHERE name IN ('Nikola Jokić', 'Joel Embiid')",
             "results": [
                 {"name": "Nikola Jokić", "pts": 1885, "reb": 896, "ast": 769},
@@ -279,7 +279,7 @@ While Embiid leads in scoring, Jokić significantly outpaces him in assists (769
 
         service = ChatService()
         request = ChatRequest(
-            query="Compare Jokić and Embiid's stats and playing styles",
+            query="Compare Jokić and Embiid's stats and explain why they're effective",
             k=5,
             include_sources=True
         )

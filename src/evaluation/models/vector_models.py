@@ -26,6 +26,10 @@ class EvaluationTestCase(BaseModel):
     question: str = Field(min_length=1, description="NBA business question")
     ground_truth: str = Field(min_length=1, description="Reference answer")
     category: TestCategory = Field(description="Difficulty category")
+    conversation_thread: str | None = Field(
+        default=None,
+        description="Conversation thread ID (queries with same ID belong to same conversation)"
+    )
 
 
 class EvaluationSample(BaseModel):

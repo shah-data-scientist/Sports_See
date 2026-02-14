@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- **Project Cleanup** (2026-02-13): Archived temporary documentation, logs, and test files
+  - Moved 49 documentation files to `_archived/2026-02/docs/` (evaluation summaries, verification reports, phase analyses)
+  - Moved 14 log files to `_archived/2026-02/` (API logs, UI logs, debug logs, test logs)
+  - Moved test JSON files to `_archived/2026-02/` (greeting tests, evaluation checkpoints)
+  - Archived test batch files: `RUN_AUTOMATED_TESTS.bat`, `RUN_FIXED_TEST.bat`
+  - **Retained in Root**: Only essential files (README.md, CHANGELOG.md, PROJECT_MEMORY.md, START.bat)
+  - **Service Launcher**: `START.bat` - cleanly starts API (port 8000) + UI (port 8501)
+
 ### Added
 - **Test Suite Reorganization** (2026-02-11): Restructured tests into clear categories for better organization ([tests/](tests/))
   - **New Structure**: tests/core/, tests/models/, tests/services/, tests/repositories/, tests/integration/, tests/e2e/, tests/ui/

@@ -375,19 +375,20 @@ class VectorStoreRepository:
                     else:
                         bm25_normalized = bm25_scores
 
-                    # Apply 4-signal formula: (cosine*0.45) + (bm25*0.30) + (metadata*0.15) + (quality*0.10)
+                    # Apply 4-signal formula: (cosine*0.70) + (bm25*0.15) + (metadata*0.075) + (quality*0.075)
+                    # Phase 18: Reweighted to prioritize semantic similarity (2026-02-13)
                     new_results = []
                     for i, (chunk, cosine_score) in enumerate(results):
                         bm25_score = bm25_normalized[i]
                         metadata_boost = self._compute_metadata_boost(chunk)
                         quality_boost = self._compute_quality_boost(chunk)
 
-                        # 4-signal composite score
+                        # 4-signal composite score (boosted semantic weight)
                         composite_score = (
-                            (cosine_score * 0.45)
-                            + (bm25_score * 0.30)
-                            + (metadata_boost * 0.15)
-                            + (quality_boost * 0.10)
+                            (cosine_score * 0.70)  # Increased from 0.45
+                            + (bm25_score * 0.15)  # Decreased from 0.30
+                            + (metadata_boost * 0.075)  # Adjusted from 0.15
+                            + (quality_boost * 0.075)  # Adjusted from 0.10
                         )
                         composite_score = min(composite_score, 100.0)
 

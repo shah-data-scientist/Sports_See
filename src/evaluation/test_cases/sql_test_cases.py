@@ -749,6 +749,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "Taurean Prince", "three_pct": 43.9},
         ],
         category="conversational_progressive_filtering",
+        conversation_thread="progressive_filtering_1",
     ),
     SQLEvaluationTestCase(
         question="Only from the Lakers",  # Refines previous to LAL
@@ -768,6 +769,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "LeBron James", "three_pct": 37.6},
         ],
         category="conversational_progressive_filtering",
+        conversation_thread="progressive_filtering_1",
     ),
     SQLEvaluationTestCase(
         question="Sort them by attempts",  # Further refines to ORDER BY three_pa DESC
@@ -790,6 +792,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "Dorian Finney-Smith", "three_pct": 41.1, "three_pa": 315},
         ],
         category="conversational_progressive_filtering",
+        conversation_thread="progressive_filtering_1",
     ),
 
     # --- Thread: User Correction (3 turns) ---
@@ -809,6 +812,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "Buddy Hield", "pts": 910, "reb": 262, "ast": 131},
         ],
         category="conversational_correction",
+        conversation_thread="correction_celtics",
     ),
     SQLEvaluationTestCase(
         question="Actually, I meant the Celtics",  # Corrects team
@@ -825,6 +829,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "Derrick White", "pts": 1246, "reb": 342, "ast": 365},
         ],
         category="conversational_correction",
+        conversation_thread="correction_celtics",
     ),
     SQLEvaluationTestCase(
         question="Who is their top scorer?",  # "their" = Celtics (not Warriors)
@@ -837,6 +842,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="Jayson Tatum is the Celtics' top scorer with 1930 points.",
         ground_truth_data={"name": "Jayson Tatum", "pts": 1930},
         category="conversational_correction",
+        conversation_thread="correction_celtics",
     ),
 
     # --- Thread: Implicit Category Continuation (3 turns) ---
@@ -852,6 +858,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="Dyson Daniels leads in steals with 228.",
         ground_truth_data={"name": "Dyson Daniels", "stl": 228},
         category="conversational_implicit_continuation",
+        conversation_thread="stats_continuation",
     ),
     SQLEvaluationTestCase(
         question="And blocks?",  # Implicitly: who leads in blocks
@@ -864,6 +871,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="Victor Wembanyama leads in blocks with 175.",
         ground_truth_data={"name": "Victor Wembanyama", "blk": 175},
         category="conversational_implicit_continuation",
+        conversation_thread="stats_continuation",
     ),
     SQLEvaluationTestCase(
         question="What about turnovers?",  # Still: who leads in turnovers
@@ -876,6 +884,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="Trae Young leads in turnovers with 357.",
         ground_truth_data={"name": "Trae Young", "tov": 357},
         category="conversational_implicit_continuation",
+        conversation_thread="stats_continuation",
     ),
 
     # --- Thread: Multi-Entity Tracking (3 turns) ---
@@ -891,6 +900,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="Jayson Tatum: 1930 PTS in 72 GP (26.8 PPG).",
         ground_truth_data={"name": "Jayson Tatum", "pts": 1930, "gp": 72, "ppg": 26.8},
         category="conversational_multi_entity",
+        conversation_thread="multi_entity_tatum_lebron",
     ),
     SQLEvaluationTestCase(
         question="How does LeBron James compare?",  # Introduces second entity
@@ -906,6 +916,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "LeBron James", "pts": 1708, "gp": 70, "ppg": 24.4},
         ],
         category="conversational_multi_entity",
+        conversation_thread="multi_entity_tatum_lebron",
     ),
     SQLEvaluationTestCase(
         question="Between the two, who has more rebounds?",  # References both entities
@@ -921,6 +932,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "LeBron James", "reb": 546},
         ],
         category="conversational_multi_entity",
+        conversation_thread="multi_entity_tatum_lebron",
     ),
 
     # --- Thread: Team-Level Pronoun Resolution (3 turns) ---
@@ -936,6 +948,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="The Detroit Pistons (DET) have the highest total points with 10292.",
         ground_truth_data={"team_abbr": "DET", "total_pts": 10292},
         category="conversational_team_pronoun",
+        conversation_thread="team_pronoun_pistons",
     ),
     SQLEvaluationTestCase(
         question="Who are their top scorers?",  # "their" = DET
@@ -952,6 +965,7 @@ CONVERSATIONAL_SQL_CASES = [
             {"name": "Tobias Harris", "pts": 1000},
         ],
         category="conversational_team_pronoun",
+        conversation_thread="team_pronoun_pistons",
     ),
     SQLEvaluationTestCase(
         question="What is the average age of their players?",  # "their" still = DET
@@ -963,6 +977,7 @@ CONVERSATIONAL_SQL_CASES = [
         ground_truth_answer="The average age of the Pistons players is 25.3 years.",
         ground_truth_data={"avg_age": 25.3},
         category="conversational_team_pronoun",
+        conversation_thread="team_pronoun_pistons",
     ),
 ]
 

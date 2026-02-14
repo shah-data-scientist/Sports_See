@@ -8,7 +8,7 @@ MAINTAINER: Shahu
 
 import logging
 import time
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 # LAZY IMPORTS: Heavy modules are imported on-demand, not at module load time
 # This prevents 30-second startup hangs in Streamlit
@@ -208,11 +208,17 @@ CRITICAL INSTRUCTIONS - SYNTHESIS & PRESENTATION:
    - Why do they matter?
    - What's the bigger picture?
    - Use professional analysis tone with light wit where appropriate
+   - **Tone for EXACT statistics** (Issue #6 Fix): Use DEFINITIVE language ("Player X scored 30 points", NOT "appears to have scored around 30 points")
+   - Reserve hedging ("possibly", "approximately", "seems to") ONLY for comparisons, projections, or interpretations
 
 3. **Format for readability**:
    - Present numbers clearly (bullet points or flowing text)
    - Use transitions between ideas
    - Build toward insights, not just facts
+   - **Top-N Queries** (Issue #4 Fix): If question asks for "top N" or "list of N items":
+     * FIRST: Present the COMPLETE list of ALL N items with their stats
+     * THEN: Add analysis/context AFTER the complete list
+     * CRITICAL: Complete the full list BEFORE adding commentary
 
 4. **Citation format**:
    - NO inline citations in text
@@ -225,11 +231,41 @@ CRITICAL INSTRUCTIONS - SYNTHESIS & PRESENTATION:
 MANDATORY: Only use the STATISTICAL DATA provided.
 Do NOT add general knowledge or information not provided.
 
-If data is shown above, present it confidently. Only say "data not available" if section explicitly says "No results found".
+**MANDATORY RESPONSE RULES** (Issue #5 Fix - NEVER DECLINE):
+1. ALWAYS check the STATISTICAL DATA section FIRST before responding
+2. If data EXISTS in STATISTICAL DATA → PRESENT IT IMMEDIATELY (no hedging, no apologies, no "I can't...")
+3. If SQL returned results for a FILTERED query → The filter criteria were SATISFIED, present results confidently
+4. If data is TRULY MISSING (0 rows or empty) → State clearly: "This specific data is not available in the database."
+
+**FORBIDDEN PHRASES when data IS present in STATISTICAL DATA:**
+❌ "I can't provide..."
+❌ "I'm unable to find..."
+❌ "I cannot give you..."
+❌ "The data doesn't include..." (when SQL successfully returned filtered results)
+❌ "The database does not include..." (when SQL succeeded with WHERE clauses)
+❌ "I don't have access to..."
+
+**REQUIRED FORMAT when data IS present:**
+✅ "Based on the statistics: [answer with numbers]"
+✅ "[Direct answer]. According to the data: [details]"
+✅ "The data shows [answer]."
+✅ "X players meet this criteria: [list them]" (for filtered queries)
+
+Examples:
+- Question: "How many players have more than 500 assists?"
+- STATISTICAL DATA: "Found 15 matching records: ..."
+- ✅ CORRECT: "15 players have more than 500 assists this season. The leaders include..."
+- ❌ WRONG: "I can't provide a specific number..."
+
+- Question: "Find players between 25-30 years old with 1500+ points"
+- STATISTICAL DATA: "Found 14 matching records: 1. name: Shai Gilgeous-Alexander, 2. name: Jayson Tatum..."
+- ✅ CORRECT: "14 players between 25 and 30 years old have scored more than 1500 points this season: Shai Gilgeous-Alexander, Jayson Tatum..."
+- ❌ WRONG: "The database does not include age or points scored" (SQL ALREADY FILTERED by these!)
 
 ANSWER:"""
 
 # Hybrid prompt: Mandate blending of SQL + vector
+# Phase 18: Enhanced faithfulness with numbered citations (2026-02-13)
 HYBRID_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional, engaging voice. You synthesize statistics and insights into compelling narratives.
 
 {conversation_history}
@@ -247,48 +283,63 @@ CONTEXTUAL KNOWLEDGE (Analysis & Insights):
 USER QUESTION:
 {question}
 
-CRITICAL INSTRUCTIONS FOR HYBRID ANSWERS:
+CRITICAL INSTRUCTIONS - FAITHFULNESS & SYNTHESIS:
 
-**YOU MUST USE BOTH DATA SOURCES ABOVE - SYNTHESIZE THEM, DON'T SEPARATE THEM**
+**1. FAITHFULNESS (HIGHEST PRIORITY):**
+   - **ONLY use information from the two sources above** (Statistical Data + Contextual Knowledge)
+   - **FORBIDDEN:** Do NOT add information from general knowledge or external sources
+   - Database statistics are exact - cite them precisely
+   - If sources conflict: Present both perspectives with separate citations
+   - If information is missing: State explicitly what is not in the sources
 
-1. **Weave together naturally**: Don't say "Stat X" then "Context Y". Blend them into flowing, coherent paragraphs.
-   - Stats answer the WHAT and numbers
+**2. ANSWER RELEVANCY:**
+   - **Start with direct answer** combining both data sources in first sentence
+   - Statistics answer the WHAT and numbers
    - Context explains the WHY, HOW, and implications
+   - Stay focused on the user's question
 
-2. **Add personality & transitions**:
-   - Use connecting phrases: "Interestingly", "Moreover", "However", "This is partly because", "What's particularly notable..."
-   - Be authoritative but approachable
-   - A touch of wit is welcome where appropriate
+**3. SYNTHESIS (Required):**
+   - **YOU MUST USE BOTH DATA SOURCES - WEAVE THEM TOGETHER**
+   - Don't say "Stat X" then "Context Y" separately
+   - Blend into flowing, coherent paragraphs
+   - Example: "Player X averaged 28.5 PPG[1], showcasing the efficiency that fans praised throughout the playoffs[2]."
 
-3. **Structure for impact**:
-   - Open with the key insight (stat + context combined)
-   - Build supporting details
-   - Close with implications or takeaways
-   - Use transitions between ideas
+**4. NUMBERED CITATIONS (Required):**
+   - Add [1], [2], [3] etc. after statements
+   - Number sources sequentially (SQL Database = [1], then documents = [2], [3], etc.)
+   - Example: "According to statistics, Player X averaged 28.5 PPG[1]. Fans praised his efficiency[2]."
 
-4. **Citation format - MOVE TO END**:
-   - NO inline "[Source: X]" in the text
-   - Write naturally, then list all sources once at the bottom:
-   - "Sources: Source1, Source2, Source3"
+**5. COMPLETENESS:**
+   - If sources partially answer: Provide what you can, acknowledge gaps
+   - **Do NOT fully decline if sources have ANY relevant information**
 
-5. Resolve pronouns using conversation history (he, his, them)
+**6. SOURCE LIST (Required at end):**
+   After your answer, add:
 
-6. Respond in English
+   Sources:
+   1. NBA Statistics Database
+   2. [Second source name]
+   3. [Third source name]
 
-**FAILURE TO SYNTHESIZE IS UNACCEPTABLE**
-Do not list facts separately. Weave them together seamlessly. If both data sources are provided, use them together, not in isolation.
+7. Add personality with transitions: "Interestingly", "Moreover", "However"
+8. Resolve pronouns using conversation history (he, his, them)
+9. Respond in English
 
-EXAMPLE (GOOD - Synthesized):
-"LeBron James scored 1,708 points this season, continuing his role as one of the league's elite scorers. His offensive toolkit is remarkably diverse—he attacks the basket with power, but also possesses an underrated three-point shot. This versatility keeps defenders guessing and creates opportunities for his teammates. The consistency he brings year after year is a testament to his professionalism and basketball IQ.
+EXAMPLE (GOOD - Faithful + Synthesized + Cited):
+"LeBron James scored 1,708 points this season[1], continuing his role as one of the league's elite scorers. His offensive toolkit is remarkably diverse—he attacks the basket with power, but also possesses an underrated three-point shot[2]. This versatility keeps defenders guessing and creates opportunities for his teammates[2]. The consistency he brings year after year is a testament to his professionalism and basketball IQ[3].
 
-Sources: NBA Statistics, ESPN Analysis, Basketball Community Discussion"
+Sources:
+1. NBA Statistics Database
+2. ESPN Analysis
+3. Basketball Community Discussion"
 
-YOUR ANSWER (MUST blend both sources into natural, synthesized narrative):"""
+YOUR ANSWER (with numbered citations [1], [2], etc.):"""
 
 # Contextual prompt: For qualitative analysis and biographical info
 # Phase 12C: Answer relevancy fix - focused qualitative analysis
 # Phase 13: Add source grounding to prevent hallucination
 # Phase 17: Enhanced for biographical queries to synthesize stats + context
+# Phase 18: Enhanced faithfulness with numbered citations (2026-02-13)
 CONTEXTUAL_PROMPT = """You are '{app_name} Analyst AI', an expert NBA sports analysis assistant with a professional, personable voice. You excel at synthesizing opinions, insights, and biographical information into engaging narratives.
 
 {conversation_history}
@@ -301,41 +352,48 @@ CONTEXTUAL KNOWLEDGE (Opinions, Analysis, Discussions, Biographical Info):
 USER QUESTION:
 {question}
 
-CRITICAL INSTRUCTIONS - SYNTHESIS & ANALYSIS:
+CRITICAL INSTRUCTIONS - FAITHFULNESS & ANSWER QUALITY:
 
-**MANDATORY: You MUST ONLY answer based on the provided CONTEXTUAL KNOWLEDGE above.**
-**FORBIDDEN: Do NOT use information from general knowledge not in the sources.**
+**1. FAITHFULNESS (HIGHEST PRIORITY):**
+   - **ONLY use information from the CONTEXTUAL KNOWLEDGE above**
+   - **FORBIDDEN:** Do NOT add information from general knowledge or external sources
+   - **If sources conflict:** Present both perspectives with separate citations
+   - **If information is missing:** Explicitly state: "The sources do not provide information about [aspect]"
 
-1. **Synthesize, don't list**: Weave facts and opinions together. Don't say "Opinion 1: X, Opinion 2: Y, Opinion 3: Z". Create a cohesive narrative.
-   - For biographical queries: Include both biographical narrative AND relevant statistics if available in the context.
+**2. ANSWER RELEVANCY:**
+   - **Start with direct answer** in the first sentence
+   - Then provide supporting details from sources
+   - Stay focused on the user's question - do not drift off-topic
 
-2. **Add personality & perspective**:
-   - Use transitions: "Interestingly", "Moreover", "However", "Some argue...", "What's particularly noteworthy..."
-   - Be authoritative but approachable
-   - Show enthusiasm for the subject matter
-   - Light wit is welcome where appropriate
+**3. NUMBERED CITATIONS (Required):**
+   - Add [1], [2], [3] etc. after each statement that uses source information
+   - Example: "Player X averaged 28 points in the playoffs[1]. Fans praised his efficiency[2]."
+   - Number sources sequentially as you use them (first source = [1], second = [2], etc.)
 
-3. **Build a compelling narrative**:
-   - Start with a key insight or main theme
-   - Support with details and perspectives from sources
-   - Use transitions between ideas
-   - Close with implications or takeaways
+**4. COMPLETENESS:**
+   - If sources partially answer the question:
+     * Answer what you CAN from the sources
+     * Acknowledge gaps: "The sources provide information about X but not about Y"
+   - **Do NOT fully decline if sources have ANY relevant information**
 
-4. **Citation format - MOVE TO END**:
-   - NO inline [Source: X] citations in text
-   - List all sources ONCE at the very end:
-   - "Sources: Source1, Source2, Source3"
+**5. SYNTHESIS (Not listing):**
+   - Weave facts and opinions into cohesive narrative
+   - Use transitions: "Interestingly", "Moreover", "However"
+   - For biographical queries: Include both narrative AND statistics if available
+   - Add personality but stay grounded in sources
 
-5. If information is NOT in the contextual knowledge:
-   - Say: "Based on the sources available, I cannot find information about [topic]."
-   - Do NOT provide information from your general knowledge
+**6. SOURCE LIST (Required at end):**
+   After your answer, add a blank line and list sources:
 
-6. Resolve pronouns using conversation history (he, his, them)
-7. Respond in English
+   Sources:
+   1. [First source name]
+   2. [Second source name]
+   3. [Third source name]
 
-FORBIDDEN: Do NOT list facts separately. Synthesize them into flowing prose.
+7. Resolve pronouns using conversation history (he, his, them)
+8. Respond in English
 
-ANSWER:"""
+ANSWER (with numbered citations [1], [2], etc.):"""
 
 
 class ChatService:
@@ -467,6 +525,122 @@ class ChatService:
     def is_ready(self) -> bool:
         """Check if service is ready (index loaded)."""
         return self.vector_store.is_loaded
+
+    def _format_superscript_citations(self, answer: str) -> str:
+        """Convert [1], [2], etc. to HTML superscript for better readability.
+
+        Example:
+          Input:  "Player X scored 30 points[1]. He was efficient[2]."
+          Output: "Player X scored 30 points<sup>1</sup>. He was efficient<sup>2</sup>."
+
+        Args:
+            answer: Raw LLM response with [1], [2], etc. markers
+
+        Returns:
+            Formatted answer with <sup> tags
+        """
+        import re
+
+        # Pattern: [1], [2], [10], etc. (handles multi-digit)
+        pattern = r'\[(\d+)\]'
+
+        # Replace [1] → <sup>1</sup>
+        formatted = re.sub(pattern, r'<sup>\1</sup>', answer)
+
+        return formatted
+
+    @staticmethod
+    def _remove_excessive_hedging(answer: str) -> str:
+        """Remove excessive hedging language from statistical responses (Issue #6 Fix).
+
+        Removes weak qualifiers when presenting exact statistics:
+        - "appears to have scored" → "scored"
+        - "seems to be around" → "is"
+        - "approximately X points" → "X points"
+
+        Args:
+            answer: LLM response
+
+        Returns:
+            Response with hedging removed
+        """
+        import re
+
+        # Patterns to remove (hedging phrases before facts)
+        hedging_patterns = [
+            # "appears/seems to" phrases
+            (r'\b(appears to have|seems to have|appears to be|seems to be)\b', ''),
+            # Numeric qualifiers
+            (r'\b(approximately|roughly|around|about)\s+(\d+)', r'\2'),
+            # Possibility markers
+            (r'\b(possibly|probably|likely|perhaps)\s+', ''),
+            # Modal verbs
+            (r'\b(may have|might have|could have)\b', 'has'),
+            (r'\b(may be|might be|could be)\b', 'is'),
+            # "I think/believe" subjective markers
+            (r'\b(I think|I believe|I suspect)\s+', ''),
+            # "It seems/appears that" constructions
+            (r'\b(it seems that|it appears that|it looks like)\s+', ''),
+            # "kind of/sort of" qualifiers
+            (r'\b(kind of|sort of)\s+', ''),
+            # "tend to/tends to" patterns
+            (r'\b(tend to|tends to)\s+', ''),
+            # "generally/usually" when presenting specific stats
+            (r'\b(generally|usually|typically)\s+(scored|averaged|had)', r'\2'),
+        ]
+
+        result = answer
+        for pattern, replacement in hedging_patterns:
+            result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+
+        # Clean up double spaces
+        result = re.sub(r'\s{2,}', ' ', result)
+
+        return result
+
+    def _assess_source_quality(self, sources: List[SearchResult], min_acceptable_score: float = 50.0) -> Dict[str, Any]:
+        """Assess if retrieved sources are sufficient quality to answer confidently.
+
+        Args:
+            sources: Retrieved search results
+            min_acceptable_score: Minimum similarity score to consider "good" (default: 50%)
+
+        Returns:
+            Dict with:
+              - has_good_sources: bool (at least one source above threshold)
+              - avg_score: float (average similarity across all sources)
+              - good_count: int (number of sources above threshold)
+              - total_count: int (total sources retrieved)
+              - quality_level: str ("high", "medium", "low", "none")
+        """
+        if not sources:
+            return {
+                "has_good_sources": False,
+                "avg_score": 0.0,
+                "good_count": 0,
+                "total_count": 0,
+                "quality_level": "none",
+            }
+
+        scores = [s.score for s in sources]
+        avg_score = sum(scores) / len(sources)
+        good_count = sum(1 for s in scores if s >= min_acceptable_score)
+
+        # Determine quality level
+        if avg_score >= 65.0 and good_count >= len(sources) * 0.8:
+            quality_level = "high"  # 80%+ sources are good, avg high
+        elif avg_score >= 50.0 or good_count >= len(sources) * 0.5:
+            quality_level = "medium"  # 50%+ sources are acceptable
+        else:
+            quality_level = "low"  # Majority of sources are poor matches
+
+        return {
+            "has_good_sources": good_count > 0,
+            "avg_score": avg_score,
+            "good_count": good_count,
+            "total_count": len(sources),
+            "quality_level": quality_level,
+        }
 
     def ensure_ready(self) -> None:
         """Ensure service is ready.
@@ -746,7 +920,7 @@ class ChatService:
         query: str,
         k: int | None = None,
         min_score: float | None = None,
-        category: str | None = None,
+        max_expansions: int | None = None,
     ) -> list[SearchResult]:
         """Search for relevant documents with smart metadata filtering.
 
@@ -754,6 +928,7 @@ class ChatService:
             query: Search query
             k: Number of results (default from settings)
             min_score: Minimum similarity score (0-1)
+            max_expansions: Pre-computed expansion limit from ClassificationResult
 
         Returns:
             List of search results
@@ -771,16 +946,16 @@ class ChatService:
         self.ensure_ready()
 
         # PHASE 7: Expand query for better keyword matching (replaces metadata filtering)
-        # Phase 3 Step 3: Use category-aware expansion if category provided
-        if category:
-            expanded_query = self.query_expander.expand_smart_category(query, category=category)
+        # Use pre-computed max_expansions from QueryClassifier
+        if max_expansions:
+            expanded_query = self.query_expander.expand_weighted(query, max_expansions=max_expansions)
         else:
             expanded_query = self.query_expander.expand_smart(query)
 
         if expanded_query != query:
             logger.info(f"Expanded query: '{query}' -> '{expanded_query[:100]}...'")
-            if category:
-                logger.info(f"  (using {category}-aware expansion)")
+            if max_expansions:
+                logger.info(f"  (using max_expansions={max_expansions})")
 
         # PHASE 6 metadata filtering DISABLED - caused false negatives
         # (Only 3 chunks tagged as player_stats, all were headers not actual data)
@@ -980,7 +1155,8 @@ class ChatService:
                 processing_time_ms=int(processing_time),
                 model=self.model,
                 conversation_id=None,
-                turn_number=1
+                turn_number=1,
+                query_type="greeting",
             )
 
         # Build conversation context if conversation_id provided
@@ -1009,6 +1185,7 @@ class ChatService:
 
         query_type = classification.query_type
         is_biographical = classification.is_biographical
+        logger.warning(f"[DEBUG-CLASSIFY] query_type={query_type} ({type(query_type)}), is_biographical={is_biographical}, enable_sql={self._enable_sql}")
 
         # Adaptive k: use request.k if explicitly set, otherwise use classifier's complexity estimate
         adaptive_k = request.k if request.k and request.k > 0 else classification.complexity_k
@@ -1078,12 +1255,39 @@ class ChatService:
                 query=effective_query,
                 k=adaptive_k,
                 min_score=request.min_score,
-                category=query_type.value,  # Phase 3 Step 3: Category-aware expansion
+                max_expansions=classification.max_expansions,  # Pass pre-computed expansion limit
             )
 
-            # Format vector search context
+            # Format vector search context with quality assessment (Phase 18)
             if search_results:
-                vector_context = "\n\n---\n\n".join(
+                # Assess source quality
+                quality_assessment = self._assess_source_quality(search_results, min_acceptable_score=50.0)
+
+                # Build quality warning prefix based on level
+                quality_prefix = ""
+                if quality_assessment["quality_level"] == "low":
+                    quality_prefix = (
+                        f"⚠️ SOURCE QUALITY WARNING: Retrieved sources have low similarity (avg: {quality_assessment['avg_score']:.1f}%).\n"
+                        f"Instructions: If sources contain ANY relevant information, provide a PARTIAL answer starting with: "
+                        f"'I have limited information about this topic. Based on the available sources:' "
+                        f"Otherwise, respond: 'I do not have sufficient information to answer this question reliably.'\n\n"
+                    )
+                elif quality_assessment["quality_level"] == "medium":
+                    quality_prefix = (
+                        f"ℹ️ SOURCE QUALITY: Retrieved sources have moderate similarity (avg: {quality_assessment['avg_score']:.1f}%).\n"
+                        f"Instructions: Answer using available information. If aspects are missing, acknowledge: "
+                        f"'The sources provide information about X but not about Y.'\n\n"
+                    )
+                else:  # high quality
+                    quality_prefix = (
+                        f"✅ SOURCE QUALITY: Retrieved sources have high similarity (avg: {quality_assessment['avg_score']:.1f}%).\n"
+                        f"Instructions: Answer confidently using the high-quality sources.\n\n"
+                    )
+
+                logger.info(f"Source quality: {quality_assessment['quality_level']} (avg: {quality_assessment['avg_score']:.1f}%)")
+
+                # Prepend quality context to vector_context
+                vector_context = quality_prefix + "\n\n---\n\n".join(
                     [f"Source: {r.source} (Score: {r.score:.1f}%)\n{r.text}" for r in search_results]
                 )
 
@@ -1131,9 +1335,19 @@ class ChatService:
                 prompt_template=prompt_template,
             )
 
-        # SMART FALLBACK: If SQL succeeded but LLM still says "cannot find", retry with vector search
-        if sql_success and not sql_failed and "cannot find" in answer.lower():
-            logger.warning("SQL succeeded but LLM couldn't use results - retrying with vector search")
+        # SMART FALLBACK: If SQL succeeded but LLM couldn't USE the data, retry with vector search
+        # Only trigger if LLM explicitly says it can't PARSE/USE provided data, NOT when data doesn't exist
+        decline_phrases = [
+            "cannot parse",
+            "unable to interpret the data",
+            "the provided data is unclear",
+            "no statistical data provided",  # LLM didn't see SQL context
+            "the data format is unclear",
+        ]
+        should_fallback = sql_success and not sql_failed and any(phrase in answer.lower() for phrase in decline_phrases)
+
+        if should_fallback:
+            logger.warning("SQL succeeded but LLM couldn't parse results - retrying with vector search")
 
             # Get vector search results (if not already retrieved)
             if not search_results:
@@ -1141,7 +1355,7 @@ class ChatService:
                     query=effective_query,
                     k=adaptive_k,
                     min_score=request.min_score,
-                    category=query_type.value,  # Phase 3 Step 3: Category-aware expansion
+                    max_expansions=classification.max_expansions,  # Pass pre-computed expansion limit
                 )
 
             if search_results:
@@ -1158,6 +1372,14 @@ class ChatService:
                     prompt_template=CONTEXTUAL_PROMPT,
                 )
                 logger.info("Vector search fallback succeeded")
+
+        # Apply post-processing to answer
+        # Issue #6: Remove excessive hedging language from statistical responses
+        if query_type in (QueryType.STATISTICAL, QueryType.HYBRID):
+            answer = self._remove_excessive_hedging(answer)
+
+        # Apply superscript formatting to citations (Phase 18)
+        answer = self._format_superscript_citations(answer)
 
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
@@ -1204,6 +1426,10 @@ class ChatService:
                 turn_number=request.turn_number,
             )
 
+        # Map query_type enum to string for API response (Phase 18)
+        query_type_str = query_type.value if query_type else None
+        logger.warning(f"[DEBUG-RETURN] BEFORE ChatResponse: query_type={query_type}, query_type_str={query_type_str}, type={type(query_type)}")
+
         return ChatResponse(
             answer=answer,
             sources=search_results if request.include_sources else [],
@@ -1214,4 +1440,5 @@ class ChatService:
             turn_number=request.turn_number,
             generated_sql=generated_sql,
             visualization=visualization,
+            query_type=query_type_str,
         )
